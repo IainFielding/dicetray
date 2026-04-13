@@ -6,7 +6,7 @@
 
 A Foundry VTT module that adds a convenient dice tray to the chat sidebar for quickly building and rolling dice pools with advantage, disadvantage, and keep highest/lowest support.
 
-![Dice Tray Overview](assets\docs\dicetray-screenshot.png)
+![Dice Tray Overview](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dicetray-screenshot.png?raw=true)
 
 ---
 
@@ -31,7 +31,7 @@ A Foundry VTT module that adds a convenient dice tray to the chat sidebar for qu
 **Right-click** a dice button to remove one die of that type from the pool.
 
 
-![Dice Buttons](IainFielding/dicetray/blob/master/assets/docs/dice-buttons.png)
+![Dice Buttons](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dice-buttons.png?raw=true)
 
 ### Roll Modifiers
 
@@ -44,7 +44,7 @@ The tray provides four roll modifier modes. Only one can be active at a time —
 | **DIS** | Disadvantage | Rolls with disadvantage — doubles the dice and keeps the worse half (e.g. `2d20dis`) |
 | **KL** | Keep Lowest | Rolls the pool and keeps only the lowest result from each die group (e.g. `2d20kl`) |
 
-![Roll Modifiers](assets\docs\roll-modifiers.png)
+![Roll Modifiers](https://github.com/IainFielding/dicetray/blob/master/assets/docs/roll-modifiers.png?raw=true)
 
 ### Formula Display
 
@@ -62,7 +62,7 @@ As you add dice and select a mode, the formula preview updates in real time to s
 
 A **D20 icon button** is added to the chat sidebar header (next to the export button). Click it to show or hide the dice tray. Your preference is saved per client and persists between sessions.
 
-![DiceTray toggle](assets\docs\dicetray-showicon.png)
+![DiceTray toggle](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dicetray-showicon.png?raw=true)
 
 ---
 
