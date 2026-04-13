@@ -31,7 +31,7 @@ A Foundry VTT module that adds a convenient dice tray to the chat sidebar for qu
 **Right-click** a dice button to remove one die of that type from the pool.
 
 
-![Dice Buttons](assets\docs\dice-buttons.png)
+![Dice Buttons](IainFielding/dicetray/blob/master/assets/docs/dice-buttons.png)
 
 ### Roll Modifiers
 
