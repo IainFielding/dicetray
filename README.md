@@ -1,71 +1,79 @@
-![](https://img.shields.io/badge/Foundry-v10-informational)
-<!--- Downloads @ Latest Badge -->
-<!--- replace <user>/<repo> with your username/repository -->
-<!--- ![Latest Release Download Count](https://img.shields.io/github/downloads/<user>/<repo>/latest/module.zip) -->
+![](https://img.shields.io/badge/Foundry-v14-informational)
+<!--- ![Latest Release Download Count](https://img.shields.io/github/downloads/IainFielding/dicetray/latest/module.zip) -->
+<!--- ![Forge Installs](https://img.shields.io/badge/dynamic/json?label=Forge%20Installs&query=package.installs&suffix=%25&url=https%3A%2F%2Fforge-vtt.com%2Fapi%2Fbazaar%2Fpackage%2Fsogrom-dicetray&colorB=4aa94a) -->
 
-<!--- Forge Bazaar Install % Badge -->
-<!--- replace <your-module-name> with the `name` in your manifest -->
-<!--- ![Forge Installs](https://img.shields.io/badge/dynamic/json?label=Forge%20Installs&query=package.installs&suffix=%25&url=https%3A%2F%2Fforge-vtt.com%2Fapi%2Fbazaar%2Fpackage%2F<your-module-name>&colorB=4aa94a) -->
+# Sogrom's Dice Tray
 
+A Foundry VTT module that adds a convenient dice tray to the chat sidebar for quickly building and rolling dice pools with advantage, disadvantage, and keep highest/lowest support.
 
-# How to use this Template to create a versioned Release
+![Dice Tray Overview](assets\docs\dicetray-screenshot.png)
 
-1. Open your repository's releases page.
+---
 
-![Where to click to open repository releases.](https://user-images.githubusercontent.com/7644614/93409301-9fd25080-f864-11ea-9e0c-bdd09e4418e4.png)
+## Features
 
-2. Click "Draft a new release"
+- Build dice pools by clicking dice buttons directly in the chat sidebar
+- Support for all standard dice: D4, D6, D8, D10, D12, D20, and D100
+- Roll modifiers: Keep Highest, Advantage, Disadvantage, and Keep Lowest
+- Live formula preview as you build your pool
+- Toggle the tray on/off with a D20 button in the sidebar header
+- Works in both the sidebar and popped-out chat windows
+- Visibility preference is saved per user
 
-![Draft a new release button.](https://user-images.githubusercontent.com/7644614/93409364-c1333c80-f864-11ea-89f1-abfcb18a8d9f.png)
+---
 
-3. Fill out the release version as the tag name.
+## How to Use
 
-If you want to add details at this stage you can, or you can always come back later and edit them.
+### Adding and Removing Dice
 
-![Release Creation Form](https://user-images.githubusercontent.com/7644614/93409543-225b1000-f865-11ea-9a19-f1906a724421.png)
+**Left-click** any dice button (D4–D100) to add that die to your pool. A badge appears on the button showing how many of that die you've added.
 
-4. Hit submit.
-
-5. Wait a few minutes.
-
-A Github Action will run to populate the `module.json` and `module.zip` with the correct urls that you can then use to distribute this release. You can check on its status in the "Actions" tab.
-
-![Actions Tab](https://user-images.githubusercontent.com/7644614/93409820-c1800780-f865-11ea-8c6b-c3792e35e0c8.png)
-
-6. Grab the module.json url from the release's details page.
-
-![image](https://user-images.githubusercontent.com/7644614/93409960-10c63800-f866-11ea-83f6-270cc5d10b71.png)
-
-This `module.json` will only ever point at this release's `module.zip`, making it useful for sharing a specific version for compatibility purposes.
-
-7. You can use the url `https://github.com/<user>/<repo>/releases/latest/download/module.json` to refer to the manifest.
-
-This is the url you want to use to install the module typically, as it will get updated automatically.
-
-# How to List Your Releases on Package Admin
-
-To request a package listing for your first release, go to the [Package Submission Form](https://foundryvtt.com/packages/submit) (accessible via a link at the bottom of the "[Systems and Modules](https://foundryvtt.com/packages/)" page on the Foundry website).
-
-Fill in the form. "Package Name" must match the name in the module manifest.  Package Title will be the display name for the package.  Package URL should be your repo URL.
-![image](https://user-images.githubusercontent.com/36359784/120664263-b49e5500-c482-11eb-9126-af7006389903.png)
+**Right-click** a dice button to remove one die of that type from the pool.
 
 
-One of the Foundry staff will typically get back to you with an approval or any further questions within a few days, and give you access to the package admin pages.
+![Dice Buttons](assets\docs\dice-buttons.png)
 
-Once you have access to the [module admin page](https://foundryvtt.com/admin/packages/package/), you can release a new version by going into the page for your module, scrolling to the bottom, and filling in a new Package Version.
+### Roll Modifiers
 
-When listing a new version, Version should be the version number you set above, and the Manifest URL should be the manifest __for that specific version__ (do not use /latest/ here).
-![image](https://user-images.githubusercontent.com/36359784/120664346-c4b63480-c482-11eb-9d8b-731b50d70939.png)
+The tray provides four roll modifier modes. Only one can be active at a time — click a mode to select it, click it again to deselect and return to a normal roll.
 
-> ### :warning: Important :warning:
-> 
-> It is very important that you use the specific release manifest url, and not the `/latest` url here. For more details about why this is important and how Foundry Installs/Updates packages, read [this wiki article](https://foundryvtt.wiki/en/development/guides/releases-and-history).
+| Button | Mode | Effect |
+|--------|------|--------|
+| **KH** | Keep Highest | Rolls the pool and keeps only the highest result from each die group (e.g. `2d20kh`) |
+| **ADV** | Advantage | Rolls with advantage — doubles the dice and keeps the better half (e.g. `2d20adv`) |
+| **DIS** | Disadvantage | Rolls with disadvantage — doubles the dice and keeps the worse half (e.g. `2d20dis`) |
+| **KL** | Keep Lowest | Rolls the pool and keeps only the lowest result from each die group (e.g. `2d20kl`) |
 
-Clicking "Save" in the bottom right will save the new version, which means that anyone installing your module from within Foundry will get that version, and a post will be generated in the #release-announcements channel on the official Foundry VTT Discord.
+![Roll Modifiers](assets\docs\roll-modifiers.png)
+
+### Formula Display
+
+As you add dice and select a mode, the formula preview updates in real time to show exactly what will be rolled (e.g. `1d8 + 2d6kh`). When the pool is empty it displays *"Click dice to add them to your pool"*.
 
 
-# FoundryVTT Module
+### Rolling and Clearing
 
-Does something, probably
+- **Roll** — Evaluates the current formula and posts the result as a chat message with a flavor label indicating the roll mode (if any).
+- **Clear** — Resets the entire dice pool and deselects any active roll mode.
 
-## Changelog
+
+
+### Toggling the Dice Tray
+
+A **D20 icon button** is added to the chat sidebar header (next to the export button). Click it to show or hide the dice tray. Your preference is saved per client and persists between sessions.
+
+![DiceTray toggle](assets\docs\dicetray-showicon.png)
+
+---
+
+## Compatibility
+
+- **Foundry VTT**: v14+
+- **Systems**: System-agnostic — works with any game system
+
+---
+
+## License
+
+See [LICENSE](LICENSE) for details.
+
