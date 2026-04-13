@@ -1,0 +1,14 @@
+{
+  "SOGROM_DICETRAY.Title": "Dice Tray",
+  "SOGROM_DICETRAY.RollButton": "Roll",
+  "SOGROM_DICETRAY.ClearButton": "Clear",
+  "SOGROM_DICETRAY.KeepHighest": "KH",
+  "SOGROM_DICETRAY.Advantage": "ADV",
+  "SOGROM_DICETRAY.Normal": "Normal",
+  "SOGROM_DICETRAY.Disadvantage": "DIS",
+  "SOGROM_DICETRAY.KeepLowest": "KL",
+  "SOGROM_DICETRAY.EmptyPool": "Click dice to add them to your pool",
+  "SOGROM_DICETRAY.ToggleTray": "Toggle Dice Tray",
+  "SOGROM_DICETRAY.SettingShow": "Show Dice Tray",
+  "SOGROM_DICETRAY.SettingShowHint": "Toggle visibilty of the Dice Tray by default."
+}
