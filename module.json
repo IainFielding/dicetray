@@ -1,20 +1,18 @@
 {
-  "id": "module",
-  "title": "New Module",
-  "description": "",
+  "id": "sogrom-dicetray",
+  "title": "Sogrom's Dice Tray",
+  "description": "Adds a convenient dice tray to the chat sidebar for quickly building and rolling dice with advantage and disadvantage support.",
   "version": "#{VERSION}#",
   "library": "false",
-  "manifestPlusVersion": "1.2.0",
   "compatibility": {
-    "minimum": 10,
-    "verified": 10,
-    "maximum": 11
+    "minimum": 14,
+    "verified": 14
   },
   "authors": [
     {
-      "name": "The League of Extraordinary FVTT Developers",
-      "url": "https://github.com/League-of-Foundry-Developers",
-      "discord": "discordID#0001"
+      "name": "Iain Fielding",
+      "url": "https://iainfielding.com",
+      "discord": "Sogrom"
     }
   ],
   "relationships": {
@@ -22,19 +20,19 @@
     "requires": []
   },
   "esmodules": [
-    "scripts/module.js"
+    "scripts/dice-tray.js"
   ],
   "scripts": [
     "scripts/lib/lib.js"
   ],
   "styles": [
-    "styles/module.css"
+    "styles/dice-tray.css"
   ],
   "languages": [
     {
       "lang": "en",
       "name": "English",
-      "path": "languages/en.json"
+      "path": "lang/en.json"
     }
   ],
   "url": "#{URL}#",
