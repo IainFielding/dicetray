@@ -4,11 +4,17 @@
   "SOGROM_DICETRAY.ClearButton": "Clear",
   "SOGROM_DICETRAY.KeepHighest": "KH",
   "SOGROM_DICETRAY.Advantage": "ADV",
-  "SOGROM_DICETRAY.Normal": "Normal",
   "SOGROM_DICETRAY.Disadvantage": "DIS",
   "SOGROM_DICETRAY.KeepLowest": "KL",
-  "SOGROM_DICETRAY.EmptyPool": "Click dice to add them to your pool",
+  "SOGROM_DICETRAY.EmptyPool": "Add some dice to your pool first!",
+  "SOGROM_DICETRAY.FormulaPlaceholder": "Type a formula or click dice",
   "SOGROM_DICETRAY.ToggleTray": "Toggle Dice Tray",
   "SOGROM_DICETRAY.SettingShow": "Show Dice Tray",
-  "SOGROM_DICETRAY.SettingShowHint": "Toggle visibilty of the Dice Tray by default."
+  "SOGROM_DICETRAY.SettingShowHint": "Set Dice Tray to be visible by default.",
+  "SOGROM_DICETRAY.FlavorBase": "Dice Tray Roll",
+  "SOGROM_DICETRAY.FlavorKeepHighest": "Keep Highest",
+  "SOGROM_DICETRAY.FlavorAdvantage": "Advantage",
+  "SOGROM_DICETRAY.FlavorDisadvantage": "Disadvantage",
+  "SOGROM_DICETRAY.FlavorKeepLowest": "Keep Lowest",
+  "SOGROM_DICETRAY.RollError": "Invalid dice formula. Please check your input."
 }
