@@ -1,7 +1,7 @@
 /* ========================================
-   Sogrom's Dice Tray - Stylesheet
-   Styles for the dice tray UI injected
-   into the Foundry VTT chat sidebar.
+    Sogrom's Dice Tray - Stylesheet
+    Styles for the dice tray UI injected
+    into the Foundry VTT chat sidebar.
    ======================================== */
 
 /* --- Dice Tray Container --- */
@@ -133,7 +133,6 @@
 
 .dice-tray-mode-btn.active {
   opacity: 1;
-  border-color: var(--color-warm-2, #ff6400);
   background: var(--color-cool-3, #4b4e62);
   box-shadow: 0 0 4px rgba(255, 100, 0, 0.3);
 }
