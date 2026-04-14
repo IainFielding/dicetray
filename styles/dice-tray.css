@@ -7,7 +7,7 @@
 /* --- Dice Tray Container --- */
 /* Main wrapper for the entire dice tray panel. */
 
-#sogrom-dice-tray {
+.sogrom-dice-tray {
   background: var(--color-cool-5, #1a1c2e);
   border: 1px solid var(--color-cool-4, #3d4050);
   border-radius: 6px;
@@ -169,7 +169,7 @@
   border-radius: 4px;
   padding: 6px 8px;
   text-align: center;
-  font-family: var(--font-primary, "Signika", sans-serif);;
+  font-family: var(--font-primary, "Signika", sans-serif);
   font-size: 0.8rem;
   color: #caae94;
   min-height: 1.6em;
@@ -228,7 +228,7 @@
 
 /* --- Hidden State --- */
 /* Applied when the dice tray is toggled off via the header D20 button. */
-#sogrom-dice-tray.dice-tray-hidden {
+.sogrom-dice-tray.dice-tray-hidden {
   display: none;
 }
 

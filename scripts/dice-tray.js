@@ -3,7 +3,7 @@ const MODULE_ID = "sogrom-dicetray";
 // --- Dice Pool State ---
 // Tracks the dice added by the user and the currently selected roll modifier.
 let dicePool = [];
-let rollMode = "normal"; // "normal", "keephighest", "advantage", "disadvantage", "keeplowest"
+let diceTrayMode = "normal"; // "normal", "keephighest", "advantage", "disadvantage", "keeplowest"
 
 // --- Settings Registration ---
 // Register client-side setting to persist dice tray visibility per user.
@@ -26,7 +26,7 @@ Hooks.once("init", () => {
  */
 function createDiceTray() {
   const tray = document.createElement("div");
-  tray.id = "sogrom-dice-tray";
+  tray.classList.add("sogrom-dice-tray");
 
   // --- Title bar ---
   const titleBar = document.createElement("div");
@@ -74,7 +74,7 @@ function createDiceTray() {
     btn.type = "button";
     btn.classList.add("dice-tray-btn", "dice-tray-mode-btn");
     btn.dataset.mode = mode.id;
-    if (mode.id === rollMode) btn.classList.add("active");
+    if (mode.id === diceTrayMode) btn.classList.add("active");
     btn.innerHTML = `<i class="fas ${mode.icon}"></i> ${mode.label}`;
     btn.addEventListener("click", () => setRollMode(mode.id));
     modeRow.appendChild(btn);
@@ -128,7 +128,7 @@ function createDiceTray() {
  */
 function injectDiceTray(element) {
   // Don't duplicate
-  if (element.querySelector("#sogrom-dice-tray")) return;
+  if (element.querySelector(".sogrom-dice-tray")) return;
 
   const tray = createDiceTray();
 
@@ -186,7 +186,7 @@ function injectToggleButton(element) {
     await game.settings.set(MODULE_ID, "showDiceTray", !current);
 
     // Toggle all dice tray instances (sidebar + popout)
-    document.querySelectorAll("#sogrom-dice-tray").forEach(tray => {
+    document.querySelectorAll(".sogrom-dice-tray").forEach(tray => {
       tray.classList.toggle("dice-tray-hidden", current);
     });
 
@@ -249,11 +249,11 @@ function updateDieButtons() {
 }
 
 /**
- * Update all mode buttons to reflect the current rollMode.
+ * Update all mode buttons to reflect the current diceTrayMode.
  */
 function updateModeButtons() {
   document.querySelectorAll(".dice-tray-mode-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.mode === rollMode);
+    btn.classList.toggle("active", btn.dataset.mode === diceTrayMode);
   });
 }
 
@@ -263,7 +263,7 @@ function updateModeButtons() {
  */
 function setRollMode(mode) {
   // Toggle: clicking the active mode deselects it (back to normal)
-  rollMode = (rollMode === mode) ? "normal" : mode;
+  diceTrayMode = (diceTrayMode === mode) ? "normal" : mode;
   updateModeButtons();
   updateFormulaDisplay();
 }
@@ -289,13 +289,13 @@ function buildFormula() {
   const sortedFaces = Object.keys(groups).map(Number).sort((a, b) => a - b);
   const parts = sortedFaces.map(faces => {
     const count = groups[faces];
-    if (rollMode === "keephighest") {
+    if (diceTrayMode === "keephighest") {
       return `${count}d${faces}kh`;
-    } else if (rollMode === "advantage") {
+    } else if (diceTrayMode === "advantage") {
       return `${count}d${faces}adv`;
-    } else if (rollMode === "disadvantage") {
+    } else if (diceTrayMode === "disadvantage") {
       return `${count}d${faces}dis`;
-    } else if (rollMode === "keeplowest") {
+    } else if (diceTrayMode === "keeplowest") {
       return `${count}d${faces}kl`;
     }
     return `${count}d${faces}`;
@@ -326,7 +326,16 @@ function updateFormulaDisplay() {
  * with a flavor label, then clear the pool and mode selection.
  */
 async function rollDice() {
-  const el = document.querySelector(".dice-tray-formula");
+  // Find the formula input closest to the clicked context; fall back to first available
+  const allInputs = document.querySelectorAll(".dice-tray-formula");
+  let el = null;
+  for (const input of allInputs) {
+    if (input.closest(".sogrom-dice-tray") && document.activeElement?.closest(".sogrom-dice-tray") === input.closest(".sogrom-dice-tray")) {
+      el = input;
+      break;
+    }
+  }
+  if (!el) el = allInputs[0] || null;
   const formula = el ? el.value.trim() : buildFormula();
   if (!formula) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
@@ -335,13 +344,13 @@ async function rollDice() {
 
   // Build a flavor label based on the active roll mode
   let flavor = game.i18n.localize("SOGROM_DICETRAY.FlavorBase");
-  if (rollMode === "keephighest") {
+  if (diceTrayMode === "keephighest") {
     flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorKeepHighest") + ")";
-  } else if (rollMode === "advantage") {
+  } else if (diceTrayMode === "advantage") {
     flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorAdvantage") + ")";
-  } else if (rollMode === "disadvantage") {
+  } else if (diceTrayMode === "disadvantage") {
     flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorDisadvantage") + ")";
-  } else if (rollMode === "keeplowest") {
+  } else if (diceTrayMode === "keeplowest") {
     flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorKeepLowest") + ")";
   }
 
@@ -368,7 +377,7 @@ async function rollDice() {
  */
 function clearPool() {
   dicePool = [];
-  rollMode = "normal";
+  diceTrayMode = "normal";
   updateDieButtons();
   updateModeButtons();
   updateFormulaDisplay();
@@ -406,4 +415,8 @@ Hooks.once("ready", () => {
     }
   });
   observer.observe(target, { childList: true, subtree: true });
+
+  // Safety timeout: disconnect the observer after 30 seconds to avoid
+  // an indefinite performance leak if the export button never appears.
+  setTimeout(() => observer.disconnect(), 30000);
 });
