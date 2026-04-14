@@ -142,48 +142,28 @@
   margin-right: 2px;
 }
 
-/* --- Advantage (ADV) --- green tint */
-.dice-tray-mode-btn[data-mode="advantage"].active {
-  border-color: #e74c3c;
-  box-shadow: 0 0 4px rgba(231, 76, 60, 0.3);
-}
-
+/* --- Advantage (ADV) --- green hover tint */
 .dice-tray-mode-btn[data-mode="advantage"]:hover {
   border-color: #2ecc71;
 }
 
-/* --- Keep Highest (KH) --- blue tint */
-.dice-tray-mode-btn[data-mode="keephighest"].active {
-  border-color: #e74c3c;
-  box-shadow: 0 0 4px rgba(231, 76, 60, 0.3);
-}
-
+/* --- Keep Highest (KH) --- blue hover tint */
 .dice-tray-mode-btn[data-mode="keephighest"]:hover {
   border-color: #3498db;
 }
 
-/* --- Disadvantage (DIS) --- red tint */
-.dice-tray-mode-btn[data-mode="disadvantage"].active {
-  border-color: #e74c3c;
-  box-shadow: 0 0 4px rgba(231, 76, 60, 0.3);
-}
-
+/* --- Disadvantage (DIS) --- red hover tint */
 .dice-tray-mode-btn[data-mode="disadvantage"]:hover {
   border-color: #e74c3c;
 }
 
-/* --- Keep Lowest (KL) --- purple tint */
-.dice-tray-mode-btn[data-mode="keeplowest"].active {
-  border-color: #e74c3c;
-  box-shadow: 0 0 4px rgba(231, 76, 60, 0.3);
-}
-
+/* --- Keep Lowest (KL) --- purple hover tint */
 .dice-tray-mode-btn[data-mode="keeplowest"]:hover {
   border-color: #9b59b6;
 }
 
-/* --- Formula Display --- */
-/* Monospace readout of the computed dice formula. */
+/* --- Formula Display (editable input) --- */
+/* Monospace input for the dice formula. Users can type directly or edit generated formulas. */
 .dice-tray-formula {
   background: var(--color-cool-5, #111322);
   border: 1px solid var(--color-cool-4, #3d4050);
@@ -194,7 +174,22 @@
   font-size: 0.8rem;
   color: #caae94;
   min-height: 1.6em;
-  word-break: break-all;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.dice-tray-formula::placeholder {
+  color: #caae94;
+  opacity: 0.7;
+  font-family: monospace;
+  font-style: italic;
+}
+
+.dice-tray-formula:focus {
+  border-color: var(--color-warm-2, #ff6400);
+  box-shadow: 0 0 4px rgba(255, 100, 0, 0.3);
 }
 
 .dice-tray-formula.has-dice {
@@ -204,7 +199,7 @@
 }
 
 /* --- Roll Button --- */
-/* Primary action button to evaluate the dice pool. */
+/* Primary action button to evaluate the dice formula. */
 .dice-tray-roll-btn {
   background: var(--color-warm-2, #ff6400);
   color: #fff;

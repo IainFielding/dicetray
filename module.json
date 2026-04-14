@@ -3,7 +3,7 @@
   "title": "Sogrom's Dice Tray",
   "description": "Adds a convenient dice tray to the chat sidebar for quickly building and rolling dice with advantage and disadvantage support.",
   "version": "#{VERSION}#",
-  "library": "false",
+  "library": false,
   "compatibility": {
     "minimum": 14,
     "verified": 14
@@ -21,9 +21,6 @@
   },
   "esmodules": [
     "scripts/dice-tray.js"
-  ],
-  "scripts": [
-    "scripts/lib/lib.js"
   ],
   "styles": [
     "styles/dice-tray.css"

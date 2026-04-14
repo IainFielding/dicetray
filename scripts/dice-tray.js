@@ -81,12 +81,21 @@ function createDiceTray() {
   }
   tray.appendChild(modeRow);
 
-  // --- Formula display ---
+  // --- Formula display (editable input) ---
   // Shows the computed dice formula based on pool and active mode.
-  const formulaDisplay = document.createElement("div");
+  // Users can also type directly to enter any formula (e.g. 2d6+5).
+  const formulaDisplay = document.createElement("input");
+  formulaDisplay.type = "text";
   formulaDisplay.classList.add("dice-tray-formula");
-  formulaDisplay.id = "sogrom-dice-formula";
-  formulaDisplay.textContent = game.i18n.localize("SOGROM_DICETRAY.EmptyPool");
+  formulaDisplay.placeholder = game.i18n.localize("SOGROM_DICETRAY.FormulaPlaceholder");
+  formulaDisplay.spellcheck = false;
+  formulaDisplay.autocomplete = "off";
+  formulaDisplay.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      rollDice();
+    }
+  });
   tray.appendChild(formulaDisplay);
 
   // --- Action row (Clear + Roll) ---
@@ -240,24 +249,30 @@ function updateDieButtons() {
 }
 
 /**
+ * Update all mode buttons to reflect the current rollMode.
+ */
+function updateModeButtons() {
+  document.querySelectorAll(".dice-tray-mode-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.mode === rollMode);
+  });
+}
+
+/**
  * Toggle the roll mode. Clicking the already-active mode deselects it
  * (reverts to "normal"). Only one mode can be active at a time.
  */
 function setRollMode(mode) {
   // Toggle: clicking the active mode deselects it (back to normal)
   rollMode = (rollMode === mode) ? "normal" : mode;
-  // Update button active states
-  document.querySelectorAll(".dice-tray-mode-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.mode === rollMode);
-  });
+  updateModeButtons();
   updateFormulaDisplay();
 }
 
 /**
  * Build a dice formula string from the current pool and active mode.
  * - keephighest: appends "kh" (keep highest single die)
- * - advantage: doubles dice count and keeps top half
- * - disadvantage: doubles dice count and keeps bottom half
+ * - advantage: appends "adv" modifier to each die group
+ * - disadvantage: appends "dis" modifier to each die group
  * - keeplowest: appends "kl" (keep lowest single die)
  * - normal: no modifier
  */
@@ -290,21 +305,20 @@ function buildFormula() {
 }
 
 /**
- * Update the formula display element with the current formula,
- * or show the empty pool placeholder if no dice are selected.
+ * Update all formula display inputs with the current formula,
+ * or clear them if no dice are selected.
  */
 function updateFormulaDisplay() {
-  const el = document.getElementById("sogrom-dice-formula");
-  if (!el) return;
-
-  if (dicePool.length === 0) {
-    el.textContent = game.i18n.localize("SOGROM_DICETRAY.EmptyPool");
-    el.classList.remove("has-dice");
-    return;
-  }
-
-  el.textContent = buildFormula();
-  el.classList.add("has-dice");
+  const formula = buildFormula();
+  document.querySelectorAll(".dice-tray-formula").forEach(el => {
+    if (dicePool.length === 0) {
+      el.value = "";
+      el.classList.remove("has-dice");
+    } else {
+      el.value = formula;
+      el.classList.add("has-dice");
+    }
+  });
 }
 
 /**
@@ -312,30 +326,37 @@ function updateFormulaDisplay() {
  * with a flavor label, then clear the pool and mode selection.
  */
 async function rollDice() {
-  const formula = buildFormula();
+  const el = document.querySelector(".dice-tray-formula");
+  const formula = el ? el.value.trim() : buildFormula();
   if (!formula) {
-    ui.notifications.warn("Add some dice to your pool first!");
+    ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
     return;
   }
 
   // Build a flavor label based on the active roll mode
-  let flavor = "Dice Tray Roll";
+  let flavor = game.i18n.localize("SOGROM_DICETRAY.FlavorBase");
   if (rollMode === "keephighest") {
-    flavor += " (Keep Highest)";
+    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorKeepHighest") + ")";
   } else if (rollMode === "advantage") {
-    flavor += " (Advantage)";
+    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorAdvantage") + ")";
   } else if (rollMode === "disadvantage") {
-    flavor += " (Disadvantage)";
+    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorDisadvantage") + ")";
   } else if (rollMode === "keeplowest") {
-    flavor += " (Keep Lowest)";
+    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorKeepLowest") + ")";
   }
 
-  const roll = new Roll(formula);
-  await roll.evaluate();
-  await roll.toMessage({
-    speaker: ChatMessage.getSpeaker(),
-    flavor: flavor
-  });
+  try {
+    const roll = new Roll(formula);
+    await roll.evaluate();
+    await roll.toMessage({
+      speaker: ChatMessage.getSpeaker(),
+      flavor: flavor
+    });
+  } catch (err) {
+    console.error(`${MODULE_ID} | Roll error:`, err);
+    ui.notifications.error(game.i18n.localize("SOGROM_DICETRAY.RollError"));
+    return;
+  }
 
   // Clear the pool after rolling
   clearPool();
@@ -349,11 +370,8 @@ function clearPool() {
   dicePool = [];
   rollMode = "normal";
   updateDieButtons();
+  updateModeButtons();
   updateFormulaDisplay();
-  // Deselect all mode buttons
-  document.querySelectorAll(".dice-tray-mode-btn").forEach(btn => {
-    btn.classList.remove("active");
-  });
 }
 
 // --- Hooks ---
