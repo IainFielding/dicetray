@@ -4,7 +4,7 @@
 
 # Sogrom's Dice Tray
 
-A Foundry VTT module that adds a convenient dice tray to the chat sidebar for quickly building and rolling dice pools with advantage, disadvantage, and keep highest/lowest support.
+I created this Foundry module because the exsisting dice-tray module wasn't yet working on V14, The goal of this module is to adds a dice tray to the chat sidebar for quickly building and rolling dice pools with advantage, disadvantage, and keep highest/lowest support.
 
 ![Dice Tray Overview](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dicetray-screenshot.png?raw=true)
 
