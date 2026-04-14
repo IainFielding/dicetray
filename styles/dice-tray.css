@@ -242,13 +242,9 @@
   color: var(--color-text-light-highlight, #f0f0e0);
   cursor: pointer;
   font-size: 1rem;
-  padding: 4px 4px;
+  padding: 2px 4px;
   opacity: 1;
   transition: opacity 0.15s, color 0.15s;
-}
-
-.sogrom-dice-tray-toggle:hover {
-  color: var(--color-warm-2, #ff6400);
 }
 
 .sogrom-dice-tray-toggle.toggled-off {
