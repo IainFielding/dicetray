@@ -169,7 +169,7 @@
   border-radius: 4px;
   padding: 6px 8px;
   text-align: center;
-  font-family: monospace;
+  font-family: var(--font-primary, "Signika", sans-serif);;
   font-size: 0.8rem;
   color: #caae94;
   min-height: 1.6em;
@@ -182,7 +182,7 @@
 .dice-tray-formula::placeholder {
   color: #caae94;
   opacity: 0.7;
-  font-family: monospace;
+  font-family: var(--font-primary, "Signika", sans-serif);
   font-style: italic;
 }
 
@@ -244,6 +244,14 @@
   padding: 2px 8px;
   opacity: 1;
   transition: opacity 0.15s, color 0.15s;
+}
+
+.sogrom-dice-tray-toggle:hover,
+.sogrom-dice-tray-toggle:focus {
+  background: #000;
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
 
 .sogrom-dice-tray-toggle.toggled-off {
