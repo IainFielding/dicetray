@@ -29,6 +29,14 @@
   border-bottom: 1px solid var(--color-cool-4, #3d4050);
 }
 
+/* --- Version Badge --- */
+.dice-tray-version {
+  font-size: 0.65rem;
+  font-weight: normal;
+  opacity: 0.5;
+  margin-left: 2px;
+}
+
 /* --- Title Bar Icon --- */
 .dice-tray-title i {
   margin-right: 4px;

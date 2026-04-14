@@ -31,7 +31,8 @@ function createDiceTray() {
   // --- Title bar ---
   const titleBar = document.createElement("div");
   titleBar.classList.add("dice-tray-title");
-  titleBar.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.Title")}`;
+  const moduleVersion = game.modules.get(MODULE_ID)?.version ?? "";
+  titleBar.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.Title")} <span class="dice-tray-version">v${moduleVersion}</span>`;
   tray.appendChild(titleBar);
 
   // --- Dice buttons (D4, D6, D8, D10, D12, D20, D100) ---
