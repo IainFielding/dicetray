@@ -7,7 +7,7 @@
   "SOGROM_DICETRAY.Disadvantage": "DIS",
   "SOGROM_DICETRAY.KeepLowest": "KL",
   "SOGROM_DICETRAY.EmptyPool": "Add some dice to your pool first!",
-  "SOGROM_DICETRAY.FormulaPlaceholder": "Type a formula (e.g. 2d6+5) or click dice",
+  "SOGROM_DICETRAY.FormulaPlaceholder": "Type a formula or click dice",
   "SOGROM_DICETRAY.ToggleTray": "Toggle Dice Tray",
   "SOGROM_DICETRAY.SettingShow": "Show Dice Tray",
   "SOGROM_DICETRAY.SettingShowHint": "Set Dice Tray to be visable by default.",
