@@ -4,7 +4,7 @@
 
 # Sogrom's Dice Tray
 
-I created this Foundry module because the exsisting dice-tray module wasn't yet working on V14, The goal of this module is to adds a dice tray to the chat sidebar for quickly building and rolling dice pools with advantage, disadvantage, and keep highest/lowest support.
+I created this Foundry module because the exsisting dice-tray module wasn't yet working on V14, The goal of this module is to add a dice tray to the chat sidebar for quickly building and rolling dice with support for dnd5e's modifiers.
 
 ![Dice Tray Overview](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dicetray-screenshot.png?raw=true)
 
@@ -26,7 +26,7 @@ I created this Foundry module because the exsisting dice-tray module wasn't yet 
 
 ### Adding and Removing Dice
 
-**Left-click** any dice button (D4–D100) to add that die to your pool. A badge appears on the button showing how many of that die you've added.
+**Left-click** any dice button (D4–D100) to add that die to the pool. A badge appears on the button showing how many of that die are added.
 
 **Right-click** a dice button to remove one die of that type from the pool.
 
@@ -48,7 +48,7 @@ The tray provides four roll modifier modes. Only one can be active at a time —
 
 ### Formula Display
 
-As you add dice and select a mode, the formula preview updates in real time to show exactly what will be rolled (e.g. `1d8 + 2d6kh`). When the pool is empty it displays *"Click dice to add them to your pool"*.
+As dice are added and a mode selcted, the formula preview updates in real time to show exactly what will be rolled.
 
 
 ### Rolling and Clearing
