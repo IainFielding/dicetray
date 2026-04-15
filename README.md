@@ -69,7 +69,7 @@ A **D20 icon button** is added to the chat sidebar header (next to the export bu
 ## Compatibility
 
 - **Foundry VTT**: v14+
-- **Systems**: System-agnostic — works with any game system
+- **Systems**: Dungeons & Dragons 5e — it might work with other systems but I havent testrd it.
 
 ---
 
