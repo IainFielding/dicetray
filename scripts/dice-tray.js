@@ -26,7 +26,8 @@ Hooks.once("init", () => {
     type: String,
     default: "darkmode",
     choices: {
-      "darkmode": "SOGROM_DICETRAY.ThemeDarkMode"
+      "darkmode": "SOGROM_DICETRAY.ThemeDarkMode",
+      "lightmode": "SOGROM_DICETRAY.ThemeLightMode"
     },
     onChange: (value) => applyTheme(value)
   });
@@ -36,7 +37,7 @@ Hooks.once("init", () => {
  * Apply the selected theme class to all dice tray and toggle button instances.
  * Removes any previous theme class before adding the new one.
  */
-const THEME_CLASSES = ["darkmode"];
+const THEME_CLASSES = ["darkmode", "lightmode"];
 
 function applyTheme(theme) {
   document.querySelectorAll(".sogrom-dice-tray").forEach(el => {

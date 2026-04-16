@@ -269,3 +269,125 @@
   box-shadow: none;
   outline: none;
 }
+
+/* ========================================
+    Light Mode Theme
+   ======================================== */
+
+.sogrom-dice-tray.lightmode {
+  background: #c0c0c0;
+  border: 1px solid var(--color-warm-3, #b5b3a4);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-title {
+  color: var(--color-text-dark-primary, #191813);
+  border-bottom: 1px solid var(--color-warm-3, #b5b3a4);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-title i {
+  color: var(--color-warm-2, #ff6400);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-btn {
+  border: 1px solid var(--color-warm-3, #b5b3a4);
+  background: var(--color-warm-4, #e8e5dd);
+  color: var(--color-text-dark-primary, #191813);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-btn:hover {
+  background: var(--color-warm-3, #d4d0c7);
+  border-color: var(--color-warm-2, #ff6400);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-die-btn:hover {
+  background: var(--color-warm-2, #ff6400);
+  color: #fff;
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-die-btn.active {
+  opacity: 1;
+  border-color: var(--color-warm-2, #ff6400);
+  background: var(--color-warm-3, #d4d0c7);
+  box-shadow: 0 0 4px rgba(255, 100, 0, 0.25);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-badge {
+  background: var(--color-warm-2, #ff6400);
+  color: #fff;
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-mode-btn.active {
+  opacity: 1;
+  background: var(--color-warm-3, #d4d0c7);
+  box-shadow: 0 0 4px rgba(255, 100, 0, 0.25);
+}
+
+/* --- Advantage (ADV) --- green hover tint */
+.sogrom-dice-tray.lightmode .dice-tray-mode-btn[data-mode="advantage"]:hover {
+  border-color: #2ecc71;
+}
+
+/* --- Keep Highest (KH) --- blue hover tint */
+.sogrom-dice-tray.lightmode .dice-tray-mode-btn[data-mode="keephighest"]:hover {
+  border-color: #3498db;
+}
+
+/* --- Disadvantage (DIS) --- red hover tint */
+.sogrom-dice-tray.lightmode .dice-tray-mode-btn[data-mode="disadvantage"]:hover {
+  border-color: #e74c3c;
+}
+
+/* --- Keep Lowest (KL) --- purple hover tint */
+.sogrom-dice-tray.lightmode .dice-tray-mode-btn[data-mode="keeplowest"]:hover {
+  border-color: #9b59b6;
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-formula {
+  background: var(--color-warm-5, #fafaf2);
+  border: 1px solid var(--color-warm-3, #b5b3a4);
+  color: var(--color-text-dark-primary, #4b4a44);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-formula::placeholder {
+  color: var(--color-text-dark-primary, #7a7971);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-formula:focus {
+  border-color: var(--color-warm-2, #ff6400);
+  box-shadow: 0 0 4px rgba(255, 100, 0, 0.25);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-formula.has-dice {
+  color: var(--color-text-dark-primary, #191813);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-roll-btn {
+  background: var(--color-warm-2, #ff6400);
+  color: #fff;
+  border-color: var(--color-warm-1, #cc5000);
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-roll-btn:hover {
+  background: var(--color-warm-1, #cc5000);
+  border-color: var(--color-warm-1, #cc5000);
+  color: #fff;
+}
+
+.sogrom-dice-tray.lightmode .dice-tray-clear-btn:hover {
+  background: #e74c3c;
+  border-color: #c0392b;
+  color: #fff;
+}
+
+.sogrom-dice-tray-toggle.lightmode {
+  background: var(--color-warm-5, #f0f0e0);
+  color: var(--color-text-dark-primary, #191813);
+}
+
+.sogrom-dice-tray-toggle.lightmode:hover,
+.sogrom-dice-tray-toggle.lightmode:focus {
+  background: var(--color-warm-4, #e8e5dd);
+  border: none;
+  box-shadow: none;
+  outline: none;
+}

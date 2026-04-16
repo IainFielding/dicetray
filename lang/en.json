@@ -14,6 +14,7 @@
   "SOGROM_DICETRAY.SettingTheme": "Theme",
   "SOGROM_DICETRAY.SettingThemeHint": "Choose the visual theme for the dice tray.",
   "SOGROM_DICETRAY.ThemeDarkMode": "Dark Mode",
+  "SOGROM_DICETRAY.ThemeLightMode": "Light Mode",
   "SOGROM_DICETRAY.FlavorBase": "Dice Tray Roll",
   "SOGROM_DICETRAY.FlavorKeepHighest": "Keep Highest",
   "SOGROM_DICETRAY.FlavorAdvantage": "Advantage",
