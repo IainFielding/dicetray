@@ -17,7 +17,37 @@ Hooks.once("init", () => {
     type: Boolean,
     default: true
   });
+
+  game.settings.register(MODULE_ID, "theme", {
+    name: "SOGROM_DICETRAY.SettingTheme",
+    hint: "SOGROM_DICETRAY.SettingThemeHint",
+    scope: "client",
+    config: true,
+    type: String,
+    default: "darkmode",
+    choices: {
+      "darkmode": "SOGROM_DICETRAY.ThemeDarkMode"
+    },
+    onChange: (value) => applyTheme(value)
+  });
 });
+
+/**
+ * Apply the selected theme class to all dice tray and toggle button instances.
+ * Removes any previous theme class before adding the new one.
+ */
+const THEME_CLASSES = ["darkmode"];
+
+function applyTheme(theme) {
+  document.querySelectorAll(".sogrom-dice-tray").forEach(el => {
+    el.classList.remove(...THEME_CLASSES);
+    if (theme) el.classList.add(theme);
+  });
+  document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(el => {
+    el.classList.remove(...THEME_CLASSES);
+    if (theme) el.classList.add(theme);
+  });
+}
 
 /**
  * Create the dice tray DOM element.
@@ -27,6 +57,10 @@ Hooks.once("init", () => {
 function createDiceTray() {
   const tray = document.createElement("div");
   tray.classList.add("sogrom-dice-tray");
+
+  // Apply current theme
+  const theme = game.settings.get(MODULE_ID, "theme");
+  if (theme) tray.classList.add(theme);
 
   // --- Title bar ---
   const titleBar = document.createElement("div");
@@ -174,6 +208,8 @@ function injectToggleButton(element) {
   const toggleBtn = document.createElement("button");
   toggleBtn.type = "button";
   toggleBtn.classList.add("sogrom-dice-tray-toggle");
+  const currentTheme = game.settings.get(MODULE_ID, "theme");
+  if (currentTheme) toggleBtn.classList.add(currentTheme);
   toggleBtn.dataset.action = "toggleDiceTray";
   toggleBtn.dataset.tooltip = game.i18n.localize("SOGROM_DICETRAY.ToggleTray");
   toggleBtn.setAttribute("aria-label", game.i18n.localize("SOGROM_DICETRAY.ToggleTray"));
