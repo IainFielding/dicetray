@@ -1,10 +1,10 @@
-![](https://img.shields.io/badge/Foundry-v14-informational) ![Latest Release Download Count](https://img.shields.io/github/downloads/IainFielding/dicetray/latest/module.zip) 
+![](https://img.shields.io/badge/Foundry-v14-informational) ![Latest Release Download Count](https://img.shields.io/github/downloads/IainFielding/dicetray/latest/module.zip) <br> [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/M4M01JLMYA)
 <!--- ![Latest Release Download Count](https://img.shields.io/github/downloads/IainFielding/dicetray/latest/module.zip) -->
 <!--- ![Forge Installs](https://img.shields.io/badge/dynamic/json?label=Forge%20Installs&query=package.installs&suffix=%25&url=https%3A%2F%2Fforge-vtt.com%2Fapi%2Fbazaar%2Fpackage%2Fsogrom-dicetray&colorB=4aa94a) -->
 
 # Sogrom's Dice Tray
 
-I created this Foundry module because the exsisting dice-tray module wasn't yet working on V14, The goal of this module is to add a dice tray to the chat sidebar for quickly building and rolling dice with support for dnd5e's modifiers.
+I created this Foundry module because the exsisting dice-tray module wasn't  working on V14, That original dice-calculator module was the inspiration for this module. The goal of this module is to add a dice tray to the chat sidebar for quickly building and rolling dice with support for dnd5e's modifiers.
 
 ![Dice Tray Overview](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dicetray-screenshot.png?raw=true)
 
@@ -18,7 +18,6 @@ I created this Foundry module because the exsisting dice-tray module wasn't yet 
 - Live formula preview as you build your pool
 - Toggle the tray on/off with a D20 button in the sidebar header
 - Works in both the sidebar and popped-out chat windows
-- Visibility preference is saved per user
 
 ---
 
@@ -55,7 +54,6 @@ As dice are added and a mode selcted, the formula preview updates in real time t
 
 - **Roll** — Evaluates the current formula and posts the result as a chat message with a flavor label indicating the roll mode (if any).
 - **Clear** — Resets the entire dice pool and deselects any active roll mode.
-
 
 
 ### Toggling the Dice Tray

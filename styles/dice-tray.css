@@ -1,15 +1,6 @@
-/* ========================================
-    Sogrom's Dice Tray - Stylesheet
-    Styles for the dice tray UI injected
-    into the Foundry VTT chat sidebar.
-   ======================================== */
-
-/* --- Dice Tray Container --- */
-/* Main wrapper for the entire dice tray panel. */
+/* Layout & Structure (theme-independent) */
 
 .sogrom-dice-tray {
-  background: var(--color-cool-5, #1a1c2e);
-  border: 1px solid var(--color-cool-4, #3d4050);
   border-radius: 6px;
   padding: 8px;
   margin: 0 0 8px 0;
@@ -18,18 +9,13 @@
   gap: 6px;
 }
 
-/* --- Title Bar --- */
-/* Centered heading with a D20 icon. */
 .dice-tray-title {
   font-size: 0.85rem;
   font-weight: bold;
-  color: var(--color-text-light-highlight, #f0f0e0);
   text-align: center;
   padding-bottom: 4px;
-  border-bottom: 1px solid var(--color-cool-4, #3d4050);
 }
 
-/* --- Version Badge --- */
 .dice-tray-version {
   font-size: 0.65rem;
   font-weight: normal;
@@ -37,43 +23,30 @@
   margin-left: 2px;
 }
 
-/* --- Title Bar Icon --- */
 .dice-tray-title i {
   margin-right: 4px;
-  color: var(--color-warm-2, #ff6400);
 }
 
-/* --- Dice Buttons Row --- */
-/* 7-column grid for the D4–D100 die buttons. */
 .dice-tray-dice-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
 }
 
-/* --- Mode Buttons Row --- */
-/* 4-column grid for KH, ADV, DIS, KL toggle buttons. */
 .dice-tray-mode-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
 }
 
-/* --- Action Row --- */
-/* 2-column grid: smaller Clear button, larger Roll button. */
 .dice-tray-action-row {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 4px;
 }
 
-/* --- Generic Button Style --- */
-/* Base styling shared by all tray buttons (dice, mode, action). */
 .dice-tray-btn {
-  border: 1px solid var(--color-cool-4, #3d4050);
   border-radius: 4px;
-  background: var(--color-cool-4, #2b2e3e);
-  color: var(--color-text-light-highlight, #f0f0e0);
   padding: 6px 4px;
   cursor: pointer;
   font-size: 0.75rem;
@@ -83,43 +56,20 @@
   line-height: 1.2;
 }
 
-.dice-tray-btn:hover {
-  background: var(--color-cool-3, #4b4e62);
-  border-color: var(--color-warm-2, #ff6400);
-}
-
 .dice-tray-btn:active {
   transform: scale(0.95);
 }
 
-/* --- Die Buttons --- */
-/* Individual die type buttons (D4, D6, etc). Positioned relative for badge overlay. */
 .dice-tray-die-btn {
   font-size: 0.8rem;
   padding: 8px 4px;
   position: relative;
 }
 
-.dice-tray-die-btn:hover {
-  background: var(--color-warm-2, #ff6400);
-  color: #fff;
-}
-
-.dice-tray-die-btn.active {
-  opacity: 1;
-  border-color: var(--color-warm-2, #ff6400);
-  background: var(--color-cool-3, #4b4e62);
-  box-shadow: 0 0 4px rgba(255, 100, 0, 0.3);
-}
-
-/* --- Die Count Badge --- */
-/* Floating pill badge showing how many of each die are in the pool. */
 .dice-tray-badge {
   position: absolute;
   top: -4px;
   right: -4px;
-  background: var(--color-warm-2, #ff6400);
-  color: #fff;
   font-size: 0.6rem;
   font-weight: bold;
   min-width: 14px;
@@ -131,55 +81,22 @@
   pointer-events: none;
 }
 
-/* --- Mode Buttons --- */
-/* KH / ADV / DIS / KL toggle buttons. Dim when inactive, highlighted when active. */
 .dice-tray-mode-btn {
   font-size: 0.7rem;
   padding: 5px 2px;
   opacity: 0.7;
 }
 
-.dice-tray-mode-btn.active {
-  opacity: 1;
-  background: var(--color-cool-3, #4b4e62);
-  box-shadow: 0 0 4px rgba(255, 100, 0, 0.3);
-}
-
 .dice-tray-mode-btn i {
   margin-right: 2px;
 }
 
-/* --- Advantage (ADV) --- green hover tint */
-.dice-tray-mode-btn[data-mode="advantage"]:hover {
-  border-color: #2ecc71;
-}
-
-/* --- Keep Highest (KH) --- blue hover tint */
-.dice-tray-mode-btn[data-mode="keephighest"]:hover {
-  border-color: #3498db;
-}
-
-/* --- Disadvantage (DIS) --- red hover tint */
-.dice-tray-mode-btn[data-mode="disadvantage"]:hover {
-  border-color: #e74c3c;
-}
-
-/* --- Keep Lowest (KL) --- purple hover tint */
-.dice-tray-mode-btn[data-mode="keeplowest"]:hover {
-  border-color: #9b59b6;
-}
-
-/* --- Formula Display (editable input) --- */
-/* Monospace input for the dice formula. Users can type directly or edit generated formulas. */
 .dice-tray-formula {
-  background: var(--color-cool-5, #111322);
-  border: 1px solid var(--color-cool-4, #3d4050);
   border-radius: 4px;
   padding: 6px 8px;
   text-align: center;
   font-family: var(--font-primary, "Signika", sans-serif);
   font-size: 0.8rem;
-  color: #caae94;
   min-height: 1.6em;
   width: 100%;
   box-sizing: border-box;
@@ -188,65 +105,32 @@
 }
 
 .dice-tray-formula::placeholder {
-  color: #caae94;
   opacity: 0.7;
   font-family: var(--font-primary, "Signika", sans-serif);
   font-style: italic;
 }
 
-.dice-tray-formula:focus {
-  border-color: var(--color-warm-2, #ff6400);
-  box-shadow: 0 0 4px rgba(255, 100, 0, 0.3);
-}
-
 .dice-tray-formula.has-dice {
-  color: var(--color-text-light-highlight, #f0f0e0);
   font-weight: bold;
   font-size: 0.9rem;
 }
 
-/* --- Roll Button --- */
-/* Primary action button to evaluate the dice formula. */
 .dice-tray-roll-btn {
-  background: var(--color-warm-2, #ff6400);
-  color: #fff;
-  border-color: var(--color-warm-1, #cc5000);
   font-size: 0.85rem;
   padding: 8px 4px;
 }
 
-.dice-tray-roll-btn:hover {
-  background: var(--color-warm-1, #cc5000);
-  border-color: var(--color-warm-1, #cc5000);
-  color: #fff;
-}
-
-/* --- Clear Button --- */
-/* Resets the dice pool, mode selection, and formula display. */
 .dice-tray-clear-btn {
   font-size: 0.8rem;
   padding: 8px 4px;
 }
 
-.dice-tray-clear-btn:hover {
-  background: #e74c3c;
-  border-color: #c0392b;
-  color: #fff;
-}
-
-/* --- Hidden State --- */
-/* Applied when the dice tray is toggled off via the header D20 button. */
 .sogrom-dice-tray.dice-tray-hidden {
   display: none;
 }
 
-/* --- Toggle Button (sidebar header) --- */
-/* D20 icon button placed next to the export chat log button.
-   Controls dice tray visibility. Dims when the tray is hidden. */
 .sogrom-dice-tray-toggle {
-  background: #212026;
   border: none;
-  color: var(--color-text-light-highlight, #f0f0e0);
   cursor: pointer;
   font-size: 1rem;
   padding: 2px 8px;
@@ -254,14 +138,170 @@
   transition: opacity 0.15s, color 0.15s;
 }
 
-.sogrom-dice-tray-toggle:hover,
-.sogrom-dice-tray-toggle:focus {
+.sogrom-dice-tray-toggle.toggled-off {
+  opacity: 0.4;
+}
+
+/* ========================================
+    Theme Definitions
+   ======================================== */
+
+.sogrom-dice-tray.darkmode {
+  --tray-bg: var(--color-cool-5, #1a1c2e);
+  --tray-border: var(--color-cool-4, #3d4050);
+  --tray-text: var(--color-text-light-highlight, #f0f0e0);
+  --tray-btn-bg: var(--color-cool-4, #2b2e3e);
+  --tray-btn-hover-bg: var(--color-cool-3, #4b4e62);
+  --tray-active-bg: var(--color-cool-3, #4b4e62);
+  --tray-active-shadow: 0 0 4px rgba(255, 100, 0, 0.3);
+  --tray-formula-bg: var(--color-cool-5, #111322);
+  --tray-formula-color: #caae94;
+  --tray-formula-placeholder: #caae94;
+  --tray-formula-active-color: var(--color-text-light-highlight, #f0f0e0);
+}
+
+.sogrom-dice-tray.lightmode {
+  --tray-bg: #c0c0c0;
+  --tray-border: var(--color-warm-3, #b5b3a4);
+  --tray-text: var(--color-text-dark-primary, #191813);
+  --tray-btn-bg: var(--color-warm-4, #e8e5dd);
+  --tray-btn-hover-bg: var(--color-warm-3, #d4d0c7);
+  --tray-active-bg: var(--color-warm-3, #d4d0c7);
+  --tray-active-shadow: 0 0 4px rgba(255, 100, 0, 0.25);
+  --tray-formula-bg: var(--color-warm-5, #fafaf2);
+  --tray-formula-color: var(--color-text-dark-primary, #4b4a44);
+  --tray-formula-placeholder: var(--color-text-dark-primary, #7a7971);
+  --tray-formula-active-color: var(--color-text-dark-primary, #191813);
+}
+
+/* Themed Rules */
+
+.sogrom-dice-tray.darkmode,
+.sogrom-dice-tray.lightmode {
+  background: var(--tray-bg);
+  border: 1px solid var(--tray-border);
+}
+
+.sogrom-dice-tray .dice-tray-title {
+  color: var(--tray-text);
+  border-bottom: 1px solid var(--tray-border);
+}
+
+.sogrom-dice-tray .dice-tray-title i {
+  color: var(--color-warm-2, #ff6400);
+}
+
+.sogrom-dice-tray .dice-tray-btn {
+  border: 1px solid var(--tray-border);
+  background: var(--tray-btn-bg);
+  color: var(--tray-text);
+}
+
+.sogrom-dice-tray .dice-tray-btn:hover {
+  background: var(--tray-btn-hover-bg);
+  border-color: var(--color-warm-2, #ff6400);
+}
+
+.sogrom-dice-tray .dice-tray-die-btn:hover {
+  background: var(--color-warm-2, #ff6400);
+  color: #fff;
+}
+
+.sogrom-dice-tray .dice-tray-die-btn.active {
+  opacity: 1;
+  border-color: var(--color-warm-2, #ff6400);
+  background: var(--tray-active-bg);
+  box-shadow: var(--tray-active-shadow);
+}
+
+.sogrom-dice-tray .dice-tray-badge {
+  background: var(--color-warm-2, #ff6400);
+  color: #fff;
+}
+
+.sogrom-dice-tray .dice-tray-mode-btn.active {
+  opacity: 1;
+  background: var(--tray-active-bg);
+  box-shadow: var(--tray-active-shadow);
+}
+
+.sogrom-dice-tray .dice-tray-mode-btn[data-mode="advantage"]:hover {
+  border-color: #2ecc71;
+}
+
+.sogrom-dice-tray .dice-tray-mode-btn[data-mode="keephighest"]:hover {
+  border-color: #3498db;
+}
+
+.sogrom-dice-tray .dice-tray-mode-btn[data-mode="disadvantage"]:hover {
+  border-color: #e74c3c;
+}
+
+.sogrom-dice-tray .dice-tray-mode-btn[data-mode="keeplowest"]:hover {
+  border-color: #9b59b6;
+}
+
+.sogrom-dice-tray .dice-tray-formula {
+  background: var(--tray-formula-bg);
+  border: 1px solid var(--tray-border);
+  color: var(--tray-formula-color);
+}
+
+.sogrom-dice-tray .dice-tray-formula::placeholder {
+  color: var(--tray-formula-placeholder);
+}
+
+.sogrom-dice-tray .dice-tray-formula:focus {
+  border-color: var(--color-warm-2, #ff6400);
+  box-shadow: var(--tray-active-shadow);
+}
+
+.sogrom-dice-tray .dice-tray-formula.has-dice {
+  color: var(--tray-formula-active-color);
+}
+
+.sogrom-dice-tray .dice-tray-roll-btn {
+  background: var(--color-warm-2, #ff6400);
+  color: #fff;
+  border-color: var(--color-warm-1, #cc5000);
+}
+
+.sogrom-dice-tray .dice-tray-roll-btn:hover {
+  background: var(--color-warm-1, #cc5000);
+  border-color: var(--color-warm-1, #cc5000);
+  color: #fff;
+}
+
+.sogrom-dice-tray .dice-tray-clear-btn:hover {
+  background: #e74c3c;
+  border-color: #c0392b;
+  color: #fff;
+}
+
+/* Toggle Button Themes */
+
+.sogrom-dice-tray-toggle.darkmode {
+  background: #212026;
+  color: var(--color-text-light-highlight, #f0f0e0);
+}
+
+.sogrom-dice-tray-toggle.darkmode:hover,
+.sogrom-dice-tray-toggle.darkmode:focus {
   background: #000;
   border: none;
   box-shadow: none;
   outline: none;
 }
 
-.sogrom-dice-tray-toggle.toggled-off {
-  opacity: 0.4;
+.sogrom-dice-tray-toggle.lightmode {
+  background: var(--color-warm-5, #f0f0e0);
+  color: var(--color-text-dark-primary, #191813);
+}
+
+.sogrom-dice-tray-toggle.lightmode:hover,
+.sogrom-dice-tray-toggle.lightmode:focus {
+  background: var(--color-warm-4, #e8e5dd);
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
