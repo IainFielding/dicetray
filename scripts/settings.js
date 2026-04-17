@@ -1,3 +1,5 @@
+import { injectDiceTray, injectToggleButton } from "./dice-tray.js";
+
 export const MODULE_ID = "sogrom-dicetray";
 
 // --- Settings Registration ---
@@ -26,6 +28,38 @@ Hooks.once("init", () => {
     },
     onChange: (value) => applyTheme(value)
   });
+});
+
+// Inject dice tray and toggle button on each ChatLog render.
+// The element passed to the hook is the content area; app.element includes the header.
+Hooks.on("renderChatLog", (app, element, context, options) => {
+  console.log(`${MODULE_ID} | renderChatLog hook fired`);
+  injectDiceTray(element);
+  if (app.element) injectToggleButton(app.element);
+});
+
+// On first world load, the export button may not be in the DOM when renderChatLog fires.
+// A MutationObserver watches the sidebar for the export button to appear, then injects
+// the toggle button. Disconnects itself once the button is placed or already exists.
+Hooks.once("ready", () => {
+  if (document.querySelector(".sogrom-dice-tray-toggle")) return;
+
+  const target = document.getElementById("sidebar") || document.body;
+  const observer = new MutationObserver(() => {
+    if (document.querySelector(".sogrom-dice-tray-toggle")) {
+      observer.disconnect();
+      return;
+    }
+
+    const exportBtn = target.querySelector('[data-action="export"]');
+    if (exportBtn) {
+      injectToggleButton(exportBtn.closest(".application, .sidebar-tab, #sidebar") || target);
+      observer.disconnect();
+    }
+  });
+
+  observer.observe(target, { childList: true, subtree: true });
+  setTimeout(() => observer.disconnect(), 30000);
 });
 
 /**

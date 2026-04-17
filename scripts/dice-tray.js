@@ -1,15 +1,9 @@
-import { MODULE_ID, THEME_CLASSES, applyTheme } from "./settings.js";
+import { MODULE_ID } from "./settings.js";
 
-// --- Dice Pool State ---
 // Tracks the dice added by the user and the currently selected roll modifier.
 let dicePool = [];
 let diceTrayMode = "normal"; // "normal", "keephighest", "advantage", "disadvantage", "keeplowest"
 
-/**
- * Create the dice tray DOM element.
- * Builds the full tray UI: title bar, dice buttons, mode buttons,
- * formula display, and action buttons (clear + roll).
- */
 function createDiceTray() {
   const tray = document.createElement("div");
   tray.classList.add("sogrom-dice-tray");
@@ -18,15 +12,14 @@ function createDiceTray() {
   const theme = game.settings.get(MODULE_ID, "theme");
   if (theme) tray.classList.add(theme);
 
-  // --- Title bar ---
+  // Title bar
   const titleBar = document.createElement("div");
   titleBar.classList.add("dice-tray-title");
   const moduleVersion = game.modules.get(MODULE_ID)?.version ?? "";
   titleBar.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.Title")} <span class="dice-tray-version">v${moduleVersion}</span>`;
   tray.appendChild(titleBar);
 
-  // --- Dice buttons (D4, D6, D8, D10, D12, D20, D100) ---
-  // Left-click to add a die, right-click to remove one.
+  // Dice buttons 
   const diceRow = document.createElement("div");
   diceRow.classList.add("dice-tray-dice-row");
 
@@ -47,9 +40,7 @@ function createDiceTray() {
   }
   tray.appendChild(diceRow);
 
-  // --- Roll mode row (KH / ADV / DIS / KL) ---
-  // These are toggle buttons — click to select, click again to deselect.
-  // Only one mode can be active at a time.
+  // Roll mode 
   const modeRow = document.createElement("div");
   modeRow.classList.add("dice-tray-mode-row");
 
@@ -72,9 +63,7 @@ function createDiceTray() {
   }
   tray.appendChild(modeRow);
 
-  // --- Formula display (editable input) ---
-  // Shows the computed dice formula based on pool and active mode.
-  // Users can also type directly to enter any formula (e.g. 2d6+5).
+  // Display
   const formulaDisplay = document.createElement("input");
   formulaDisplay.type = "text";
   formulaDisplay.classList.add("dice-tray-formula");
@@ -89,8 +78,7 @@ function createDiceTray() {
   });
   tray.appendChild(formulaDisplay);
 
-  // --- Action row (Clear + Roll) ---
-  // Clear resets the pool and mode. Roll evaluates and sends to chat.
+  // Clear or Roll
   const actionRow = document.createElement("div");
   actionRow.classList.add("dice-tray-action-row");
 
@@ -112,12 +100,8 @@ function createDiceTray() {
   return tray;
 }
 
-/**
- * Inject the dice tray into the chat sidebar element.
- * Targets V14 ApplicationV2 DOM structure, with fallbacks for older layouts.
- * Respects the showDiceTray client setting for initial visibility.
- */
-function injectDiceTray(element) {
+// Dice Tray into ChatBar
+export function injectDiceTray(element) {
   // Don't duplicate
   if (element.querySelector(".sogrom-dice-tray")) return;
 
@@ -145,12 +129,8 @@ function injectDiceTray(element) {
   element.appendChild(tray);
 }
 
-/**
- * Inject a D20 toggle button next to the export chat log button in the sidebar header.
- * Clicking it shows/hides the dice tray and persists the preference.
- * Uses a class selector so the button works in both the sidebar and popped-out chat.
- */
-function injectToggleButton(element) {
+// Toggle Button
+export function injectToggleButton(element) {
   // Don't duplicate
   if (element.querySelector(".sogrom-dice-tray-toggle")) return;
 
@@ -160,7 +140,6 @@ function injectToggleButton(element) {
 
   const visible = game.settings.get(MODULE_ID, "showDiceTray");
 
-  // Create toggle button matching the style of existing header controls
   const toggleBtn = document.createElement("button");
   toggleBtn.type = "button";
   toggleBtn.classList.add("sogrom-dice-tray-toggle");
@@ -183,7 +162,6 @@ function injectToggleButton(element) {
       tray.classList.toggle("dice-tray-hidden", current);
     });
 
-    // Toggle all toggle button instances (sidebar + popout)
     document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(btn => {
       btn.classList.toggle("toggled-off", current);
     });
@@ -193,18 +171,14 @@ function injectToggleButton(element) {
   exportBtn.parentElement.insertBefore(toggleBtn, exportBtn);
 }
 
-/**
- * Add a die to the pool by face count and refresh the UI.
- */
+// Add Dice
 function addDie(faces) {
   dicePool.push(faces);
   updateDieButtons();
   updateFormulaDisplay();
 }
 
-/**
- * Remove the last occurrence of a die with the given face count from the pool.
- */
+// Remove Dice
 function removeDie(faces) {
   const idx = dicePool.lastIndexOf(faces);
   if (idx !== -1) {
@@ -214,10 +188,7 @@ function removeDie(faces) {
   }
 }
 
-/**
- * Update die buttons to show an active highlight and a count badge
- * indicating how many of each die type are in the pool.
- */
+// Show how many dice in the stack 
 function updateDieButtons() {
   const groups = {};
   for (const faces of dicePool) {
@@ -241,19 +212,14 @@ function updateDieButtons() {
   });
 }
 
-/**
- * Update all mode buttons to reflect the current diceTrayMode.
- */
+// Update all mode buttons to reflect the current diceTrayMode.
 function updateModeButtons() {
   document.querySelectorAll(".dice-tray-mode-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.mode === diceTrayMode);
   });
 }
 
-/**
- * Toggle the roll mode. Clicking the already-active mode deselects it
- * (reverts to "normal"). Only one mode can be active at a time.
- */
+// Set roll mode
 function setRollMode(mode) {
   // Toggle: clicking the active mode deselects it (back to normal)
   diceTrayMode = (diceTrayMode === mode) ? "normal" : mode;
@@ -261,14 +227,8 @@ function setRollMode(mode) {
   updateFormulaDisplay();
 }
 
-/**
- * Build a dice formula string from the current pool and active mode.
- * - keephighest: appends "kh" (keep highest single die)
- * - advantage: appends "adv" modifier to each die group
- * - disadvantage: appends "dis" modifier to each die group
- * - keeplowest: appends "kl" (keep lowest single die)
- * - normal: no modifier
- */
+
+// Build a dice formula string from the current pool and active mode.
 function buildFormula() {
   if (dicePool.length === 0) return "";
 
@@ -297,10 +257,7 @@ function buildFormula() {
   return parts.join(" + ");
 }
 
-/**
- * Update all formula display inputs with the current formula,
- * or clear them if no dice are selected.
- */
+// Update the formula display input with the current formula.
 function updateFormulaDisplay() {
   const formula = buildFormula();
   document.querySelectorAll(".dice-tray-formula").forEach(el => {
@@ -314,10 +271,7 @@ function updateFormulaDisplay() {
   });
 }
 
-/**
- * Evaluate the current dice formula, post the result as a chat message
- * with a flavor label, then clear the pool and mode selection.
- */
+// Roll Dice
 async function rollDice() {
   // Find the formula input closest to the clicked context; fall back to first available
   const allInputs = document.querySelectorAll(".dice-tray-formula");
@@ -364,10 +318,7 @@ async function rollDice() {
   clearPool();
 }
 
-/**
- * Clear the dice pool, reset the roll mode to normal,
- * update the UI, and deselect all mode buttons.
- */
+// Clear pool and reset mode
 function clearPool() {
   dicePool = [];
   diceTrayMode = "normal";
@@ -376,40 +327,3 @@ function clearPool() {
   updateFormulaDisplay();
 }
 
-// --- Hooks ---
-
-// Inject dice tray and toggle button on each ChatLog render.
-// The element passed to the hook is the content area; app.element includes the header.
-Hooks.on("renderChatLog", (app, element, context, options) => {
-  console.log(`${MODULE_ID} | renderChatLog hook fired`);
-  injectDiceTray(element);
-  // Try to inject toggle into the app's full element (includes header controls)
-  if (app.element) injectToggleButton(app.element);
-});
-
-// On first world load, the export button may not be in the DOM when renderChatLog fires.
-// A MutationObserver watches the sidebar for the export button to appear, then injects
-// the toggle button. Disconnects itself once the button is placed or already exists.
-Hooks.once("ready", () => {
-  // If already injected (e.g. by renderChatLog), nothing to do
-  if (document.querySelector(".sogrom-dice-tray-toggle")) return;
-
-  const target = document.getElementById("sidebar") || document.body;
-  const observer = new MutationObserver(() => {
-    // Wait until the export button exists AND we haven't injected yet
-    if (document.querySelector(".sogrom-dice-tray-toggle")) {
-      observer.disconnect();
-      return;
-    }
-    const exportBtn = target.querySelector('[data-action="export"]');
-    if (exportBtn) {
-      injectToggleButton(exportBtn.closest(".application, .sidebar-tab, #sidebar") || target);
-      observer.disconnect();
-    }
-  });
-  observer.observe(target, { childList: true, subtree: true });
-
-  // Safety timeout: disconnect the observer after 30 seconds to avoid
-  // an indefinite performance leak if the export button never appears.
-  setTimeout(() => observer.disconnect(), 30000);
-});
