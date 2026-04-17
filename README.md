@@ -12,11 +12,11 @@ I created this Foundry module because the exsisting dice-tray module wasn't  wor
 
 ## Features
 
-- Build dice pools by clicking dice buttons directly in the chat sidebar
-- Support for all standard dice: D4, D6, D8, D10, D12, D20, and D100
+- Build dice pools by clicking dice buttons directly in the Dice Tray
+- Support for all standard D&D dice: D4, D6, D8, D10, D12, D20, and D100
 - Roll modifiers: Keep Highest, Advantage, Disadvantage, and Keep Lowest
 - Live formula preview as you build your pool
-- Toggle the tray on/off with a D20 button in the sidebar header
+- Toggle the tray on/off with a D20 button
 - Works in both the sidebar and popped-out chat windows
 
 ---
@@ -67,7 +67,7 @@ A **D20 icon button** is added to the chat sidebar header (next to the export bu
 ## Compatibility
 
 - **Foundry VTT**: v14+
-- **Systems**: Dungeons & Dragons 5e — it might work with other systems but I havent tested it.
+- **Systems**: Dungeons & Dragons 5e — it should work with other systems but I havent tested it.
 
 ---
 
