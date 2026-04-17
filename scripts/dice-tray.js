@@ -1,30 +1,65 @@
-import { MODULE_ID } from "./settings.js";
+const MODULE_ID = "sogrom-dicetray";
+const DICE_TYPES = [4, 6, 8, 10, 12, 20, 100];
+const MODE_CONFIG = {
+  keephighest:  { suffix: "kh",  flavorKey: "FlavorKeepHighest",  icon: "fa-arrow-up",          labelKey: "KeepHighest" },
+  advantage:    { suffix: "adv", flavorKey: "FlavorAdvantage",    icon: "fa-angle-double-up",   labelKey: "Advantage" },
+  disadvantage: { suffix: "dis", flavorKey: "FlavorDisadvantage", icon: "fa-angle-double-down", labelKey: "Disadvantage" },
+  keeplowest:   { suffix: "kl",  flavorKey: "FlavorKeepLowest",   icon: "fa-arrow-down",        labelKey: "KeepLowest" },
+};
 
-// Tracks the dice added by the user and the currently selected roll modifier.
+const THEME_CHOICES = {
+  "darkmode": "SOGROM_DICETRAY.ThemeDarkMode",
+  "lightmode": "SOGROM_DICETRAY.ThemeLightMode"
+};
+const THEME_CLASSES = Object.keys(THEME_CHOICES);
+
 let dicePool = [];
-let diceTrayMode = "normal"; // "normal", "keephighest", "advantage", "disadvantage", "keeplowest"
+let diceTrayMode = "normal";
+const trayInstances = new Set();
+
+// Settings
+
+Hooks.once("init", () => {
+  game.settings.register(MODULE_ID, "showDiceTray", {
+    name: "SOGROM_DICETRAY.SettingShow",
+    hint: "SOGROM_DICETRAY.SettingShowHint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE_ID, "theme", {
+    name: "SOGROM_DICETRAY.SettingTheme",
+    hint: "SOGROM_DICETRAY.SettingThemeHint",
+    scope: "client",
+    config: true,
+    type: String,
+    default: "darkmode",
+    choices: THEME_CHOICES,
+    onChange: (value) => applyTheme(value)
+  });
+});
+
+// UI Creation
 
 function createDiceTray() {
   const tray = document.createElement("div");
   tray.classList.add("sogrom-dice-tray");
 
-  // Apply current theme
   const theme = game.settings.get(MODULE_ID, "theme");
   if (theme) tray.classList.add(theme);
 
-  // Title bar
   const titleBar = document.createElement("div");
   titleBar.classList.add("dice-tray-title");
   const moduleVersion = game.modules.get(MODULE_ID)?.version ?? "";
   titleBar.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.Title")} <span class="dice-tray-version">v${moduleVersion}</span>`;
   tray.appendChild(titleBar);
 
-  // Dice buttons 
   const diceRow = document.createElement("div");
   diceRow.classList.add("dice-tray-dice-row");
 
-  const diceTypes = [4, 6, 8, 10, 12, 20, 100];
-  for (const faces of diceTypes) {
+  for (const faces of DICE_TYPES) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.classList.add("dice-tray-btn", "dice-tray-die-btn");
@@ -40,30 +75,21 @@ function createDiceTray() {
   }
   tray.appendChild(diceRow);
 
-  // Roll mode 
   const modeRow = document.createElement("div");
   modeRow.classList.add("dice-tray-mode-row");
 
-  const modes = [
-    { id: "keephighest", label: game.i18n.localize("SOGROM_DICETRAY.KeepHighest"), icon: "fa-arrow-up" },
-    { id: "advantage", label: game.i18n.localize("SOGROM_DICETRAY.Advantage"), icon: "fa-angle-double-up" },
-    { id: "disadvantage", label: game.i18n.localize("SOGROM_DICETRAY.Disadvantage"), icon: "fa-angle-double-down" },
-    { id: "keeplowest", label: game.i18n.localize("SOGROM_DICETRAY.KeepLowest"), icon: "fa-arrow-down" }
-  ];
-
-  for (const mode of modes) {
+  for (const [id, cfg] of Object.entries(MODE_CONFIG)) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.classList.add("dice-tray-btn", "dice-tray-mode-btn");
-    btn.dataset.mode = mode.id;
-    if (mode.id === diceTrayMode) btn.classList.add("active");
-    btn.innerHTML = `<i class="fas ${mode.icon}"></i> ${mode.label}`;
-    btn.addEventListener("click", () => setRollMode(mode.id));
+    btn.dataset.mode = id;
+    if (id === diceTrayMode) btn.classList.add("active");
+    btn.innerHTML = `<i class="fas ${cfg.icon}"></i> ${game.i18n.localize("SOGROM_DICETRAY." + cfg.labelKey)}`;
+    btn.addEventListener("click", () => setRollMode(id));
     modeRow.appendChild(btn);
   }
   tray.appendChild(modeRow);
 
-  // Display
   const formulaDisplay = document.createElement("input");
   formulaDisplay.type = "text";
   formulaDisplay.classList.add("dice-tray-formula");
@@ -73,12 +99,11 @@ function createDiceTray() {
   formulaDisplay.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      rollDice();
+      rollDice(e);
     }
   });
   tray.appendChild(formulaDisplay);
 
-  // Clear or Roll
   const actionRow = document.createElement("div");
   actionRow.classList.add("dice-tray-action-row");
 
@@ -97,44 +122,36 @@ function createDiceTray() {
   actionRow.appendChild(rollBtn);
 
   tray.appendChild(actionRow);
+  trayInstances.add(tray);
   return tray;
 }
 
-// Dice Tray into ChatBar
-export function injectDiceTray(element) {
-  // Don't duplicate
+function injectDiceTray(element) {
   if (element.querySelector(".sogrom-dice-tray")) return;
 
   const tray = createDiceTray();
 
-  // Apply visibility from setting
   const visible = game.settings.get(MODULE_ID, "showDiceTray");
   if (!visible) tray.classList.add("dice-tray-hidden");
 
-  // V14 ApplicationV2: find the input part
   const inputPart = element.querySelector('[data-application-part="input"]');
   if (inputPart) {
     inputPart.insertBefore(tray, inputPart.firstChild);
     return;
   }
 
-  // Fallback: look for a form element
   const form = element.querySelector("form");
   if (form) {
     form.parentElement.insertBefore(tray, form);
     return;
   }
 
-  // Last resort: append to the element itself
   element.appendChild(tray);
 }
 
-// Toggle Button
-export function injectToggleButton(element) {
-  // Don't duplicate
+function injectToggleButton(element) {
   if (element.querySelector(".sogrom-dice-tray-toggle")) return;
 
-  // Find the export button by data-action
   const exportBtn = element.querySelector('[data-action="export"]');
   if (!exportBtn) return;
 
@@ -157,28 +174,26 @@ export function injectToggleButton(element) {
     const current = game.settings.get(MODULE_ID, "showDiceTray");
     await game.settings.set(MODULE_ID, "showDiceTray", !current);
 
-    // Toggle all dice tray instances (sidebar + popout)
-    document.querySelectorAll(".sogrom-dice-tray").forEach(tray => {
+    for (const tray of trayInstances) {
+      if (!tray.isConnected) { trayInstances.delete(tray); continue; }
       tray.classList.toggle("dice-tray-hidden", current);
-    });
-
+    }
     document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(btn => {
       btn.classList.toggle("toggled-off", current);
     });
   });
 
-  // Insert before the export button
   exportBtn.parentElement.insertBefore(toggleBtn, exportBtn);
 }
 
-// Add Dice
+// State & Logic
+
 function addDie(faces) {
   dicePool.push(faces);
   updateDieButtons();
   updateFormulaDisplay();
 }
 
-// Remove Dice
 function removeDie(faces) {
   const idx = dicePool.lastIndexOf(faces);
   if (idx !== -1) {
@@ -188,79 +203,64 @@ function removeDie(faces) {
   }
 }
 
-// Show how many dice in the stack 
-function updateDieButtons() {
+function getDiceGroups() {
   const groups = {};
-  for (const faces of dicePool) {
-    groups[faces] = (groups[faces] || 0) + 1;
-  }
-  document.querySelectorAll(".dice-tray-die-btn").forEach(btn => {
-    const faces = Number(btn.dataset.faces);
-    const count = groups[faces] || 0;
-    btn.classList.toggle("active", count > 0);
-    let badge = btn.querySelector(".dice-tray-badge");
-    if (count > 0) {
-      if (!badge) {
-        badge = document.createElement("span");
-        badge.classList.add("dice-tray-badge");
-        btn.appendChild(badge);
+  for (const faces of dicePool) groups[faces] = (groups[faces] || 0) + 1;
+  return groups;
+}
+
+function updateDieButtons() {
+  const groups = getDiceGroups();
+  for (const tray of trayInstances) {
+    if (!tray.isConnected) { trayInstances.delete(tray); continue; }
+    for (const btn of tray.querySelectorAll(".dice-tray-die-btn")) {
+      const faces = Number(btn.dataset.faces);
+      const count = groups[faces] || 0;
+      btn.classList.toggle("active", count > 0);
+      let badge = btn.querySelector(".dice-tray-badge");
+      if (count > 0) {
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.classList.add("dice-tray-badge");
+          btn.appendChild(badge);
+        }
+        badge.textContent = count;
+      } else if (badge) {
+        badge.remove();
       }
-      badge.textContent = count;
-    } else if (badge) {
-      badge.remove();
     }
-  });
+  }
 }
 
-// Update all mode buttons to reflect the current diceTrayMode.
 function updateModeButtons() {
-  document.querySelectorAll(".dice-tray-mode-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.mode === diceTrayMode);
-  });
+  for (const tray of trayInstances) {
+    if (!tray.isConnected) { trayInstances.delete(tray); continue; }
+    for (const btn of tray.querySelectorAll(".dice-tray-mode-btn")) {
+      btn.classList.toggle("active", btn.dataset.mode === diceTrayMode);
+    }
+  }
 }
 
-// Set roll mode
 function setRollMode(mode) {
-  // Toggle: clicking the active mode deselects it (back to normal)
   diceTrayMode = (diceTrayMode === mode) ? "normal" : mode;
   updateModeButtons();
   updateFormulaDisplay();
 }
 
-
-// Build a dice formula string from the current pool and active mode.
 function buildFormula() {
   if (dicePool.length === 0) return "";
-
-  // Group dice by face count
-  const groups = {};
-  for (const faces of dicePool) {
-    groups[faces] = (groups[faces] || 0) + 1;
-  }
-
-  // Build formula parts, sorting by die size
+  const groups = getDiceGroups();
+  const suffix = MODE_CONFIG[diceTrayMode]?.suffix ?? "";
   const sortedFaces = Object.keys(groups).map(Number).sort((a, b) => a - b);
-  const parts = sortedFaces.map(faces => {
-    const count = groups[faces];
-    if (diceTrayMode === "keephighest") {
-      return `${count}d${faces}kh`;
-    } else if (diceTrayMode === "advantage") {
-      return `${count}d${faces}adv`;
-    } else if (diceTrayMode === "disadvantage") {
-      return `${count}d${faces}dis`;
-    } else if (diceTrayMode === "keeplowest") {
-      return `${count}d${faces}kl`;
-    }
-    return `${count}d${faces}`;
-  });
-
-  return parts.join(" + ");
+  return sortedFaces.map(f => `${groups[f]}d${f}${suffix}`).join(" + ");
 }
 
-// Update the formula display input with the current formula.
 function updateFormulaDisplay() {
   const formula = buildFormula();
-  document.querySelectorAll(".dice-tray-formula").forEach(el => {
+  for (const tray of trayInstances) {
+    if (!tray.isConnected) { trayInstances.delete(tray); continue; }
+    const el = tray.querySelector(".dice-tray-formula");
+    if (!el) continue;
     if (dicePool.length === 0) {
       el.value = "";
       el.classList.remove("has-dice");
@@ -268,37 +268,22 @@ function updateFormulaDisplay() {
       el.value = formula;
       el.classList.add("has-dice");
     }
-  });
+  }
 }
 
-// Roll Dice
-async function rollDice() {
-  // Find the formula input closest to the clicked context; fall back to first available
-  const allInputs = document.querySelectorAll(".dice-tray-formula");
-  let el = null;
-  for (const input of allInputs) {
-    if (input.closest(".sogrom-dice-tray") && document.activeElement?.closest(".sogrom-dice-tray") === input.closest(".sogrom-dice-tray")) {
-      el = input;
-      break;
-    }
-  }
-  if (!el) el = allInputs[0] || null;
+async function rollDice(e) {
+  const tray = e?.target?.closest(".sogrom-dice-tray");
+  const el = tray?.querySelector(".dice-tray-formula") ?? document.querySelector(".dice-tray-formula");
   const formula = el ? el.value.trim() : buildFormula();
   if (!formula) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
     return;
   }
 
-  // Build a flavor label based on the active roll mode
   let flavor = game.i18n.localize("SOGROM_DICETRAY.FlavorBase");
-  if (diceTrayMode === "keephighest") {
-    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorKeepHighest") + ")";
-  } else if (diceTrayMode === "advantage") {
-    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorAdvantage") + ")";
-  } else if (diceTrayMode === "disadvantage") {
-    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorDisadvantage") + ")";
-  } else if (diceTrayMode === "keeplowest") {
-    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorKeepLowest") + ")";
+  const modeInfo = MODE_CONFIG[diceTrayMode];
+  if (modeInfo) {
+    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY." + modeInfo.flavorKey) + ")";
   }
 
   try {
@@ -314,11 +299,9 @@ async function rollDice() {
     return;
   }
 
-  // Clear the pool after rolling
   clearPool();
 }
 
-// Clear pool and reset mode
 function clearPool() {
   dicePool = [];
   diceTrayMode = "normal";
@@ -327,3 +310,35 @@ function clearPool() {
   updateFormulaDisplay();
 }
 
+function applyTheme(theme) {
+  for (const tray of trayInstances) {
+    if (!tray.isConnected) { trayInstances.delete(tray); continue; }
+    tray.classList.remove(...THEME_CLASSES);
+    if (theme) tray.classList.add(theme);
+  }
+  document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(el => {
+    el.classList.remove(...THEME_CLASSES);
+    if (theme) el.classList.add(theme);
+  });
+}
+
+// Hook Registrations
+
+Hooks.on("renderChatLog", (app, element) => {
+  injectDiceTray(element);
+  if (app.element) injectToggleButton(app.element);
+});
+
+Hooks.once("ready", () => {
+  if (document.querySelector(".sogrom-dice-tray-toggle")) return;
+  const sidebar = document.getElementById("sidebar");
+  if (!sidebar) return;
+  const observer = new MutationObserver(() => {
+    const exportBtn = sidebar.querySelector('[data-action="export"]');
+    if (!exportBtn) return;
+    injectToggleButton(exportBtn.closest(".application, .sidebar-tab, #sidebar") || sidebar);
+    observer.disconnect();
+  });
+  observer.observe(sidebar, { childList: true, subtree: true });
+  setTimeout(() => observer.disconnect(), 5000);
+});
