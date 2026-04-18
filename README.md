@@ -8,7 +8,6 @@ I created this Foundry module because the exsisting dice-tray module wasn't  wor
 
 ![Dice Tray Overview](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dicetray-screenshot.png?raw=true)
 
----
 
 ## Features
 
@@ -19,20 +18,16 @@ I created this Foundry module because the exsisting dice-tray module wasn't  wor
 - Toggle the tray on/off with a D20 button
 - Works in both the sidebar and popped-out chat windows
 
----
-
 ## How to Use
 
 ### Adding and Removing Dice
+![Dice Buttons](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dice-buttons.png?raw=true) 
 
-**Left-click** any dice button (D4–D100) to add that die to the pool. A badge appears on the button showing how many of that die are added.
-
-**Right-click** a dice button to remove one die of that type from the pool.
-
-
-![Dice Buttons](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dice-buttons.png?raw=true)
+- **Left-click** any dice button (D4–D100) to add that die to the pool. A badge appears on the button showing how many of that die are added.
+- **Right-click** a dice button to remove one die of that type from the pool.
 
 ### Roll Modifiers
+![Roll Modifiers](https://github.com/IainFielding/dicetray/blob/master/assets/docs/roll-modifiers.png?raw=true)
 
 The tray provides four roll modifier modes. Only one can be active at a time — click a mode to select it, click it again to deselect and return to a normal roll.
 
@@ -42,8 +37,6 @@ The tray provides four roll modifier modes. Only one can be active at a time —
 | **ADV** | Advantage | Rolls with advantage — doubles the dice and keeps the better half (e.g. `2d20adv`) |
 | **DIS** | Disadvantage | Rolls with disadvantage — doubles the dice and keeps the worse half (e.g. `2d20dis`) |
 | **KL** | Keep Lowest | Rolls the pool and keeps only the lowest result from each die group (e.g. `2d20kl`) |
-
-![Roll Modifiers](https://github.com/IainFielding/dicetray/blob/master/assets/docs/roll-modifiers.png?raw=true)
 
 ### Formula Display
 
@@ -57,17 +50,15 @@ As dice are added and a mode selcted, the formula preview updates in real time t
 
 
 ### Toggling the Dice Tray
-
-A **D20 icon button** is added to the chat sidebar header (next to the export button). Click it to show or hide the dice tray. Your preference is saved per client and persists between sessions.
-
 ![DiceTray toggle](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dicetray-showicon.png?raw=true)
+A **D20 icon button** is added to the chat sidebar header (next to the export button). Click it to show or hide the dice tray. Your preference is saved per client and persists between sessions.
 
 ---
 
 ## Compatibility
 
 - **Foundry VTT**: v14+
-- **Systems**: Dungeons & Dragons 5e — it should work with other systems but I havent tested it.
+- **Systems**: System Agnostic however I've only  tested with Dungeons & Dragons 5e.
 
 ---
 
