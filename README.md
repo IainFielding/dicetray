@@ -51,6 +51,7 @@ As dice are added and a mode selcted, the formula preview updates in real time t
 
 ### Toggling the Dice Tray
 ![DiceTray toggle](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dicetray-showicon.png?raw=true)
+
 A **D20 icon button** is added to the chat sidebar header (next to the export button). Click it to show or hide the dice tray. Your preference is saved per client and persists between sessions.
 
 ---
