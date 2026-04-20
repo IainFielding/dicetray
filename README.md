@@ -33,10 +33,10 @@ The tray provides four roll modifier modes. Only one can be active at a time —
 
 | Button | Mode | Effect |
 |--------|------|--------|
-| **KH** | Keep Highest | Rolls the pool and keeps only the highest result from each die group (e.g. `2d20kh`) |
-| **ADV** | Advantage | Rolls with advantage — doubles the dice and keeps the better half (e.g. `2d20adv`) |
-| **DIS** | Disadvantage | Rolls with disadvantage — doubles the dice and keeps the worse half (e.g. `2d20dis`) |
-| **KL** | Keep Lowest | Rolls the pool and keeps only the lowest result from each die group (e.g. `2d20kl`) |
+| **KH** | Keep Highest | Rolls the pool and keeps only the highest result from each die group  |
+| **ADV** | Advantage | Rolls with advantage — doubles the dice and keeps the better half  |
+| **DIS** | Disadvantage | Rolls with disadvantage — doubles the dice and keeps the worse half  |
+| **KL** | Keep Lowest | Rolls the pool and keeps only the lowest result from each die group  |
 
 ### Formula Display
 
