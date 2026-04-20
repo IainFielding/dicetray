@@ -4,7 +4,7 @@
 
 # Dice Tray by Sogrom
 
-I created this Foundry module because the exsisting dice-tray module wasn't working on V14 of Foundry, and the only alternative is a much larger module which does multiple things. The original dice-calculator module was the inspiration for this module. The goal of this module is to add a dice tray to the chat sidebar for quickly building and rolling dice with support for modifiers.
+I created this Foundry module because the exsisting dice-tray module wasn't working on V14 of Foundry, and the other alternative is a much larger module which does multiple things. I just wanted to make a simple dice roller. The original dice-calculator module was the inspiration for this module. The goal of this module is to add a dice tray to the chat sidebar for quickly building and rolling dice with support for modifiers.
 
 ![Dice Tray Overview](https://github.com/IainFielding/dicetray/blob/master/assets/docs/dicetray-screenshot.png?raw=true)
 
