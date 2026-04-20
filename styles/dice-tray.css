@@ -135,12 +135,10 @@
   font-size: 1rem;
   padding: 2px 8px;
   opacity: 1;
-  transition: opacity 0.15s, color 0.15s;
+/*  transition: opacity 0.15s, color 0.15s; */
 }
 
-.sogrom-dice-tray-toggle.toggled-off {
-  opacity: 0.4;
-}
+
 
 /* ========================================
     Theme Definitions
@@ -150,7 +148,7 @@
   --tray-bg: var(--color-cool-5, #1a1c2e);
   --tray-border: var(--color-cool-4, #3d4050);
   --tray-text: var(--color-text-light-highlight, #f0f0e0);
-  --tray-btn-bg: var(--color-cool-4, #2b2e3e);
+  --tray-btn-bg: var(--color-cool-4, #2b2e3e);   
   --tray-btn-hover-bg: var(--color-cool-3, #4b4e62);
   --tray-active-bg: var(--color-cool-3, #4b4e62);
   --tray-active-shadow: 0 0 4px rgba(255, 100, 0, 0.3);
@@ -281,21 +279,38 @@
 /* Toggle Button Themes */
 
 .sogrom-dice-tray-toggle.darkmode {
-  background: #212026;
+  background: #000;
   color: var(--color-text-light-highlight, #f0f0e0);
 }
 
-.sogrom-dice-tray-toggle.darkmode:hover,
-.sogrom-dice-tray-toggle.darkmode:focus {
+
+.sogrom-dice-tray-toggle.darkmode:hover {
   background: #000;
-  border: none;
+  border: 1px solid #a259ff; /* purple border */
   box-shadow: none;
   outline: none;
 }
 
+/* When dice tray is active, orange border */
+
+
+/* Orange border on toggle button when dice tray is visible (not hidden) */
+.sogrom-dice-tray-toggle.darkmode.tray-visible {
+  background: #000;
+  border: 1px solid #ff6400;
+}
+
+
 .sogrom-dice-tray-toggle.lightmode {
-  background: var(--color-warm-5, #f0f0e0);
+  background: #c0c0c0;
   color: var(--color-text-dark-primary, #191813);
+  opacity: 1;
+}
+
+/* When dice tray is visible (active), use lighter background */
+.sogrom-dice-tray-toggle.lightmode.tray-visible {
+  background: #e8e8e7;
+  border: 1px solid #ff6400;
 }
 
 .sogrom-dice-tray-toggle.lightmode:hover,

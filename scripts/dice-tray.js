@@ -152,38 +152,65 @@ function injectDiceTray(element) {
 function injectToggleButton(element) {
   if (element.querySelector(".sogrom-dice-tray-toggle")) return;
 
-  const exportBtn = element.querySelector('[data-action="export"]');
-  if (!exportBtn) return;
+  function actuallyInject() {
+    const messageModesDiv = element.querySelector('#message-modes');
+    if (!messageModesDiv) return false;
 
-  const visible = game.settings.get(MODULE_ID, "showDiceTray");
-
-  const toggleBtn = document.createElement("button");
-  toggleBtn.type = "button";
-  toggleBtn.classList.add("sogrom-dice-tray-toggle");
-  const currentTheme = game.settings.get(MODULE_ID, "theme");
-  if (currentTheme) toggleBtn.classList.add(currentTheme);
-  toggleBtn.dataset.action = "toggleDiceTray";
-  toggleBtn.dataset.tooltip = game.i18n.localize("SOGROM_DICETRAY.ToggleTray");
-  toggleBtn.setAttribute("aria-label", game.i18n.localize("SOGROM_DICETRAY.ToggleTray"));
-  toggleBtn.innerHTML = `<i class="fas fa-dice-d20"></i>`;
-  if (!visible) toggleBtn.classList.add("toggled-off");
-
-  toggleBtn.addEventListener("click", async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const current = game.settings.get(MODULE_ID, "showDiceTray");
-    await game.settings.set(MODULE_ID, "showDiceTray", !current);
-
-    for (const tray of trayInstances) {
-      if (!tray.isConnected) { trayInstances.delete(tray); continue; }
-      tray.classList.toggle("dice-tray-hidden", current);
+    let insertAfterBtn = messageModesDiv.querySelector('button[aria-label="Public as Character"]');
+    if (!insertAfterBtn) {
+      const allBtns = messageModesDiv.querySelectorAll('button');
+      if (allBtns.length > 0) {
+        insertAfterBtn = allBtns[allBtns.length - 1];
+      } else {
+        return false;
+      }
     }
-    document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(btn => {
-      btn.classList.toggle("toggled-off", current);
-    });
-  });
 
-  exportBtn.parentElement.insertBefore(toggleBtn, exportBtn);
+    const visible = game.settings.get(MODULE_ID, "showDiceTray");
+
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.type = "button";
+    toggleBtn.classList.add("sogrom-dice-tray-toggle");
+    toggleBtn.style.marginLeft = "10px";
+    const currentTheme = game.settings.get(MODULE_ID, "theme");
+    if (currentTheme) toggleBtn.classList.add(currentTheme);
+    toggleBtn.dataset.action = "toggleDiceTray";
+    toggleBtn.dataset.tooltip = game.i18n.localize("SOGROM_DICETRAY.ToggleTray");
+    toggleBtn.setAttribute("aria-label", game.i18n.localize("SOGROM_DICETRAY.ToggleTray"));
+    toggleBtn.innerHTML = `<i class=\"fas fa-dice-d20\"></i>`;
+    if (!visible) toggleBtn.classList.add("toggled-off");
+    if (visible) toggleBtn.classList.add("tray-visible");
+
+    toggleBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const current = game.settings.get(MODULE_ID, "showDiceTray");
+      await game.settings.set(MODULE_ID, "showDiceTray", !current);
+
+      for (const tray of trayInstances) {
+        if (!tray.isConnected) { trayInstances.delete(tray); continue; }
+        tray.classList.toggle("dice-tray-hidden", current);
+      }
+      document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(btn => {
+        btn.classList.toggle("toggled-off", current);
+        btn.classList.toggle("tray-visible", !current);
+      });
+    });
+
+    insertAfterBtn.insertAdjacentElement('afterend', toggleBtn);
+    return true;
+  }
+
+  // Try immediately, if not present, observe for it
+  if (!actuallyInject()) {
+    const observer = new MutationObserver(() => {
+      if (actuallyInject()) observer.disconnect();
+    });
+    observer.observe(element, { childList: true, subtree: true });
+    // Safety: disconnect after 5 seconds
+    setTimeout(() => observer.disconnect(), 5000);
+  }
 }
 
 // State & Logic
@@ -326,19 +353,7 @@ function applyTheme(theme) {
 
 Hooks.on("renderChatLog", (app, element) => {
   injectDiceTray(element);
-  if (app.element) injectToggleButton(app.element);
+  injectToggleButton(element);
 });
 
-Hooks.once("ready", () => {
-  if (document.querySelector(".sogrom-dice-tray-toggle")) return;
-  const sidebar = document.getElementById("sidebar");
-  if (!sidebar) return;
-  const observer = new MutationObserver(() => {
-    const exportBtn = sidebar.querySelector('[data-action="export"]');
-    if (!exportBtn) return;
-    injectToggleButton(exportBtn.closest(".application, .sidebar-tab, #sidebar") || sidebar);
-    observer.disconnect();
-  });
-  observer.observe(sidebar, { childList: true, subtree: true });
-  setTimeout(() => observer.disconnect(), 5000);
-});
+
