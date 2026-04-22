@@ -64,8 +64,25 @@ function createDiceTray() {
     btn.type = "button";
     btn.classList.add("dice-tray-btn", "dice-tray-die-btn");
     btn.dataset.faces = faces;
-    btn.textContent = `D${faces}`;
     btn.title = `Add a D${faces}`;
+    // Set icon path
+    let iconPath = null;
+    switch (faces) {
+      case 4: iconPath = "modules/sogrom-dicetray/assets/icons/d4-grey.svg"; break;
+      case 6: iconPath = "modules/sogrom-dicetray/assets/icons/d6-grey.svg"; break;
+      case 8: iconPath = "modules/sogrom-dicetray/assets/icons/d8-grey.svg"; break;
+      case 10: iconPath = "modules/sogrom-dicetray/assets/icons/d10-grey.svg"; break;
+      case 12: iconPath = "modules/sogrom-dicetray/assets/icons/d12-grey.svg"; break;
+      case 20: iconPath = "modules/sogrom-dicetray/assets/icons/d20-grey.svg"; break;
+      case 100: iconPath = "modules/sogrom-dicetray/assets/icons/d100-grey.svg"; break; 
+    }
+    if (iconPath) {
+      // Add an <img> with onerror fallback to text
+      btn.innerHTML = `<img src="${iconPath}" alt="D${faces}" class="dice-tray-die-icon" style="width:1.8em;height:1.8em;vertical-align:middle;" onerror="this.style.display='none';this.parentNode.innerHTML='<span class=\'dice-tray-die-fallback\'>D${faces}</span>';" />`;
+    } else {
+      // Fallback for missing icon path
+      btn.innerHTML = `<span class="dice-tray-die-fallback">D${faces}</span>`;
+    }
     btn.addEventListener("click", () => addDie(faces));
     btn.addEventListener("contextmenu", (e) => {
       e.preventDefault();
