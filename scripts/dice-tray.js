@@ -142,11 +142,10 @@ function createDiceTray() {
     img.alt = `D${faces}`;
     img.classList.add("dice-tray-die-icon");
     img.addEventListener("error", () => {
-      btn.textContent = "";
       const fallback = document.createElement("span");
       fallback.classList.add("dice-tray-die-fallback");
       fallback.textContent = `D${faces}`;
-      btn.appendChild(fallback);
+      img.replaceWith(fallback);
     });
     btn.appendChild(img);
     btn.addEventListener("click", () => addDie(faces));
