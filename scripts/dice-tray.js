@@ -91,7 +91,7 @@ Hooks.once("init", () => {
     scope: "client",
     config: true,
     type: Boolean,
-    default: false,
+    default: true,
     onChange: () => location.reload()
   });
 });
@@ -221,14 +221,16 @@ function injectDiceTray(element) {
 
   if (compactMode) {
     // In compact mode, place after #chat-message (same as theripper93's dice tray)
-    if (element.querySelector(".sogrom-dice-tray")) return;
     const chatMessage = element.querySelector('#chat-message')
       || document.querySelector("#chat-message");
     if (!chatMessage) return;
+    // Remove any existing tray (may have lost event listeners after sidebar collapse)
+    chatMessage.parentElement?.querySelector(".sogrom-dice-tray")?.remove();
     const tray = createDiceTray();
     const visible = game.settings.get(MODULE_ID, "showDiceTray");
     if (!visible) tray.classList.add("dice-tray-hidden");
     tray.style.flex = "0 0";
+    tray.style.pointerEvents = "all";
     tray.style.order = "999";
     chatMessage.after(tray);
     return;
@@ -258,10 +260,12 @@ function injectDiceTray(element) {
 }
 
 function injectToggleButton(element) {
-  if (element.querySelector(".sogrom-dice-tray-toggle")) return;
+  if (element.querySelector(".sogrom-dice-tray-toggle")
+    || document.querySelector(".sogrom-dice-tray-toggle")) return;
 
   function actuallyInject() {
-    const messageModesDiv = element.querySelector('#message-modes');
+    const messageModesDiv = element.querySelector('#message-modes')
+      || document.querySelector('#message-modes');
     if (!messageModesDiv) return false;
 
     let insertAfterBtn = messageModesDiv.querySelector('button[aria-label="Public as Character"]');
@@ -287,6 +291,7 @@ function injectToggleButton(element) {
     toggleBtn.innerHTML = `<i class="fas fa-dice-d20"></i>`;
     if (!visible) toggleBtn.classList.add("toggled-off");
     if (visible) toggleBtn.classList.add("tray-visible");
+    toggleBtn.style.pointerEvents = "all";
 
     toggleBtn.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -503,6 +508,24 @@ function applyTheme(theme) {
 Hooks.on("renderChatLog", (app, element) => {
   injectDiceTray(element);
   injectToggleButton(element);
+});
+
+Hooks.on("collapseSidebar", () => {
+  if (!game.settings.get(MODULE_ID, "compactMode")) return;
+  // Remove all compact trays and toggle buttons (collapsed/expanded use different DOM contexts)
+  document.querySelectorAll(".sogrom-dice-tray.compact-mode").forEach(el => el.remove());
+  document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(el => el.remove());
+  const element = ui.chat?.element;
+  if (element) {
+    injectDiceTray(element);
+    injectToggleButton(element);
+  }
+});
+
+Hooks.on("changeSidebarTab", () => {
+  if (!game.settings.get(MODULE_ID, "compactMode")) return;
+  const element = ui.chat?.element;
+  if (element) injectDiceTray(element);
 });
 
 // Reset dice pool when a chat message is submitted (compact mode uses the chat box)
