@@ -220,22 +220,17 @@ function injectDiceTray(element) {
   const compactMode = game.settings.get(MODULE_ID, "compactMode");
 
   if (compactMode) {
-    // In compact mode, place below the chat input
+    // In compact mode, place after #chat-message (same as theripper93's dice tray)
     if (element.querySelector(".sogrom-dice-tray")) return;
     const chatMessage = element.querySelector('#chat-message')
-      || document.getElementById('chat-message');
+      || document.querySelector("#chat-message");
     if (!chatMessage) return;
     const tray = createDiceTray();
     const visible = game.settings.get(MODULE_ID, "showDiceTray");
     if (!visible) tray.classList.add("dice-tray-hidden");
-    // Docked mode: chat-message is inside a form, append to form so it's last
-    // Popped out: no form wrapper, use afterend as sibling
-    const form = chatMessage.closest("form");
-    if (form) {
-      form.appendChild(tray);
-    } else {
-      chatMessage.insertAdjacentElement("afterend", tray);
-    }
+    tray.style.flex = "0 0";
+    tray.style.order = "999";
+    chatMessage.after(tray);
     return;
   }
 
