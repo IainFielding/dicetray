@@ -370,3 +370,8 @@
   font-size: 0.65rem;
   padding: 4px 2px;
 }
+
+.sogrom-dice-tray.compact-mode .dice-tray-keep-btn {
+  font-size: 0.65rem;
+  padding: 4px 2px;
+}
