@@ -13,6 +13,8 @@
   "SOGROM_DICETRAY.SettingShowHint": "Set Dice Tray to be visible by default.",
   "SOGROM_DICETRAY.SettingTheme": "Theme",
   "SOGROM_DICETRAY.SettingThemeHint": "Choose the visual theme for the dice tray.",
+  "SOGROM_DICETRAY.SettingCompact": "Compact Mode",
+  "SOGROM_DICETRAY.SettingCompactHint": "Hides the formula display and action buttons. Dice formulas are placed directly in the chat box instead.",
   "SOGROM_DICETRAY.ThemeDarkMode": "Dark Mode",
   "SOGROM_DICETRAY.ThemeLightMode": "Light Mode",
   "SOGROM_DICETRAY.FlavorBase": "Dice Tray Roll",

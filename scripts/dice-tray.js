@@ -1,10 +1,8 @@
 const MODULE_ID = "sogrom-dicetray";
 const DICE_TYPES = [4, 6, 8, 10, 12, 20, 100];
 const MODE_CONFIG = {
-  keephighest:  { suffix: "kh",  flavorKey: "FlavorKeepHighest",  icon: "fa-arrow-up",          labelKey: "KeepHighest" },
   advantage:    { suffix: "adv", flavorKey: "FlavorAdvantage",    icon: "fa-angle-double-up",   labelKey: "Advantage" },
   disadvantage: { suffix: "dis", flavorKey: "FlavorDisadvantage", icon: "fa-angle-double-down", labelKey: "Disadvantage" },
-  keeplowest:   { suffix: "kl",  flavorKey: "FlavorKeepLowest",   icon: "fa-arrow-down",        labelKey: "KeepLowest" },
 };
 
 const THEME_CHOICES = {
@@ -15,20 +13,58 @@ const THEME_CLASSES = Object.keys(THEME_CHOICES);
 
 let dicePool = [];
 let diceTrayMode = "normal";
+let lastDieType = null;
+const keepModifiers = {};
 const trayInstances = new Set();
+
+// Helpers
+
+function forEachTray(callback) {
+  for (const tray of trayInstances) {
+    if (!tray.isConnected) { trayInstances.delete(tray); continue; }
+    callback(tray);
+  }
+}
+
+function updateBadge(btn, count) {
+  let badge = btn.querySelector(".dice-tray-badge");
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.classList.add("dice-tray-badge");
+      btn.appendChild(badge);
+    }
+    badge.textContent = count;
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
+function createKeepButton({ type, icon, labelKey, title }) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.classList.add("dice-tray-btn", "dice-tray-keep-btn");
+  btn.dataset.keep = type;
+  btn.title = title;
+  const count = getKeepCount(type);
+  if (count > 0) btn.classList.add("active");
+  btn.innerHTML = `<i class="fas ${icon}"></i> ${game.i18n.localize("SOGROM_DICETRAY." + labelKey)}`;
+  updateBadge(btn, count);
+  btn.addEventListener("click", () => adjustKeep(type, 1));
+  btn.addEventListener("contextmenu", (e) => { e.preventDefault(); adjustKeep(type, -1); });
+  return btn;
+}
+
+function refreshUI() {
+  updateDieButtons();
+  updateModeButtons();
+  updateKeepButtons();
+  updateFormulaDisplay();
+}
 
 // Settings
 
 Hooks.once("init", () => {
-  game.settings.register(MODULE_ID, "showDiceTray", {
-    name: "SOGROM_DICETRAY.SettingShow",
-    hint: "SOGROM_DICETRAY.SettingShowHint",
-    scope: "client",
-    config: true,
-    type: Boolean,
-    default: true
-  });
-
   game.settings.register(MODULE_ID, "theme", {
     name: "SOGROM_DICETRAY.SettingTheme",
     hint: "SOGROM_DICETRAY.SettingThemeHint",
@@ -39,13 +75,48 @@ Hooks.once("init", () => {
     choices: THEME_CHOICES,
     onChange: (value) => applyTheme(value)
   });
+
+  game.settings.register(MODULE_ID, "showDiceTray", {
+    name: "SOGROM_DICETRAY.SettingShow",
+    hint: "SOGROM_DICETRAY.SettingShowHint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE_ID, "compactMode", {
+    name: "SOGROM_DICETRAY.SettingCompact",
+    hint: "SOGROM_DICETRAY.SettingCompactHint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => location.reload()
+  });
 });
+
+// ProseMirror Chat Helper
+
+function getChatTextarea() {
+  const proseMirror = document.getElementById("chat-message");
+  const editorContent = proseMirror?.querySelector(".editor-content.ProseMirror");
+  if (!editorContent) return proseMirror;
+  return {
+    get value() { return editorContent.innerText.replace(/\n$/, ""); },
+    set value(v) { editorContent.innerText = v; },
+    focus() { editorContent.focus(); },
+  };
+}
 
 // UI Creation
 
 function createDiceTray() {
   const tray = document.createElement("div");
   tray.classList.add("sogrom-dice-tray");
+
+  const compactMode = game.settings.get(MODULE_ID, "compactMode");
+  if (compactMode) tray.classList.add("compact-mode");
 
   const theme = game.settings.get(MODULE_ID, "theme");
   if (theme) tray.classList.add(theme);
@@ -65,24 +136,18 @@ function createDiceTray() {
     btn.classList.add("dice-tray-btn", "dice-tray-die-btn");
     btn.dataset.faces = faces;
     btn.title = `Add a D${faces}`;
-    // Set icon path
-    let iconPath = null;
-    switch (faces) {
-      case 4: iconPath = "modules/sogrom-dicetray/assets/icons/d4-grey.svg"; break;
-      case 6: iconPath = "modules/sogrom-dicetray/assets/icons/d6-grey.svg"; break;
-      case 8: iconPath = "modules/sogrom-dicetray/assets/icons/d8-grey.svg"; break;
-      case 10: iconPath = "modules/sogrom-dicetray/assets/icons/d10-grey.svg"; break;
-      case 12: iconPath = "modules/sogrom-dicetray/assets/icons/d12-grey.svg"; break;
-      case 20: iconPath = "modules/sogrom-dicetray/assets/icons/d20-grey.svg"; break;
-      case 100: iconPath = "modules/sogrom-dicetray/assets/icons/d100-grey.svg"; break; 
-    }
-    if (iconPath) {
-      // Add an <img> with onerror fallback to text
-      btn.innerHTML = `<img src="${iconPath}" alt="D${faces}" class="dice-tray-die-icon" style="width:1.8em;height:1.8em;vertical-align:middle;" onerror="this.style.display='none';this.parentNode.innerHTML='<span class=\'dice-tray-die-fallback\'>D${faces}</span>';" />`;
-    } else {
-      // Fallback for missing icon path
-      btn.innerHTML = `<span class="dice-tray-die-fallback">D${faces}</span>`;
-    }
+    const iconPath = `modules/${MODULE_ID}/assets/icons/d${faces}-grey.svg`;
+    const img = document.createElement("img");
+    img.src = iconPath;
+    img.alt = `D${faces}`;
+    img.classList.add("dice-tray-die-icon");
+    img.addEventListener("error", () => {
+      const fallback = document.createElement("span");
+      fallback.classList.add("dice-tray-die-fallback");
+      fallback.textContent = `D${faces}`;
+      img.replaceWith(fallback);
+    });
+    btn.appendChild(img);
     btn.addEventListener("click", () => addDie(faces));
     btn.addEventListener("contextmenu", (e) => {
       e.preventDefault();
@@ -95,6 +160,9 @@ function createDiceTray() {
   const modeRow = document.createElement("div");
   modeRow.classList.add("dice-tray-mode-row");
 
+  modeRow.appendChild(createKeepButton({ type: "kh", icon: "fa-arrow-up", labelKey: "KeepHighest", title: "Keep Highest (right-click to remove)" }));
+
+  // Advantage / Disadvantage mode buttons
   for (const [id, cfg] of Object.entries(MODE_CONFIG)) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -105,45 +173,73 @@ function createDiceTray() {
     btn.addEventListener("click", () => setRollMode(id));
     modeRow.appendChild(btn);
   }
+
+  modeRow.appendChild(createKeepButton({ type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", title: "Keep Lowest (right-click to remove)" }));
+
   tray.appendChild(modeRow);
 
-  const formulaDisplay = document.createElement("input");
-  formulaDisplay.type = "text";
-  formulaDisplay.classList.add("dice-tray-formula");
-  formulaDisplay.placeholder = game.i18n.localize("SOGROM_DICETRAY.FormulaPlaceholder");
-  formulaDisplay.spellcheck = false;
-  formulaDisplay.autocomplete = "off";
-  formulaDisplay.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      rollDice(e);
-    }
-  });
-  tray.appendChild(formulaDisplay);
+  if (!compactMode) {
+    const formulaDisplay = document.createElement("input");
+    formulaDisplay.type = "text";
+    formulaDisplay.classList.add("dice-tray-formula");
+    formulaDisplay.placeholder = game.i18n.localize("SOGROM_DICETRAY.FormulaPlaceholder");
+    formulaDisplay.spellcheck = false;
+    formulaDisplay.autocomplete = "off";
+    formulaDisplay.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        rollDice(e);
+      }
+    });
+    tray.appendChild(formulaDisplay);
 
-  const actionRow = document.createElement("div");
-  actionRow.classList.add("dice-tray-action-row");
+    const actionRow = document.createElement("div");
+    actionRow.classList.add("dice-tray-action-row");
 
-  const clearBtn = document.createElement("button");
-  clearBtn.type = "button";
-  clearBtn.classList.add("dice-tray-btn", "dice-tray-clear-btn");
-  clearBtn.innerHTML = `<i class="fas fa-times"></i> ${game.i18n.localize("SOGROM_DICETRAY.ClearButton")}`;
-  clearBtn.addEventListener("click", clearPool);
-  actionRow.appendChild(clearBtn);
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.classList.add("dice-tray-btn", "dice-tray-clear-btn");
+    clearBtn.innerHTML = `<i class="fas fa-times"></i> ${game.i18n.localize("SOGROM_DICETRAY.ClearButton")}`;
+    clearBtn.addEventListener("click", clearPool);
+    actionRow.appendChild(clearBtn);
 
-  const rollBtn = document.createElement("button");
-  rollBtn.type = "button";
-  rollBtn.classList.add("dice-tray-btn", "dice-tray-roll-btn");
-  rollBtn.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.RollButton")}`;
-  rollBtn.addEventListener("click", rollDice);
-  actionRow.appendChild(rollBtn);
+    const rollBtn = document.createElement("button");
+    rollBtn.type = "button";
+    rollBtn.classList.add("dice-tray-btn", "dice-tray-roll-btn");
+    rollBtn.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.RollButton")}`;
+    rollBtn.addEventListener("click", rollDice);
+    actionRow.appendChild(rollBtn);
 
-  tray.appendChild(actionRow);
+    tray.appendChild(actionRow);
+  }
   trayInstances.add(tray);
   return tray;
 }
 
 function injectDiceTray(element) {
+  const compactMode = game.settings.get(MODULE_ID, "compactMode");
+
+  if (compactMode) {
+    // In compact mode, place below the chat input
+    if (element.querySelector(".sogrom-dice-tray")) return;
+    const chatMessage = element.querySelector('#chat-message')
+      || document.getElementById('chat-message');
+    if (!chatMessage) return;
+    const tray = createDiceTray();
+    const visible = game.settings.get(MODULE_ID, "showDiceTray");
+    if (!visible) tray.classList.add("dice-tray-hidden");
+    // Docked mode: chat-message is inside a form, append to form so it's last
+    // Popped out: no form wrapper, use afterend as sibling
+    const form = chatMessage.closest("form");
+    if (form) {
+      form.appendChild(tray);
+    } else {
+      chatMessage.insertAdjacentElement("afterend", tray);
+    }
+    return;
+  }
+
+  // Normal mode: inject at top of input area
   if (element.querySelector(".sogrom-dice-tray")) return;
 
   const tray = createDiceTray();
@@ -185,17 +281,15 @@ function injectToggleButton(element) {
 
     const visible = game.settings.get(MODULE_ID, "showDiceTray");
 
-
     const toggleBtn = document.createElement("button");
     toggleBtn.type = "button";
     toggleBtn.classList.add("sogrom-dice-tray-toggle");
-    toggleBtn.style.marginLeft = "10px";
     const currentTheme = game.settings.get(MODULE_ID, "theme");
     if (currentTheme) toggleBtn.classList.add(currentTheme);
     toggleBtn.dataset.action = "toggleDiceTray";
     toggleBtn.dataset.tooltip = game.i18n.localize("SOGROM_DICETRAY.ToggleTray");
     toggleBtn.setAttribute("aria-label", game.i18n.localize("SOGROM_DICETRAY.ToggleTray"));
-    toggleBtn.innerHTML = `<i class=\"fas fa-dice-d20\"></i>`;
+    toggleBtn.innerHTML = `<i class="fas fa-dice-d20"></i>`;
     if (!visible) toggleBtn.classList.add("toggled-off");
     if (visible) toggleBtn.classList.add("tray-visible");
 
@@ -205,10 +299,7 @@ function injectToggleButton(element) {
       const current = game.settings.get(MODULE_ID, "showDiceTray");
       await game.settings.set(MODULE_ID, "showDiceTray", !current);
 
-      for (const tray of trayInstances) {
-        if (!tray.isConnected) { trayInstances.delete(tray); continue; }
-        tray.classList.toggle("dice-tray-hidden", current);
-      }
+      forEachTray(tray => tray.classList.toggle("dice-tray-hidden", current));
       document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(btn => {
         btn.classList.toggle("toggled-off", current);
         btn.classList.toggle("tray-visible", !current);
@@ -234,16 +325,15 @@ function injectToggleButton(element) {
 
 function addDie(faces) {
   dicePool.push(faces);
-  updateDieButtons();
-  updateFormulaDisplay();
+  lastDieType = faces;
+  refreshUI();
 }
 
 function removeDie(faces) {
   const idx = dicePool.lastIndexOf(faces);
   if (idx !== -1) {
     dicePool.splice(idx, 1);
-    updateDieButtons();
-    updateFormulaDisplay();
+    refreshUI();
   }
 }
 
@@ -255,63 +345,107 @@ function getDiceGroups() {
 
 function updateDieButtons() {
   const groups = getDiceGroups();
-  for (const tray of trayInstances) {
-    if (!tray.isConnected) { trayInstances.delete(tray); continue; }
+  forEachTray(tray => {
     for (const btn of tray.querySelectorAll(".dice-tray-die-btn")) {
       const faces = Number(btn.dataset.faces);
       const count = groups[faces] || 0;
       btn.classList.toggle("active", count > 0);
-      let badge = btn.querySelector(".dice-tray-badge");
-      if (count > 0) {
-        if (!badge) {
-          badge = document.createElement("span");
-          badge.classList.add("dice-tray-badge");
-          btn.appendChild(badge);
-        }
-        badge.textContent = count;
-      } else if (badge) {
-        badge.remove();
-      }
+      updateBadge(btn, count);
     }
-  }
+  });
 }
 
 function updateModeButtons() {
-  for (const tray of trayInstances) {
-    if (!tray.isConnected) { trayInstances.delete(tray); continue; }
+  forEachTray(tray => {
     for (const btn of tray.querySelectorAll(".dice-tray-mode-btn")) {
       btn.classList.toggle("active", btn.dataset.mode === diceTrayMode);
     }
+  });
+}
+
+function getKeepCount(type) {
+  if (!lastDieType) return 0;
+  const mod = keepModifiers[lastDieType];
+  if (!mod || mod.type !== type) return 0;
+  return mod.count;
+}
+
+function adjustKeep(type, delta) {
+  if (dicePool.length === 0 || !lastDieType) return;
+  diceTrayMode = "normal";
+  const existing = keepModifiers[lastDieType];
+  if (existing && existing.type !== type) {
+    // Switching from kh to kl or vice versa on this die type
+    delete keepModifiers[lastDieType];
   }
+  const current = (existing && existing.type === type) ? existing.count : 0;
+  const newCount = Math.max(0, current + delta);
+  if (newCount > 0) {
+    keepModifiers[lastDieType] = { type, count: newCount };
+  } else {
+    delete keepModifiers[lastDieType];
+  }
+  refreshUI();
+}
+
+function updateKeepButtons() {
+  forEachTray(tray => {
+    for (const btn of tray.querySelectorAll(".dice-tray-keep-btn")) {
+      const type = btn.dataset.keep;
+      const count = getKeepCount(type);
+      btn.classList.toggle("active", count > 0);
+      updateBadge(btn, count);
+    }
+  });
 }
 
 function setRollMode(mode) {
   diceTrayMode = (diceTrayMode === mode) ? "normal" : mode;
-  updateModeButtons();
-  updateFormulaDisplay();
+  refreshUI();
 }
 
 function buildFormula() {
   if (dicePool.length === 0) return "";
   const groups = getDiceGroups();
-  const suffix = MODE_CONFIG[diceTrayMode]?.suffix ?? "";
+  const modeSuffix = MODE_CONFIG[diceTrayMode]?.suffix ?? "";
   const sortedFaces = Object.keys(groups).map(Number).sort((a, b) => a - b);
-  return sortedFaces.map(f => `${groups[f]}d${f}${suffix}`).join(" + ");
+  return sortedFaces.map(f => {
+    let suffix = "";
+    const mod = keepModifiers[f];
+    if (mod && mod.count > 0) {
+      suffix += mod.count === 1 ? mod.type : `${mod.type}${mod.count}`;
+    }
+    suffix += modeSuffix;
+    return `${groups[f]}d${f}${suffix}`;
+  }).join(" + ");
 }
 
 function updateFormulaDisplay() {
   const formula = buildFormula();
-  for (const tray of trayInstances) {
-    if (!tray.isConnected) { trayInstances.delete(tray); continue; }
-    const el = tray.querySelector(".dice-tray-formula");
-    if (!el) continue;
-    if (dicePool.length === 0) {
-      el.value = "";
-      el.classList.remove("has-dice");
-    } else {
-      el.value = formula;
-      el.classList.add("has-dice");
+  const compactMode = game.settings.get(MODULE_ID, "compactMode");
+
+  if (compactMode) {
+    // In compact mode, write the formula into the ProseMirror chat box
+    const chat = getChatTextarea();
+    if (chat) {
+      if (dicePool.length === 0) {
+        chat.value = "";
+      } else {
+        chat.value = "/r " + formula;
+      }
     }
+  } else {
+    forEachTray(tray => {
+      const el = tray.querySelector(".dice-tray-formula");
+      if (!el) return;
+      if (dicePool.length === 0) {
+        el.value = "";
+        el.classList.remove("has-dice");
+      } else {
+        el.value = formula;
+        el.classList.add("has-dice");
+      }
+    });
   }
 }
 
@@ -328,6 +462,10 @@ async function rollDice(e) {
   const modeInfo = MODE_CONFIG[diceTrayMode];
   if (modeInfo) {
     flavor += " (" + game.i18n.localize("SOGROM_DICETRAY." + modeInfo.flavorKey) + ")";
+  } else if (Object.values(keepModifiers).some(m => m.type === "kh" && m.count > 0)) {
+    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorKeepHighest") + ")";
+  } else if (Object.values(keepModifiers).some(m => m.type === "kl" && m.count > 0)) {
+    flavor += " (" + game.i18n.localize("SOGROM_DICETRAY.FlavorKeepLowest") + ")";
   }
 
   try {
@@ -349,17 +487,16 @@ async function rollDice(e) {
 function clearPool() {
   dicePool = [];
   diceTrayMode = "normal";
-  updateDieButtons();
-  updateModeButtons();
-  updateFormulaDisplay();
+  for (const key of Object.keys(keepModifiers)) delete keepModifiers[key];
+  lastDieType = null;
+  refreshUI();
 }
 
 function applyTheme(theme) {
-  for (const tray of trayInstances) {
-    if (!tray.isConnected) { trayInstances.delete(tray); continue; }
+  forEachTray(tray => {
     tray.classList.remove(...THEME_CLASSES);
     if (theme) tray.classList.add(theme);
-  }
+  });
   document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(el => {
     el.classList.remove(...THEME_CLASSES);
     if (theme) el.classList.add(theme);
@@ -371,6 +508,13 @@ function applyTheme(theme) {
 Hooks.on("renderChatLog", (app, element) => {
   injectDiceTray(element);
   injectToggleButton(element);
+});
+
+// Reset dice pool when a chat message is submitted (compact mode uses the chat box)
+Hooks.on("chatMessage", () => {
+  if (game.settings.get(MODULE_ID, "compactMode")) {
+    clearPool();
+  }
 });
 
 
