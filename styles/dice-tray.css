@@ -368,8 +368,9 @@
 }
 
 .sogrom-dice-tray.compact-mode .dice-tray-compact-roll-btn {
-  font-size: 0.75rem;
-  padding: 4px 8px;
+  font-size: 0.65rem;
+  padding: 4px 2px;
+  align-self: stretch;
   background: var(--color-warm-2, #ff6400);
   color: #fff;
   border-color: var(--color-warm-1, #cc5000);
