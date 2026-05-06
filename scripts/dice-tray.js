@@ -14,6 +14,7 @@ const THEME_CLASSES = Object.keys(THEME_CHOICES);
 let dicePool = [];
 let diceTrayMode = "normal";
 let lastDieType = null;
+let rollModifier = 0;
 const keepModifiers = {};
 const trayInstances = new Set();
 
@@ -45,6 +46,9 @@ function createKeepButton({ type, icon, labelKey, tooltipKey }) {
   btn.type = "button";
   btn.classList.add("dice-tray-btn", "dice-tray-keep-btn");
   btn.dataset.keep = type;
+  btn.dataset.labelKey = labelKey;
+  btn.dataset.icon = icon;
+  btn.dataset.tooltipKey = tooltipKey;
   btn.title = game.i18n.localize("SOGROM_DICETRAY." + tooltipKey);
   const count = getKeepCount(type);
   if (count > 0) btn.classList.add("active");
@@ -84,16 +88,6 @@ Hooks.once("init", () => {
     type: Boolean,
     default: true
   });
-
-  game.settings.register(MODULE_ID, "compactMode", {
-    name: "SOGROM_DICETRAY.SettingCompact",
-    hint: "SOGROM_DICETRAY.SettingCompactHint",
-    scope: "client",
-    config: true,
-    type: Boolean,
-    default: true,
-    onChange: () => location.reload()
-  });
 });
 
 // ProseMirror Chat Helper
@@ -114,9 +108,6 @@ function getChatTextarea() {
 function createDiceTray() {
   const tray = document.createElement("div");
   tray.classList.add("sogrom-dice-tray");
-
-  const compactMode = game.settings.get(MODULE_ID, "compactMode");
-  if (compactMode) tray.classList.add("compact-mode");
 
   const theme = game.settings.get(MODULE_ID, "theme");
   if (theme) tray.classList.add(theme);
@@ -157,12 +148,42 @@ function createDiceTray() {
   }
   tray.appendChild(diceRow);
 
-  const modeRow = document.createElement("div");
-  modeRow.classList.add("dice-tray-mode-row");
+  // Controls row: stacked pairs for modifier, keep, mode + roll button
+  const controlsRow = document.createElement("div");
+  controlsRow.classList.add("dice-tray-controls-row");
 
-  modeRow.appendChild(createKeepButton({ type: "kh", icon: "fa-arrow-up", labelKey: "KeepHighest", tooltipKey: "TooltipKeepHighest" }));
+  // Modifier pair: + / -
+  const modPair = document.createElement("div");
+  modPair.classList.add("dice-tray-stacked-pair");
 
-  // Advantage / Disadvantage mode buttons
+  const plusBtn = document.createElement("button");
+  plusBtn.type = "button";
+  plusBtn.classList.add("dice-tray-btn", "dice-tray-modifier-btn");
+  plusBtn.title = game.i18n.localize("SOGROM_DICETRAY.TooltipModifierPlus");
+  plusBtn.innerHTML = `<i class="fas fa-plus"></i>`;
+  plusBtn.addEventListener("click", () => adjustModifier(1));
+  modPair.appendChild(plusBtn);
+
+  const minusBtn = document.createElement("button");
+  minusBtn.type = "button";
+  minusBtn.classList.add("dice-tray-btn", "dice-tray-modifier-btn");
+  minusBtn.title = game.i18n.localize("SOGROM_DICETRAY.TooltipModifierMinus");
+  minusBtn.innerHTML = `<i class="fas fa-minus"></i>`;
+  minusBtn.addEventListener("click", () => adjustModifier(-1));
+  modPair.appendChild(minusBtn);
+
+  controlsRow.appendChild(modPair);
+
+  // Keep pair: KH / KL
+  const keepPair = document.createElement("div");
+  keepPair.classList.add("dice-tray-stacked-pair");
+  keepPair.appendChild(createKeepButton({ type: "kh", icon: "fa-arrow-up", labelKey: "KeepHighest", tooltipKey: "TooltipKeepHighest" }));
+  keepPair.appendChild(createKeepButton({ type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", tooltipKey: "TooltipKeepLowest" }));
+  controlsRow.appendChild(keepPair);
+
+  // Mode pair: ADV / DIS
+  const modePair = document.createElement("div");
+  modePair.classList.add("dice-tray-stacked-pair");
   for (const [id, cfg] of Object.entries(MODE_CONFIG)) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -172,106 +193,38 @@ function createDiceTray() {
     if (id === diceTrayMode) btn.classList.add("active");
     btn.innerHTML = `<i class="fas ${cfg.icon}"></i> ${game.i18n.localize("SOGROM_DICETRAY." + cfg.labelKey)}`;
     btn.addEventListener("click", () => setRollMode(id));
-    modeRow.appendChild(btn);
+    modePair.appendChild(btn);
   }
+  controlsRow.appendChild(modePair);
 
-  modeRow.appendChild(createKeepButton({ type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", tooltipKey: "TooltipKeepLowest" }));
+  // Roll button (full height, same size as dice button)
+  const controlsRollBtn = document.createElement("button");
+  controlsRollBtn.type = "button";
+  controlsRollBtn.classList.add("dice-tray-btn", "dice-tray-controls-roll-btn");
+  controlsRollBtn.title = game.i18n.localize("SOGROM_DICETRAY.ButtonRoll");
+  controlsRollBtn.innerHTML = game.i18n.localize("SOGROM_DICETRAY.ButtonRoll");
+  controlsRollBtn.addEventListener("click", (e) => rollDice(e));
+  controlsRow.appendChild(controlsRollBtn);
 
-  // Compact mode: add a roll button inline with the mode row
-  // (replaces the separate formula + action row used in normal mode)
-  if (compactMode) {
-    const compactRollBtn = document.createElement("button");
-    compactRollBtn.type = "button";
-    compactRollBtn.classList.add("dice-tray-btn", "dice-tray-compact-roll-btn");
-    compactRollBtn.title = game.i18n.localize("SOGROM_DICETRAY.ButtonRoll");
-    compactRollBtn.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.ButtonRoll")}`;
-    compactRollBtn.addEventListener("click", (e) => {
-      rollDice(e);
-    });
-    modeRow.appendChild(compactRollBtn);
-  }
+  tray.appendChild(controlsRow);
 
-  tray.appendChild(modeRow);
-
-  if (!compactMode) {
-    const formulaDisplay = document.createElement("input");
-    formulaDisplay.type = "text";
-    formulaDisplay.classList.add("dice-tray-formula");
-    formulaDisplay.placeholder = game.i18n.localize("SOGROM_DICETRAY.FormulaPlaceholder");
-    formulaDisplay.spellcheck = false;
-    formulaDisplay.autocomplete = "off";
-    formulaDisplay.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        rollDice(e);
-      }
-    });
-    tray.appendChild(formulaDisplay);
-
-    const actionRow = document.createElement("div");
-    actionRow.classList.add("dice-tray-action-row");
-
-    const clearBtn = document.createElement("button");
-    clearBtn.type = "button";
-    clearBtn.classList.add("dice-tray-btn", "dice-tray-clear-btn");
-    clearBtn.innerHTML = `<i class="fas fa-times"></i> ${game.i18n.localize("SOGROM_DICETRAY.ButtonClear")}`;
-    clearBtn.addEventListener("click", clearPool);
-    actionRow.appendChild(clearBtn);
-
-    const rollBtn = document.createElement("button");
-    rollBtn.type = "button";
-    rollBtn.classList.add("dice-tray-btn", "dice-tray-roll-btn");
-    rollBtn.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.ButtonRoll")}`;
-    rollBtn.addEventListener("click", rollDice);
-    actionRow.appendChild(rollBtn);
-
-    tray.appendChild(actionRow);
-  }
   trayInstances.add(tray);
   return tray;
 }
 
 function injectDiceTray(element) {
-  const compactMode = game.settings.get(MODULE_ID, "compactMode");
-
-  if (compactMode) {
-    // In compact mode, place after #chat-message (same as theripper93's dice tray)
-    const chatMessage = element.querySelector('#chat-message')
-      || document.querySelector("#chat-message");
-    if (!chatMessage) return;
-    // Remove any existing tray (may have lost event listeners after sidebar collapse)
-    chatMessage.parentElement?.querySelector(".sogrom-dice-tray")?.remove();
-    const tray = createDiceTray();
-    const visible = game.settings.get(MODULE_ID, "showDiceTray");
-    if (!visible) tray.classList.add("dice-tray-hidden");
-    tray.style.flex = "0 0";
-    tray.style.pointerEvents = "all";
-    tray.style.order = "999";
-    chatMessage.after(tray);
-    return;
-  }
-
-  // Normal mode: inject at top of input area
-  if (element.querySelector(".sogrom-dice-tray")) return;
-
+  const chatMessage = element.querySelector('#chat-message')
+    || document.querySelector("#chat-message");
+  if (!chatMessage) return;
+  // Remove any existing tray (may have lost event listeners after sidebar collapse)
+  chatMessage.parentElement?.querySelector(".sogrom-dice-tray")?.remove();
   const tray = createDiceTray();
-
   const visible = game.settings.get(MODULE_ID, "showDiceTray");
   if (!visible) tray.classList.add("dice-tray-hidden");
-
-  const inputPart = element.querySelector('[data-application-part="input"]');
-  if (inputPart) {
-    inputPart.insertBefore(tray, inputPart.firstChild);
-    return;
-  }
-
-  const form = element.querySelector("form");
-  if (form) {
-    form.parentElement.insertBefore(tray, form);
-    return;
-  }
-
-  element.appendChild(tray);
+  tray.style.flex = "0 0";
+  tray.style.pointerEvents = "all";
+  tray.style.order = "999";
+  chatMessage.after(tray);
 }
 
 function injectToggleButton(element) {
@@ -342,7 +295,10 @@ const MAX_DICE_PER_TYPE = 99;
 
 function addDie(faces) {
   const count = dicePool.filter(f => f === faces).length;
-  if (count >= MAX_DICE_PER_TYPE) return;
+  if (count >= MAX_DICE_PER_TYPE) {
+    ui.notifications.warn(game.i18n.format("SOGROM_DICETRAY.MaxDiceReached", { max: MAX_DICE_PER_TYPE, die: `D${faces}` }));
+    return;
+  }
   dicePool.push(faces);
   lastDieType = faces;
   refreshUI();
@@ -370,6 +326,20 @@ function updateDieButtons() {
       const count = groups[faces] || 0;
       btn.classList.toggle("active", count > 0);
       updateBadge(btn, count);
+      // Show keep modifier indicator on the die button
+      const mod = keepModifiers[faces];
+      let indicator = btn.querySelector(".dice-tray-keep-indicator");
+      if (mod && count > 0) {
+        if (!indicator) {
+          indicator = document.createElement("span");
+          indicator.classList.add("dice-tray-keep-indicator");
+          btn.appendChild(indicator);
+        }
+        indicator.textContent = mod.type.toUpperCase();
+        indicator.dataset.type = mod.type;
+      } else if (indicator) {
+        indicator.remove();
+      }
     }
   });
 }
@@ -413,9 +383,28 @@ function updateKeepButtons() {
       const type = btn.dataset.keep;
       const count = getKeepCount(type);
       btn.classList.toggle("active", count > 0);
+      // Update label and tooltip to show target die type
+      const icon = btn.dataset.icon;
+      const labelKey = btn.dataset.labelKey;
+      const baseLabel = game.i18n.localize("SOGROM_DICETRAY." + labelKey);
+      if (count > 0 && lastDieType) {
+        btn.innerHTML = `<i class="fas ${icon}"></i> ${baseLabel} D${lastDieType}`;
+        const tooltipForKey = type === "kh" ? "TooltipKeepHighestFor" : "TooltipKeepLowestFor";
+        btn.title = game.i18n.format("SOGROM_DICETRAY." + tooltipForKey, { die: `D${lastDieType}` });
+      } else {
+        btn.innerHTML = `<i class="fas ${icon}"></i> ${baseLabel}`;
+        btn.title = game.i18n.localize("SOGROM_DICETRAY." + btn.dataset.tooltipKey);
+      }
       updateBadge(btn, count);
     }
   });
+}
+
+const MAX_MODIFIER = 99;
+
+function adjustModifier(delta) {
+  rollModifier = Math.max(-MAX_MODIFIER, Math.min(MAX_MODIFIER, rollModifier + delta));
+  refreshUI();
 }
 
 function setRollMode(mode) {
@@ -428,7 +417,7 @@ function buildFormula() {
   const groups = getDiceGroups();
   const modeSuffix = MODE_CONFIG[diceTrayMode]?.suffix ?? "";
   const sortedFaces = Object.keys(groups).map(Number).sort((a, b) => a - b);
-  return sortedFaces.map(f => {
+  let formula = sortedFaces.map(f => {
     let suffix = "";
     const mod = keepModifiers[f];
     if (mod && mod.count > 0) {
@@ -437,41 +426,28 @@ function buildFormula() {
     suffix += modeSuffix;
     return `${groups[f]}d${f}${suffix}`;
   }).join(" + ");
+  if (rollModifier > 0) {
+    formula += " + " + rollModifier;
+  } else if (rollModifier < 0) {
+    formula += " - " + Math.abs(rollModifier);
+  }
+  return formula;
 }
 
 function updateFormulaDisplay() {
   const formula = buildFormula();
-  const compactMode = game.settings.get(MODULE_ID, "compactMode");
-
-  if (compactMode) {
-    // In compact mode, write the formula into the ProseMirror chat box
-    const chat = getChatTextarea();
-    if (chat) {
-      if (dicePool.length === 0) {
-        chat.value = "";
-      } else {
-        chat.value = "/r " + formula;
-      }
+  const chat = getChatTextarea();
+  if (chat) {
+    if (dicePool.length === 0) {
+      chat.value = "";
+    } else {
+      chat.value = "/r " + formula;
     }
-  } else {
-    forEachTray(tray => {
-      const el = tray.querySelector(".dice-tray-formula");
-      if (!el) return;
-      if (dicePool.length === 0) {
-        el.value = "";
-        el.classList.remove("has-dice");
-      } else {
-        el.value = formula;
-        el.classList.add("has-dice");
-      }
-    });
   }
 }
 
 async function rollDice(e) {
-  const tray = e?.target?.closest(".sogrom-dice-tray");
-  const el = tray?.querySelector(".dice-tray-formula") ?? document.querySelector(".dice-tray-formula");
-  const formula = el ? el.value.trim() : buildFormula();
+  const formula = buildFormula();
   if (!formula) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
     return;
@@ -506,6 +482,7 @@ async function rollDice(e) {
 function clearPool() {
   dicePool = [];
   diceTrayMode = "normal";
+  rollModifier = 0;
   for (const key of Object.keys(keepModifiers)) delete keepModifiers[key];
   lastDieType = null;
   refreshUI();
@@ -530,9 +507,8 @@ Hooks.on("renderChatLog", (app, element) => {
 });
 
 Hooks.on("collapseSidebar", () => {
-  if (!game.settings.get(MODULE_ID, "compactMode")) return;
-  // Remove all compact trays and toggle buttons (collapsed/expanded use different DOM contexts)
-  document.querySelectorAll(".sogrom-dice-tray.compact-mode").forEach(el => el.remove());
+  // Remove all trays and toggle buttons (collapsed/expanded use different DOM contexts)
+  document.querySelectorAll(".sogrom-dice-tray").forEach(el => el.remove());
   document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(el => el.remove());
   const element = ui.chat?.element;
   if (element) {
@@ -542,16 +518,13 @@ Hooks.on("collapseSidebar", () => {
 });
 
 Hooks.on("changeSidebarTab", () => {
-  if (!game.settings.get(MODULE_ID, "compactMode")) return;
   const element = ui.chat?.element;
   if (element) injectDiceTray(element);
 });
 
-// Reset dice pool when a chat message is submitted (compact mode uses the chat box)
+// Reset dice pool when a chat message is submitted
 Hooks.on("chatMessage", () => {
-  if (game.settings.get(MODULE_ID, "compactMode")) {
-    clearPool();
-  }
+  clearPool();
 });
 
 
