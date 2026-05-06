@@ -40,12 +40,12 @@ function updateBadge(btn, count) {
   }
 }
 
-function createKeepButton({ type, icon, labelKey, title }) {
+function createKeepButton({ type, icon, labelKey, tooltipKey }) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.classList.add("dice-tray-btn", "dice-tray-keep-btn");
   btn.dataset.keep = type;
-  btn.title = title;
+  btn.title = game.i18n.localize("SOGROM_DICETRAY." + tooltipKey);
   const count = getKeepCount(type);
   if (count > 0) btn.classList.add("active");
   btn.innerHTML = `<i class="fas ${icon}"></i> ${game.i18n.localize("SOGROM_DICETRAY." + labelKey)}`;
@@ -135,7 +135,7 @@ function createDiceTray() {
     btn.type = "button";
     btn.classList.add("dice-tray-btn", "dice-tray-die-btn");
     btn.dataset.faces = faces;
-    btn.title = `Add a D${faces}`;
+    btn.title = game.i18n.format("SOGROM_DICETRAY.TooltipAddDie", { die: `D${faces}` });
     const iconPath = `modules/${MODULE_ID}/assets/icons/d${faces}-grey.svg`;
     const img = document.createElement("img");
     img.src = iconPath;
@@ -160,7 +160,7 @@ function createDiceTray() {
   const modeRow = document.createElement("div");
   modeRow.classList.add("dice-tray-mode-row");
 
-  modeRow.appendChild(createKeepButton({ type: "kh", icon: "fa-arrow-up", labelKey: "KeepHighest", title: "Keep Highest" }));
+  modeRow.appendChild(createKeepButton({ type: "kh", icon: "fa-arrow-up", labelKey: "KeepHighest", tooltipKey: "TooltipKeepHighest" }));
 
   // Advantage / Disadvantage mode buttons
   for (const [id, cfg] of Object.entries(MODE_CONFIG)) {
@@ -175,7 +175,7 @@ function createDiceTray() {
     modeRow.appendChild(btn);
   }
 
-  modeRow.appendChild(createKeepButton({ type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", title: "Keep Lowest" }));
+  modeRow.appendChild(createKeepButton({ type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", tooltipKey: "TooltipKeepLowest" }));
 
   // Compact mode: add a roll button inline with the mode row
   // (replaces the separate formula + action row used in normal mode)
@@ -338,7 +338,11 @@ function injectToggleButton(element) {
 
 // State & Logic
 
+const MAX_DICE_PER_TYPE = 99;
+
 function addDie(faces) {
+  const count = dicePool.filter(f => f === faces).length;
+  if (count >= MAX_DICE_PER_TYPE) return;
   dicePool.push(faces);
   lastDieType = faces;
   refreshUI();
