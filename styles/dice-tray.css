@@ -363,7 +363,21 @@
 }
 
 .sogrom-dice-tray.compact-mode .dice-tray-mode-row {
+  grid-template-columns: repeat(4, 1fr) auto;
   gap: 3px;
+}
+
+.sogrom-dice-tray.compact-mode .dice-tray-compact-roll-btn {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  background: var(--color-warm-2, #ff6400);
+  color: #fff;
+  border-color: var(--color-warm-1, #cc5000);
+}
+
+.sogrom-dice-tray.compact-mode .dice-tray-compact-roll-btn:hover {
+  background: var(--color-warm-1, #cc5000);
+  border-color: var(--color-warm-1, #cc5000);
 }
 
 .sogrom-dice-tray.compact-mode .dice-tray-mode-btn {

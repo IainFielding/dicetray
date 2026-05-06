@@ -176,6 +176,18 @@ function createDiceTray() {
 
   modeRow.appendChild(createKeepButton({ type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", title: "Keep Lowest (right-click to remove)" }));
 
+  if (compactMode) {
+    const compactRollBtn = document.createElement("button");
+    compactRollBtn.type = "button";
+    compactRollBtn.classList.add("dice-tray-btn", "dice-tray-compact-roll-btn");
+    compactRollBtn.title = game.i18n.localize("SOGROM_DICETRAY.RollButton");
+    compactRollBtn.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.RollButton")}`;
+    compactRollBtn.addEventListener("click", (e) => {
+      rollDice(e);
+    });
+    modeRow.appendChild(compactRollBtn);
+  }
+
   tray.appendChild(modeRow);
 
   if (!compactMode) {
