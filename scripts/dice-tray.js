@@ -176,6 +176,8 @@ function createDiceTray() {
 
   modeRow.appendChild(createKeepButton({ type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", title: "Keep Lowest (right-click to remove)" }));
 
+  // Compact mode: add a roll button inline with the mode row
+  // (replaces the separate formula + action row used in normal mode)
   if (compactMode) {
     const compactRollBtn = document.createElement("button");
     compactRollBtn.type = "button";

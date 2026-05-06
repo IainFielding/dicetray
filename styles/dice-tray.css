@@ -362,11 +362,13 @@
   padding: 5px 3px;
 }
 
+/* 5 columns: KH, ADV, DIS, KL, Roll */
 .sogrom-dice-tray.compact-mode .dice-tray-mode-row {
   grid-template-columns: repeat(5, 1fr);
   gap: 3px;
 }
 
+/* Compact roll button — styled to match mode/keep buttons */
 .sogrom-dice-tray.compact-mode .dice-tray-compact-roll-btn {
   font-size: 0.65rem;
   padding: 2px 2px;
