@@ -82,7 +82,10 @@ jobs:
       # "version" key required for a valid module manifest.
       - name: Extract Version From Tag
         id: get_version
-        uses: battila7/get-version-action@v2
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "version-without-v=$VERSION" >> "$GITHUB_OUTPUT"
 
 
       # Modify "module.json" with values specific to the release.
@@ -93,7 +96,7 @@ jobs:
       # commited to the repository, and only exist in the action's filesystem.
       - name: Modify Module Manifest With Release-Specific Values
         id: sub_manifest_link_version
-        uses: cschleiden/replace-tokens@v1
+        uses: cschleiden/replace-tokens@v1.2
         with:
           files: 'module.json'
         env:
@@ -101,6 +104,12 @@ jobs:
           URL: ${{ env.project_url }}
           MANIFEST: ${{ env.latest_manifest_url }}
           DOWNLOAD: ${{ env.release_module_url }}
+
+
+      # Validate that module.json is still valid JSON after token replacement.
+      # Catches syntax errors before they reach users.
+      - name: Validate Module Manifest
+        run: jq empty module.json
 
 
       # Create a "module.zip" archive containing all the module's required files.
@@ -119,11 +128,8 @@ jobs:
             module.json                          \
             README.md                            \
             LICENSE                              \
-            templates                            \
             scripts/                             \
             styles/                              \
-            packs/                               \
-            language/                            \
             lang/                                \
             assets/
           # Don't forget to add a backslash at the end of the line for any
