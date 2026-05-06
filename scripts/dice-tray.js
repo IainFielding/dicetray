@@ -448,7 +448,18 @@ function updateFormulaDisplay() {
 }
 
 async function rollDice(e) {
-  const formula = buildFormula();
+  let formula = buildFormula();
+
+  // Respect any manual edits the user made in the chat bar
+  const chat = getChatTextarea();
+  if (chat) {
+    const chatValue = chat.value.trim();
+    const rollMatch = chatValue.match(/^\/r(?:oll)?\s+(.+)$/i);
+    if (rollMatch) {
+      formula = rollMatch[1].trim();
+    }
+  }
+
   if (!formula) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
     return;
