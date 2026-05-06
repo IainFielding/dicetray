@@ -1,7 +1,7 @@
 {
   "SOGROM_DICETRAY.Title": "Dice Tray",
-  "SOGROM_DICETRAY.RollButton": "Roll",
-  "SOGROM_DICETRAY.ClearButton": "Clear",
+  "SOGROM_DICETRAY.ButtonRoll": "Roll",
+  "SOGROM_DICETRAY.ButtonClear": "Clear",
   "SOGROM_DICETRAY.KeepHighest": "KH",
   "SOGROM_DICETRAY.Advantage": "ADV",
   "SOGROM_DICETRAY.TooltipAdvantage": "Advantage",

@@ -183,8 +183,8 @@ function createDiceTray() {
     const compactRollBtn = document.createElement("button");
     compactRollBtn.type = "button";
     compactRollBtn.classList.add("dice-tray-btn", "dice-tray-compact-roll-btn");
-    compactRollBtn.title = game.i18n.localize("SOGROM_DICETRAY.RollButton");
-    compactRollBtn.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.RollButton")}`;
+    compactRollBtn.title = game.i18n.localize("SOGROM_DICETRAY.ButtonRoll");
+    compactRollBtn.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.ButtonRoll")}`;
     compactRollBtn.addEventListener("click", (e) => {
       rollDice(e);
     });
@@ -214,14 +214,14 @@ function createDiceTray() {
     const clearBtn = document.createElement("button");
     clearBtn.type = "button";
     clearBtn.classList.add("dice-tray-btn", "dice-tray-clear-btn");
-    clearBtn.innerHTML = `<i class="fas fa-times"></i> ${game.i18n.localize("SOGROM_DICETRAY.ClearButton")}`;
+    clearBtn.innerHTML = `<i class="fas fa-times"></i> ${game.i18n.localize("SOGROM_DICETRAY.ButtonClear")}`;
     clearBtn.addEventListener("click", clearPool);
     actionRow.appendChild(clearBtn);
 
     const rollBtn = document.createElement("button");
     rollBtn.type = "button";
     rollBtn.classList.add("dice-tray-btn", "dice-tray-roll-btn");
-    rollBtn.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.RollButton")}`;
+    rollBtn.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.ButtonRoll")}`;
     rollBtn.addEventListener("click", rollDice);
     actionRow.appendChild(rollBtn);
 
