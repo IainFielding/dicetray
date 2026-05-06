@@ -1,8 +1,8 @@
 const MODULE_ID = "sogrom-dicetray";
 const DICE_TYPES = [4, 6, 8, 10, 12, 20, 100];
 const MODE_CONFIG = {
-  advantage:    { suffix: "adv", flavorKey: "FlavorAdvantage",    icon: "fa-angle-double-up",   labelKey: "Advantage" },
-  disadvantage: { suffix: "dis", flavorKey: "FlavorDisadvantage", icon: "fa-angle-double-down", labelKey: "Disadvantage" },
+  advantage:    { suffix: "adv", flavorKey: "FlavorAdvantage",    icon: "fa-angle-double-up",   labelKey: "Advantage",    tooltipKey: "TooltipAdvantage" },
+  disadvantage: { suffix: "dis", flavorKey: "FlavorDisadvantage", icon: "fa-angle-double-down", labelKey: "Disadvantage", tooltipKey: "TooltipDisadvantage" },
 };
 
 const THEME_CHOICES = {
@@ -160,7 +160,7 @@ function createDiceTray() {
   const modeRow = document.createElement("div");
   modeRow.classList.add("dice-tray-mode-row");
 
-  modeRow.appendChild(createKeepButton({ type: "kh", icon: "fa-arrow-up", labelKey: "KeepHighest", title: "Keep Highest (right-click to remove)" }));
+  modeRow.appendChild(createKeepButton({ type: "kh", icon: "fa-arrow-up", labelKey: "KeepHighest", title: "Keep Highest" }));
 
   // Advantage / Disadvantage mode buttons
   for (const [id, cfg] of Object.entries(MODE_CONFIG)) {
@@ -168,13 +168,14 @@ function createDiceTray() {
     btn.type = "button";
     btn.classList.add("dice-tray-btn", "dice-tray-mode-btn");
     btn.dataset.mode = id;
+    btn.title = game.i18n.localize("SOGROM_DICETRAY." + cfg.tooltipKey);
     if (id === diceTrayMode) btn.classList.add("active");
     btn.innerHTML = `<i class="fas ${cfg.icon}"></i> ${game.i18n.localize("SOGROM_DICETRAY." + cfg.labelKey)}`;
     btn.addEventListener("click", () => setRollMode(id));
     modeRow.appendChild(btn);
   }
 
-  modeRow.appendChild(createKeepButton({ type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", title: "Keep Lowest (right-click to remove)" }));
+  modeRow.appendChild(createKeepButton({ type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", title: "Keep Lowest" }));
 
   // Compact mode: add a roll button inline with the mode row
   // (replaces the separate formula + action row used in normal mode)
