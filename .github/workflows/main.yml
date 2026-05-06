@@ -106,6 +106,12 @@ jobs:
           DOWNLOAD: ${{ env.release_module_url }}
 
 
+      # Validate that module.json is still valid JSON after token replacement.
+      # Catches syntax errors before they reach users.
+      - name: Validate Module Manifest
+        run: jq empty module.json
+
+
       # Create a "module.zip" archive containing all the module's required files.
       # If you have other directories or files that will need to be added to
       # your packaged module, add them here.
