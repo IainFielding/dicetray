@@ -11,11 +11,10 @@
 }
 
 .dice-tray-title {
-  font-size: 0.65rem;
-  font-weight: normal;
+  font-size: 0.75rem;
+  font-weight: bold;
   text-align: center;
-  padding-top: 3px;
-  opacity: 0.6;
+  padding-bottom: 2px;
 }
 
 .dice-tray-version {

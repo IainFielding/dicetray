@@ -8,19 +8,10 @@
   "SOGROM_DICETRAY.KeepLowest": "KL",
   "SOGROM_DICETRAY.Advantage": "ADV",
   "SOGROM_DICETRAY.Disadvantage": "DIS",
-
-  "SOGROM_DICETRAY.TooltipAddDie": "Add a {die}",
-  "SOGROM_DICETRAY.TooltipKeepHighest": "Keep Highest",
-  "SOGROM_DICETRAY.TooltipKeepLowest": "Keep Lowest",
-  "SOGROM_DICETRAY.TooltipAdvantage": "Advantage",
-  "SOGROM_DICETRAY.TooltipDisadvantage": "Disadvantage",
-
-  "SOGROM_DICETRAY.FlavorBase": "Dice Tray Roll",
-  "SOGROM_DICETRAY.FlavorAdvantage": "Advantage",
-  "SOGROM_DICETRAY.FlavorDisadvantage": "Disadvantage",
-  "SOGROM_DICETRAY.FlavorKeepHighest": "Keep Highest",
-  "SOGROM_DICETRAY.FlavorKeepLowest": "Keep Lowest",
-
+  "SOGROM_DICETRAY.KeepLowest": "KL",
+  "SOGROM_DICETRAY.EmptyPool": "Add some dice to your pool first!",
+  "SOGROM_DICETRAY.FormulaPlaceholder": "Type a formula or click dice",
+  "SOGROM_DICETRAY.ToggleTray": "Toggle Dice Tray",
   "SOGROM_DICETRAY.SettingShow": "Show Dice Tray",
   "SOGROM_DICETRAY.SettingShowHint": "Set Dice Tray to be visible by default.",
   "SOGROM_DICETRAY.SettingTheme": "Theme",
