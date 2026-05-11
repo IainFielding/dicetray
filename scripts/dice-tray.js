@@ -116,7 +116,6 @@ function createDiceTray() {
   titleBar.classList.add("dice-tray-title");
   const moduleVersion = game.modules.get(MODULE_ID)?.version ?? "";
   titleBar.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.Title")} <span class="dice-tray-version">v${moduleVersion}</span>`;
-  tray.appendChild(titleBar);
 
   const diceRow = document.createElement("div");
   diceRow.classList.add("dice-tray-dice-row");
@@ -207,24 +206,42 @@ function createDiceTray() {
   controlsRow.appendChild(controlsRollBtn);
 
   tray.appendChild(controlsRow);
+  tray.appendChild(titleBar);
 
   trayInstances.add(tray);
   return tray;
 }
 
 function injectDiceTray(element) {
-  const chatMessage = element.querySelector('#chat-message')
-    || document.querySelector("#chat-message");
-  if (!chatMessage) return;
-  // Remove any existing tray (may have lost event listeners after sidebar collapse)
-  chatMessage.parentElement?.querySelector(".sogrom-dice-tray")?.remove();
-  const tray = createDiceTray();
-  const visible = game.settings.get(MODULE_ID, "showDiceTray");
-  if (!visible) tray.classList.add("dice-tray-hidden");
-  tray.style.flex = "0 0";
-  tray.style.pointerEvents = "all";
-  tray.style.order = "999";
-  chatMessage.after(tray);
+  function actuallyInject() {
+    const chatMessage = element.querySelector('#chat-message')
+      || document.querySelector("#chat-message");
+    if (!chatMessage) return false;
+    // Remove any existing tray (may have lost event listeners after sidebar collapse)
+    chatMessage.parentElement?.querySelector(".sogrom-dice-tray")?.remove();
+    const tray = createDiceTray();
+    const visible = game.settings.get(MODULE_ID, "showDiceTray");
+    if (!visible) tray.classList.add("dice-tray-hidden");
+    tray.style.flex = "0 0";
+    tray.style.pointerEvents = "all";
+    tray.style.order = "999";
+    chatMessage.after(tray);
+    return true;
+  }
+
+  // Try immediately, if chat-message not present yet, observe for it
+  if (!actuallyInject()) {
+    const observer = new MutationObserver(() => {
+      if (actuallyInject()) observer.disconnect();
+    });
+    observer.observe(element, { childList: true, subtree: true });
+    setTimeout(() => {
+      observer.disconnect();
+      if (!element.querySelector(".sogrom-dice-tray")) {
+        console.warn(`${MODULE_ID} | Dice tray injection timed out — #chat-message not found`);
+      }
+    }, 15000);
+  }
 }
 
 function injectToggleButton(element) {
@@ -236,15 +253,9 @@ function injectToggleButton(element) {
       || document.querySelector('#message-modes');
     if (!messageModesDiv) return false;
 
-    let insertAfterBtn = messageModesDiv.querySelector('button[aria-label="Public as Character"]');
-    if (!insertAfterBtn) {
-      const allBtns = messageModesDiv.querySelectorAll('button');
-      if (allBtns.length > 0) {
-        insertAfterBtn = allBtns[allBtns.length - 1];
-      } else {
-        return false;
-      }
-    }
+    const allBtns = messageModesDiv.querySelectorAll('button');
+    if (allBtns.length === 0) return false;
+    const insertAfterBtn = allBtns[allBtns.length - 1];
 
     const visible = game.settings.get(MODULE_ID, "showDiceTray");
 
@@ -267,6 +278,12 @@ function injectToggleButton(element) {
       const current = game.settings.get(MODULE_ID, "showDiceTray");
       await game.settings.set(MODULE_ID, "showDiceTray", !current);
 
+      // If toggling on and no tray exists in the DOM, re-inject one
+      if (!document.querySelector(".sogrom-dice-tray")) {
+        const chatEl = ui.chat?.element;
+        if (chatEl) injectDiceTray(chatEl);
+      }
+
       forEachTray(tray => tray.classList.toggle("dice-tray-hidden", current));
       document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(btn => {
         btn.classList.toggle("toggled-off", current);
@@ -284,8 +301,7 @@ function injectToggleButton(element) {
       if (actuallyInject()) observer.disconnect();
     });
     observer.observe(element, { childList: true, subtree: true });
-    // Safety: disconnect after 5 seconds
-    setTimeout(() => observer.disconnect(), 5000);
+    setTimeout(() => observer.disconnect(), 15000);
   }
 }
 
@@ -447,7 +463,17 @@ function updateFormulaDisplay() {
 }
 
 async function rollDice(e) {
-  const formula = buildFormula();
+  let formula = buildFormula();
+
+  // Respect any manual edits the user made in the chat bar
+  const chat = getChatTextarea();
+  if (chat) {
+    const chatValue = chat.value.trim();
+    const rollMatch = chatValue.match(/^\/r(?:oll)?\s+(.+)$/i);
+    if (rollMatch) {
+      formula = rollMatch[1].trim();
+    }
+  }  
   if (!formula) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
     return;
@@ -507,9 +533,10 @@ Hooks.on("renderChatLog", (app, element) => {
 });
 
 Hooks.on("collapseSidebar", () => {
-  // Remove all trays and toggle buttons (collapsed/expanded use different DOM contexts)
+  // Clean up stale DOM from the previous layout context
   document.querySelectorAll(".sogrom-dice-tray").forEach(el => el.remove());
   document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(el => el.remove());
+  // Re-inject into the new DOM context
   const element = ui.chat?.element;
   if (element) {
     injectDiceTray(element);

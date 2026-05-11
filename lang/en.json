@@ -10,8 +10,8 @@
   "SOGROM_DICETRAY.Disadvantage": "DIS",
 
   "SOGROM_DICETRAY.TooltipAddDie": "Add a {die}",
-  "SOGROM_DICETRAY.TooltipKeepHighest": "Keep Highest (right-click to remove)",
-  "SOGROM_DICETRAY.TooltipKeepLowest": "Keep Lowest (right-click to remove)",
+  "SOGROM_DICETRAY.TooltipKeepHighest": "Keep Highest",
+  "SOGROM_DICETRAY.TooltipKeepLowest": "Keep Lowest",
   "SOGROM_DICETRAY.TooltipAdvantage": "Advantage",
   "SOGROM_DICETRAY.TooltipDisadvantage": "Disadvantage",
 

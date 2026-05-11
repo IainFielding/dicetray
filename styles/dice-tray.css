@@ -11,10 +11,11 @@
 }
 
 .dice-tray-title {
-  font-size: 0.75rem;
-  font-weight: bold;
+  font-size: 0.65rem;
+  font-weight: normal;
   text-align: center;
-  padding-bottom: 2px;
+  padding-top: 3px;
+  opacity: 0.6;
 }
 
 .dice-tray-version {
@@ -173,10 +174,6 @@
   --tray-btn-hover-bg: var(--color-cool-3, #4b4e62);
   --tray-active-bg: var(--color-cool-3, #4b4e62);
   --tray-active-shadow: 0 0 4px rgba(255, 100, 0, 0.3);
-  --tray-formula-bg: var(--color-cool-5, #111322);
-  --tray-formula-color: #caae94;
-  --tray-formula-placeholder: #caae94;
-  --tray-formula-active-color: var(--color-text-light-highlight, #f0f0e0);
 }
 
 .sogrom-dice-tray.lightmode {
@@ -187,10 +184,6 @@
   --tray-btn-hover-bg: var(--color-warm-3, #d4d0c7);
   --tray-active-bg: var(--color-warm-3, #d4d0c7);
   --tray-active-shadow: 0 0 4px rgba(255, 100, 0, 0.25);
-  --tray-formula-bg: var(--color-warm-5, #fafaf2);
-  --tray-formula-color: var(--color-text-dark-primary, #4b4a44);
-  --tray-formula-placeholder: var(--color-text-dark-primary, #7a7971);
-  --tray-formula-active-color: var(--color-text-dark-primary, #191813);
 }
 
 /* Themed Rules */
@@ -203,7 +196,7 @@
 
 .sogrom-dice-tray .dice-tray-title {
   color: var(--tray-text);
-  border-bottom: 1px solid var(--tray-border);
+  border-top: 1px solid var(--tray-border);
 }
 
 .sogrom-dice-tray .dice-tray-title i {
