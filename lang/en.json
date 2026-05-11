@@ -1,26 +1,42 @@
 {
   "SOGROM_DICETRAY.Title": "Dice Tray",
-  "SOGROM_DICETRAY.RollButton": "Roll",
-  "SOGROM_DICETRAY.ClearButton": "Clear",
+
+  "SOGROM_DICETRAY.ButtonRoll": "Roll",
+  "SOGROM_DICETRAY.ButtonClear": "Clear",
+
   "SOGROM_DICETRAY.KeepHighest": "KH",
+  "SOGROM_DICETRAY.KeepLowest": "KL",
   "SOGROM_DICETRAY.Advantage": "ADV",
   "SOGROM_DICETRAY.Disadvantage": "DIS",
-  "SOGROM_DICETRAY.KeepLowest": "KL",
-  "SOGROM_DICETRAY.EmptyPool": "Add some dice to your pool first!",
-  "SOGROM_DICETRAY.FormulaPlaceholder": "Type a formula or click dice",
-  "SOGROM_DICETRAY.ToggleTray": "Toggle Dice Tray",
+
+  "SOGROM_DICETRAY.TooltipAddDie": "Add a {die}",
+  "SOGROM_DICETRAY.TooltipKeepHighest": "Keep Highest",
+  "SOGROM_DICETRAY.TooltipKeepLowest": "Keep Lowest",
+  "SOGROM_DICETRAY.TooltipAdvantage": "Advantage",
+  "SOGROM_DICETRAY.TooltipDisadvantage": "Disadvantage",
+
+  "SOGROM_DICETRAY.FlavorBase": "Dice Tray Roll",
+  "SOGROM_DICETRAY.FlavorAdvantage": "Advantage",
+  "SOGROM_DICETRAY.FlavorDisadvantage": "Disadvantage",
+  "SOGROM_DICETRAY.FlavorKeepHighest": "Keep Highest",
+  "SOGROM_DICETRAY.FlavorKeepLowest": "Keep Lowest",
+
   "SOGROM_DICETRAY.SettingShow": "Show Dice Tray",
   "SOGROM_DICETRAY.SettingShowHint": "Set Dice Tray to be visible by default.",
   "SOGROM_DICETRAY.SettingTheme": "Theme",
   "SOGROM_DICETRAY.SettingThemeHint": "Choose the visual theme for the dice tray.",
-  "SOGROM_DICETRAY.SettingCompact": "Compact Mode",
-  "SOGROM_DICETRAY.SettingCompactHint": "Hides the formula display and action buttons. Dice formulas are placed directly in the chat box instead.",
   "SOGROM_DICETRAY.ThemeDarkMode": "Dark Mode",
   "SOGROM_DICETRAY.ThemeLightMode": "Light Mode",
-  "SOGROM_DICETRAY.FlavorBase": "Dice Tray Roll",
-  "SOGROM_DICETRAY.FlavorKeepHighest": "Keep Highest",
-  "SOGROM_DICETRAY.FlavorAdvantage": "Advantage",
-  "SOGROM_DICETRAY.FlavorDisadvantage": "Disadvantage",
-  "SOGROM_DICETRAY.FlavorKeepLowest": "Keep Lowest",
-  "SOGROM_DICETRAY.RollError": "Invalid dice formula. Please check your input."
+
+  "SOGROM_DICETRAY.ToggleTray": "Toggle Dice Tray",
+
+  "SOGROM_DICETRAY.EmptyPool": "Add some dice to your pool first!",
+  "SOGROM_DICETRAY.RollError": "Invalid dice formula. Please check your input.",
+
+  "SOGROM_DICETRAY.TooltipKeepHighestFor": "Keep Highest for {die}",
+  "SOGROM_DICETRAY.TooltipKeepLowestFor": "Keep Lowest for {die}",
+  "SOGROM_DICETRAY.TooltipModifierPlus": "Increase modifier (+1)",
+  "SOGROM_DICETRAY.TooltipModifierMinus": "Decrease modifier (-1)",
+
+  "SOGROM_DICETRAY.MaxDiceReached": "Maximum of {max} {die} dice reached."
 }

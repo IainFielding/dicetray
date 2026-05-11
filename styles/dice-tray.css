@@ -1,19 +1,21 @@
 /* Layout & Structure (theme-independent) */
 
 .sogrom-dice-tray {
+  --dice-btn-height: 2.2em;
   border-radius: 6px;
-  padding: 8px;
+  padding: 6px;
   margin: 0 0 8px 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .dice-tray-title {
-  font-size: 0.85rem;
-  font-weight: bold;
+  font-size: 0.65rem;
+  font-weight: normal;
   text-align: center;
-  padding-bottom: 4px;
+  padding-top: 3px;
+  opacity: 0.6;
 }
 
 .dice-tray-version {
@@ -27,22 +29,39 @@
   margin-right: 4px;
 }
 
+.dice-tray-dice-row,
+.dice-tray-controls-row {
+  min-height: 0;
+}
+
 .dice-tray-dice-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 3px;
 }
 
-.dice-tray-mode-row {
+.dice-tray-controls-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 3px;
+  align-items: stretch;
+  height: var(--dice-btn-height);
 }
 
-.dice-tray-action-row {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 4px;
+.dice-tray-stacked-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.dice-tray-stacked-pair .dice-tray-btn {
+  flex: 1;
+  padding: 0 4px;
+  font-size: 0.55rem;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .dice-tray-btn {
@@ -62,8 +81,12 @@
 
 .dice-tray-die-btn {
   font-size: 0.8rem;
-  padding: 8px 4px;
+  padding: 0 3px;
+  height: var(--dice-btn-height);
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dice-tray-die-icon {
@@ -93,6 +116,10 @@
   opacity: 0.7;
 }
 
+.dice-tray-modifier-btn {
+  opacity: 0.7;
+}
+
 .dice-tray-mode-btn i {
   margin-right: 2px;
 }
@@ -112,38 +139,12 @@
   margin-right: 2px;
 }
 
-.dice-tray-formula {
-  border-radius: 4px;
-  padding: 6px 8px;
-  text-align: center;
-  font-family: var(--font-primary, "Signika", sans-serif);
-  font-size: 0.8rem;
-  min-height: 1.6em;
-  width: 100%;
-  box-sizing: border-box;
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.dice-tray-formula::placeholder {
-  opacity: 0.7;
-  font-family: var(--font-primary, "Signika", sans-serif);
-  font-style: italic;
-}
-
-.dice-tray-formula.has-dice {
-  font-weight: bold;
-  font-size: 0.9rem;
-}
-
-.dice-tray-roll-btn {
-  font-size: 0.85rem;
-  padding: 8px 4px;
-}
-
-.dice-tray-clear-btn {
-  font-size: 0.8rem;
-  padding: 8px 4px;
+.dice-tray-controls-roll-btn {
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
 }
 
 .sogrom-dice-tray.dice-tray-hidden {
@@ -173,10 +174,6 @@
   --tray-btn-hover-bg: var(--color-cool-3, #4b4e62);
   --tray-active-bg: var(--color-cool-3, #4b4e62);
   --tray-active-shadow: 0 0 4px rgba(255, 100, 0, 0.3);
-  --tray-formula-bg: var(--color-cool-5, #111322);
-  --tray-formula-color: #caae94;
-  --tray-formula-placeholder: #caae94;
-  --tray-formula-active-color: var(--color-text-light-highlight, #f0f0e0);
 }
 
 .sogrom-dice-tray.lightmode {
@@ -187,10 +184,6 @@
   --tray-btn-hover-bg: var(--color-warm-3, #d4d0c7);
   --tray-active-bg: var(--color-warm-3, #d4d0c7);
   --tray-active-shadow: 0 0 4px rgba(255, 100, 0, 0.25);
-  --tray-formula-bg: var(--color-warm-5, #fafaf2);
-  --tray-formula-color: var(--color-text-dark-primary, #4b4a44);
-  --tray-formula-placeholder: var(--color-text-dark-primary, #7a7971);
-  --tray-formula-active-color: var(--color-text-dark-primary, #191813);
 }
 
 /* Themed Rules */
@@ -203,7 +196,7 @@
 
 .sogrom-dice-tray .dice-tray-title {
   color: var(--tray-text);
-  border-bottom: 1px solid var(--tray-border);
+  border-top: 1px solid var(--tray-border);
 }
 
 .sogrom-dice-tray .dice-tray-title i {
@@ -261,41 +254,14 @@
   border-color: #9b59b6;
 }
 
-.sogrom-dice-tray .dice-tray-formula {
-  background: var(--tray-formula-bg);
-  border: 1px solid var(--tray-border);
-  color: var(--tray-formula-color);
+.sogrom-dice-tray .dice-tray-controls-roll-btn {
+  opacity: 0.7;
 }
 
-.sogrom-dice-tray .dice-tray-formula::placeholder {
-  color: var(--tray-formula-placeholder);
-}
-
-.sogrom-dice-tray .dice-tray-formula:focus {
+.sogrom-dice-tray .dice-tray-controls-roll-btn:hover {
+  background: var(--tray-btn-hover-bg);
   border-color: var(--color-warm-2, #ff6400);
-  box-shadow: var(--tray-active-shadow);
-}
-
-.sogrom-dice-tray .dice-tray-formula.has-dice {
-  color: var(--tray-formula-active-color);
-}
-
-.sogrom-dice-tray .dice-tray-roll-btn {
-  background: var(--color-warm-2, #ff6400);
-  color: #fff;
-  border-color: var(--color-warm-1, #cc5000);
-}
-
-.sogrom-dice-tray .dice-tray-roll-btn:hover {
-  background: var(--color-warm-1, #cc5000);
-  border-color: var(--color-warm-1, #cc5000);
-  color: #fff;
-}
-
-.sogrom-dice-tray .dice-tray-clear-btn:hover {
-  background: #e74c3c;
-  border-color: #c0392b;
-  color: #fff;
+  opacity: 1;
 }
 
 /* Toggle Button Themes */
@@ -341,50 +307,29 @@
 }
 
 /* ========================================
-    Compact Mode
+    Keep Indicator on Die Buttons
    ======================================== */
 
-.sogrom-dice-tray.compact-mode {
-  padding: 6px;
-  gap: 4px;
+.dice-tray-keep-indicator {
+  position: absolute;
+  bottom: -4px;
+  left: -4px;
+  font-size: 0.5rem;
+  font-weight: bold;
+  min-width: 14px;
+  height: 14px;
+  line-height: 14px;
+  border-radius: 7px;
+  text-align: center;
+  padding: 0 3px;
+  pointer-events: none;
+  color: #fff;
 }
 
-.sogrom-dice-tray.compact-mode .dice-tray-title {
-  font-size: 0.75rem;
-  padding-bottom: 2px;
+.dice-tray-keep-indicator[data-type="kh"] {
+  background: var(--dice-tray-keep-highest, #3498db);
 }
 
-.sogrom-dice-tray.compact-mode .dice-tray-dice-row {
-  gap: 3px;
-}
-
-.sogrom-dice-tray.compact-mode .dice-tray-die-btn {
-  padding: 5px 3px;
-}
-
-.sogrom-dice-tray.compact-mode .dice-tray-mode-row {
-  grid-template-columns: repeat(5, 1fr);
-  gap: 3px;
-}
-
-.sogrom-dice-tray.compact-mode .dice-tray-compact-roll-btn {
-  font-size: 0.65rem;
-  padding: 2px 2px;
-  align-self: stretch;
-  opacity: 0.7;
-  color: var(--tray-text);
-}
-
-.sogrom-dice-tray.compact-mode .dice-tray-compact-roll-btn i {
-  margin-right: 2px;
-}
-
-.sogrom-dice-tray.compact-mode .dice-tray-mode-btn {
-  font-size: 0.65rem;
-  padding: 2px 2px;
-}
-
-.sogrom-dice-tray.compact-mode .dice-tray-keep-btn {
-  font-size: 0.65rem;
-  padding: 2px 2px;
+.dice-tray-keep-indicator[data-type="kl"] {
+  background: var(--dice-tray-keep-lowest, #9b59b6);
 }
