@@ -116,7 +116,6 @@ function createDiceTray() {
   titleBar.classList.add("dice-tray-title");
   const moduleVersion = game.modules.get(MODULE_ID)?.version ?? "";
   titleBar.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.Title")} <span class="dice-tray-version">v${moduleVersion}</span>`;
-  tray.appendChild(titleBar);
 
   const diceRow = document.createElement("div");
   diceRow.classList.add("dice-tray-dice-row");
@@ -207,6 +206,8 @@ function createDiceTray() {
   controlsRow.appendChild(controlsRollBtn);
 
   tray.appendChild(controlsRow);
+
+  tray.appendChild(titleBar);
 
   trayInstances.add(tray);
   return tray;
