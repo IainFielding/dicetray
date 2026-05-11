@@ -116,6 +116,7 @@ function createDiceTray() {
   titleBar.classList.add("dice-tray-title");
   const moduleVersion = game.modules.get(MODULE_ID)?.version ?? "";
   titleBar.innerHTML = `<i class="fas fa-dice-d20"></i> ${game.i18n.localize("SOGROM_DICETRAY.Title")} <span class="dice-tray-version">v${moduleVersion}</span>`;
+  tray.appendChild(titleBar);
 
   const diceRow = document.createElement("div");
   diceRow.classList.add("dice-tray-dice-row");
@@ -207,17 +208,16 @@ function createDiceTray() {
 
   tray.appendChild(controlsRow);
 
-  tray.appendChild(titleBar);
-
   trayInstances.add(tray);
   return tray;
 }
 
 function injectDiceTray(element) {
-  // Remove all existing trays to prevent duplicates across chat contexts (sidebar/pop-out)
-  document.querySelectorAll(".sogrom-dice-tray").forEach(el => el.remove());
-  const chatMessage = element.querySelector('#chat-message');
+  const chatMessage = element.querySelector('#chat-message')
+    || document.querySelector("#chat-message");
   if (!chatMessage) return;
+  // Remove any existing tray (may have lost event listeners after sidebar collapse)
+  chatMessage.parentElement?.querySelector(".sogrom-dice-tray")?.remove();
   const tray = createDiceTray();
   const visible = game.settings.get(MODULE_ID, "showDiceTray");
   if (!visible) tray.classList.add("dice-tray-hidden");
@@ -228,11 +228,12 @@ function injectDiceTray(element) {
 }
 
 function injectToggleButton(element) {
-  if (element.querySelector(".sogrom-dice-tray-toggle")) return;
+  if (element.querySelector(".sogrom-dice-tray-toggle")
+    || document.querySelector(".sogrom-dice-tray-toggle")) return;
 
   function actuallyInject() {
-    const messageModesDiv = element.querySelector('#message-modes');
-
+    const messageModesDiv = element.querySelector('#message-modes')
+      || document.querySelector('#message-modes');
     if (!messageModesDiv) return false;
 
     let insertAfterBtn = messageModesDiv.querySelector('button[aria-label="Public as Character"]');
@@ -259,9 +260,6 @@ function injectToggleButton(element) {
     if (!visible) toggleBtn.classList.add("toggled-off");
     if (visible) toggleBtn.classList.add("tray-visible");
     toggleBtn.style.pointerEvents = "all";
-
-    // Remove any existing toggle buttons in other contexts before inserting
-    document.querySelectorAll(".sogrom-dice-tray-toggle").forEach(el => el.remove());
 
     toggleBtn.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -449,18 +447,7 @@ function updateFormulaDisplay() {
 }
 
 async function rollDice(e) {
-  let formula = buildFormula();
-
-  // Respect any manual edits the user made in the chat bar
-  const chat = getChatTextarea();
-  if (chat) {
-    const chatValue = chat.value.trim();
-    const rollMatch = chatValue.match(/^\/r(?:oll)?\s+(.+)$/i);
-    if (rollMatch) {
-      formula = rollMatch[1].trim();
-    }
-  }
-
+  const formula = buildFormula();
   if (!formula) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
     return;
