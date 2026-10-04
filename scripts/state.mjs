@@ -52,6 +52,12 @@ export function removeDie(faces) {
   const idx = state.pool.lastIndexOf(faces);
   if ( idx === -1 ) return;
   state.pool.splice(idx, 1);
+  if ( !state.pool.includes(faces) ) {
+    // The last die of this type is gone: drop its keep modifier, and point keep-highest/lowest
+    // at the most recently added die that is still in the pool.
+    delete state.keep[faces];
+    if ( state.lastDie === faces ) state.lastDie = state.pool.at(-1) ?? null;
+  }
   changed();
 }
 
