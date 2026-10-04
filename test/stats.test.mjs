@@ -86,6 +86,7 @@ describe("merging and summarising", () => {
       4: { count: 1, sum: 2, faces: [0, 1, 0, 0] }
     } };
     expect(Object.keys(normaliseStats(bad).dice)).toEqual(["4"]);
+    for ( const rolls of [-1000, 1e308 * 10, 2.5, "3"] ) expect(normaliseStats({ ...bad, rolls }).rolls).toBe(0);
   });
 
   it("treats figures from before a reset as empty", () => {

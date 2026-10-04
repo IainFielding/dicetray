@@ -12,6 +12,7 @@
  * @property {Float64Array} p      p[i] is the chance of a total of min + i.
  * @property {boolean} approximate  Whether any part came from simulation.
  * @property {boolean} unbounded    Whether the total has no maximum (exploding dice).
+ * @property {boolean} unboundedBelow  Whether it has no minimum (an exploding die taken away).
  */
 
 import { parseDieTerm } from "./dice.mjs";
@@ -30,10 +31,18 @@ const MAX_EXACT_KEEP_WORK = 4e6;
 /** Pools whose highest total could pass this aren't covered at all (simulated totals are 32-bit). */
 const MAX_SIMULATED_TOTAL = 1e8;
 
+/**
+ * Most multiply-adds one convolution may take before the sum is approximated instead: about 20 ms.
+ * Beyond it — many large dice — the total is near enough normal that its exact mean and variance
+ * describe it well.
+ */
+const MAX_CONVOLUTION_WORK = 2e7;
+
 /** Totals wider than this are simulated too, to bound memory. */
 const MAX_SPAN = 20000;
 
-const dist = (min, p, { approximate = false, unbounded = false } = {}) => ({ min, p, approximate, unbounded });
+const dist = (min, p, { approximate = false, unbounded = false, unboundedBelow = false } = {}) =>
+  ({ min, p, approximate, unbounded, unboundedBelow });
 
 /** A single die: 1 to faces, or -1/0/+1 for a Fate die. */
 export function dieDistribution(faces) {
@@ -67,7 +76,11 @@ export function convolve(a, b) {
   return dist(a.min + b.min, p, merge(a, b));
 }
 
-const merge = (a, b) => ({ approximate: a.approximate || b.approximate, unbounded: a.unbounded || b.unbounded });
+const merge = (a, b) => ({
+  approximate: a.approximate || b.approximate,
+  unbounded: a.unbounded || b.unbounded,
+  unboundedBelow: a.unboundedBelow || b.unboundedBelow
+});
 
 /** The sum of n independent copies of d, by repeated squaring. */
 export function sumOf(d, n) {
@@ -84,7 +97,9 @@ export function sumOf(d, n) {
 export const shift = (d, k) => dist(d.min + k, d.p, d);
 
 /** The distribution of -d. */
-export const negate = d => dist(-(d.min + d.p.length - 1), d.p.slice().reverse(), d);
+export const negate = d => dist(-(d.min + d.p.length - 1), d.p.slice().reverse(), {
+  approximate: d.approximate, unbounded: d.unboundedBelow, unboundedBelow: d.unbounded
+});
 
 /** The distribution of the larger (or smaller) of independent a and b. */
 export function extreme(a, b, larger = true) {
@@ -253,6 +268,65 @@ function simulateGroup({ faces, n, keep, explode }, seedText) {
 }
 
 /* -------------------------------------------- */
+/*  Normal approximation                        */
+/* -------------------------------------------- */
+
+/** Mean and variance of a distribution. */
+function moments(d) {
+  let mean = 0;
+  let square = 0;
+  for ( let i = 0; i < d.p.length; i++ ) {
+    const v = d.min + i;
+    mean += v * d.p[i];
+    square += v * v * d.p[i];
+  }
+  return { mean, variance: Math.max(square - (mean * mean), 0) };
+}
+
+/** The standard normal cumulative distribution (Abramowitz & Stegun 26.2.17; error below 1e-7). */
+function normalCdf(z) {
+  const t = 1 / (1 + (0.2316419 * Math.abs(z)));
+  const poly = t * (0.319381530 + (t * (-0.356563782 + (t * (1.781477937 + (t * (-1.821255978 + (t * 1.330274429))))))));
+  const tail = Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI) * poly;
+  return (z >= 0) ? 1 - tail : tail;
+}
+
+/**
+ * The sum of independent parts (each `d`, `n` times), approximated by a normal distribution with
+ * their exact mean and variance, over whole totals, within the parts' true range.
+ * @param {{d: Distribution, n: number}[]} parts
+ * @returns {Distribution|null}
+ */
+function normalSum(parts) {
+  let mean = 0;
+  let variance = 0;
+  let lo = 0;
+  let hi = 0;
+  let flags = { approximate: true, unbounded: false, unboundedBelow: false };
+  for ( const { d, n } of parts ) {
+    const m = moments(d);
+    mean += m.mean * n;
+    variance += m.variance * n;
+    lo += d.min * n;
+    hi += (d.min + d.p.length - 1) * n;
+    flags = { ...merge(flags, d), approximate: true };
+  }
+  const sd = Math.sqrt(variance);
+  if ( !sd ) return dist(Math.round(mean), Float64Array.of(1), flags);
+  const from = Math.max(lo, Math.floor(mean - (8 * sd)));
+  const to = Math.min(hi, Math.ceil(mean + (8 * sd)));
+  if ( (to - from + 1) > MAX_SPAN ) return null;
+  const p = new Float64Array(to - from + 1);
+  let previous = normalCdf((from - 0.5 - mean) / sd);
+  for ( let v = from; v <= to; v++ ) {
+    const next = normalCdf((v + 0.5 - mean) / sd);
+    p[v - from] = next - previous;
+    previous = next;
+  }
+  return dist(from, p, flags);
+}
+
+/* -------------------------------------------- */
 /*  Pools                                       */
 /* -------------------------------------------- */
 
@@ -288,7 +362,10 @@ function groupDistribution(key, count, keep, fateDice) {
   const width = (faces === "F") ? 3 : faces;
   if ( !k && ((width * count) <= MAX_SPAN) ) {
     const one = explode ? explodingDistribution(faces) : dieDistribution(faces);
-    if ( (one.p.length * count) <= MAX_SPAN ) return sumOf(one, count);
+    const span = one.p.length * count;
+    // Summing by squaring costs about span² at its last step.
+    if ( (span * span) > MAX_CONVOLUTION_WORK ) return normalSum([{ d: one, n: count }]);
+    if ( span <= MAX_SPAN ) return sumOf(one, count);
   } else if ( k && !explode && (faces !== "F") && ((width * k.count) <= MAX_SPAN) ) {
     const exact = keepDistribution(faces, count, k.count, k.type === "kh");
     if ( exact ) return exact;
@@ -310,6 +387,8 @@ export function poolDistribution({ pool, mode, modifier, keep }, { modes = {}, f
   const groups = getDiceGroups(pool);
   const active = modes[mode];
   let total = null;
+  const parts = [];
+  let approximated = false;
   for ( const [key, count] of Object.entries(groups) ) {
     let d = groupDistribution(key, count, keep[key], fateDice);
     // groupDistribution may simulate, and a simulation too wide to keep gives null too.
@@ -320,9 +399,19 @@ export function poolDistribution({ pool, mode, modifier, keep }, { modes = {}, f
       if ( !wild ) return null;
       d = extreme(d, wild, true);
     }
-    // Check the width before convolving: the work is the product of the two widths.
-    if ( total && ((total.p.length + d.p.length - 1) > MAX_SPAN) ) return null;
-    total = total ? convolve(total, d) : d;
+    parts.push(d);
+    // Check before convolving: the work is the product of the two widths. Past the budget, the
+    // whole sum is approximated from the parts' exact means and variances.
+    if ( total && (((total.p.length + d.p.length - 1) > MAX_SPAN) || ((total.p.length * d.p.length) > MAX_CONVOLUTION_WORK)) ) {
+      total = null;
+      approximated = true;
+      continue;
+    }
+    if ( !approximated ) total = total ? convolve(total, d) : d;
+  }
+  if ( approximated ) {
+    total = normalSum(parts.map(d => ({ d, n: 1 })));
+    if ( !total ) return null;
   }
   if ( active?.style === "extraDie" ) {
     const extra = modeDie(active.die);
@@ -350,6 +439,7 @@ export function summarise(d, target = null) {
     min: d.min,
     max: d.min + d.p.length - 1,
     unbounded: d.unbounded,
+    unboundedBelow: !!d.unboundedBelow,
     mean,
     chance: (target === null) ? null : Math.min(Math.max(atLeast, 0), 1),
     approximate: d.approximate

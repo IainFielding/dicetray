@@ -60,6 +60,7 @@ export class DiceTrayWindow extends ApplicationV2 {
 
   /** @override */
   _replaceHTML(tray, content) {
+    closeDrawers(content);
     content.replaceChildren(tray);
   }
 

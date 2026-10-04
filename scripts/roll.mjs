@@ -2,7 +2,7 @@ import { HOOKS, MODULE_ID } from "./constants.mjs";
 import { getModes } from "./layout.mjs";
 import { currentFormula } from "./formula.mjs";
 import { consume, getDiceGroups, state } from "./state.mjs";
-import { getChatInput, poolCommand } from "./chat-input.mjs";
+import { getChatInput, poolCommand, poolSendInFlight } from "./chat-input.mjs";
 
 /** `type` of the drag data a die dragged out of the tray carries. */
 export const DRAG_TYPE = "SogromDiceTrayRoll";
@@ -45,7 +45,8 @@ export async function rollFormula(formula, { flavor, messageMode = null, source 
   try {
     const speaker = ChatMessage.getSpeaker();
     const rollData = ChatMessage.getSpeakerActor(speaker)?.getRollData() ?? {};
-    const roll = new Roll(data.formula, rollData);
+    // The system's roll class, as the chat bar's /r would make, so its hooks and cards treat it alike.
+    const roll = Roll.create(data.formula, rollData);
     // As core does: a blind roll is hidden from its roller, so it can't ask them to roll it.
     const mode = data.messageMode ?? game.settings.get("core", "messageMode");
     await roll.evaluate({ allowInteractive: mode !== "blind" });
@@ -78,6 +79,8 @@ export function rollPool(options = {}) {
 }
 
 async function rollPoolNow({ source = "tray" } = {}) {
+  // The pool was just sent from the chat bar and is on its way; rolling it here too would post it twice.
+  if ( poolSendInFlight() ) return null;
   // The pool's command in the chat bar is the pool, perhaps edited: /gmr, # flavor and all.
   const command = poolCommand();
   const formula = command?.formula ?? currentFormula();
