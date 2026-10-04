@@ -20,7 +20,7 @@
     "requires": []
   },
   "esmodules": [
-    "scripts/dice-tray.js"
+    "scripts/main.mjs"
   ],
   "styles": [
     "styles/dice-tray.css"
