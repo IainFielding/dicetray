@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { addDie, adjustKeep, clearPool, removeDie, setModifier, state, toggleMode } from "../scripts/state.mjs";
+import {
+  addDie, adjustKeep, clearPool, removeAllOf, removeDie, setModifier, state, toggleMode
+} from "../scripts/state.mjs";
 import { MAX_DICE_PER_TYPE, MAX_MODIFIER } from "../scripts/constants.mjs";
 
 beforeEach(() => clearPool());
@@ -25,6 +27,18 @@ describe("dice pool state", () => {
     removeDie(6); removeDie(6);
     expect(state.keep).toEqual({});
     expect(state.lastDie).toBeNull();
+  });
+
+  it("removes a whole die type, keeping the rest of the pool and its modifier", () => {
+    addDie(6); addDie(6); addDie(20);
+    setModifier(2);
+    adjustKeep("kh", 1);
+    removeAllOf(6);
+    expect(state.pool).toEqual([20]);
+    expect(state.modifier).toBe(2);
+    expect(state.keep).toEqual({ 20: { type: "kh", count: 1 } });
+    removeAllOf(20);
+    expect(state.modifier).toBe(0);
   });
 
   it("caps dice per type and the modifier", () => {

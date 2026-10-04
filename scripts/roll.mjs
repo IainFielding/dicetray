@@ -1,7 +1,10 @@
 import { MODE_CONFIG, MODULE_ID } from "./constants.mjs";
 import { currentFormula, parseRollCommand } from "./formula.mjs";
-import { clearPool, state } from "./state.mjs";
+import { clearPool, removeAllOf, state } from "./state.mjs";
 import { getChatInput } from "./chat-input.mjs";
+
+/** `type` of the drag data a die dragged out of the tray carries. */
+export const DRAG_TYPE = "SogromDiceTrayRoll";
 
 /** Flavor text for the chat card, naming the roll mode or keep modifier in use. */
 function rollFlavor() {
@@ -42,4 +45,35 @@ export async function rollPool() {
     return;
   }
   if ( await rollFormula(formula, { flavor: rollFlavor() }) ) clearPool();
+}
+
+/**
+ * A die dragged from the tray and dropped on the canvas rolls what it carries. If that was the
+ * die's group from the pool, those dice are used up; the rest of the pool stays.
+ * @returns {false|void} false to stop the canvas handling the drop itself.
+ */
+export function onDropCanvasData(_canvas, data) {
+  if ( data?.type !== DRAG_TYPE ) return;
+  rollFormula(data.formula, { flavor: rollFlavor() }).then(rolled => {
+    if ( rolled && data.fromPool ) removeAllOf(data.faces);
+  });
+  return false;
+}
+
+/**
+ * A die dropped on the hotbar becomes a macro that rolls the same formula.
+ * @returns {false|void} false to stop the hotbar handling the drop itself.
+ */
+export function onHotbarDrop(_hotbar, data, slot) {
+  if ( data?.type !== DRAG_TYPE ) return;
+  createRollMacro(data.formula, slot);
+  return false;
+}
+
+async function createRollMacro(formula, slot) {
+  const name = formula;
+  const command = `/r ${formula}`;
+  const macro = game.macros.find(m => (m.name === name) && (m.command === command) && m.isOwner)
+    ?? await getDocumentClass("Macro").create({ name, type: "chat", command, img: "icons/svg/d20-grey.svg" });
+  if ( macro ) await game.user.assignHotbarMacro(macro, slot);
 }

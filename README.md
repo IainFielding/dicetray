@@ -26,6 +26,11 @@ I created this Foundry module because the exsisting dice-tray module wasn't work
 - **Left-click** any dice button (D4–D100) to add that die to the pool. A badge appears on the button showing how many of that die are added.
 - **Right-click** a dice button to remove one die of that type from the pool. In the module settings you can change **Right-click on a die** to *Roll one immediately* instead, which rolls a single die of that type without touching the pool you're building.
 
+### Dragging Dice
+
+- **Drag a die onto the canvas** to roll it there and then. If you've added that die to the pool, the whole group rolls (with its keep modifier, roll mode and modifier) and those dice leave the pool; otherwise a single die is rolled.
+- **Drag a die onto the macro hotbar** to keep that roll as a macro you can click any time.
+
 ### Roll Modifiers
 ![Roll Modifiers](https://github.com/IainFielding/dicetray/blob/master/assets/docs/roll-modifiers.png?raw=true)
 

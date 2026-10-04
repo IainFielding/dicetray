@@ -61,6 +61,19 @@ export function removeDie(faces) {
   changed();
 }
 
+/** Take every die of one type out of the pool, e.g. after that group was rolled on its own. */
+export function removeAllOf(faces) {
+  if ( !state.pool.includes(faces) ) return;
+  state.pool = state.pool.filter(f => f !== faces);
+  delete state.keep[faces];
+  if ( state.lastDie === faces ) state.lastDie = state.pool.at(-1) ?? null;
+  if ( !state.pool.length ) {
+    state.mode = "normal";
+    state.modifier = 0;
+  }
+  changed();
+}
+
 /** Keep count of the given type ("kh"/"kl") for the last die added. */
 export function getKeepCount(type) {
   if ( !state.lastDie ) return 0;

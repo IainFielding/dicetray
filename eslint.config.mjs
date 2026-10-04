@@ -19,6 +19,7 @@ const foundryGlobals = {
   ui: "readonly",
   canvas: "readonly",
   ChatMessage: "readonly",
+  getDocumentClass: "readonly",
   Handlebars: "readonly",
   FilePicker: "readonly"
 };

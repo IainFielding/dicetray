@@ -47,6 +47,20 @@ export function currentFormula() {
 }
 
 /**
+ * The formula for one die type, as it would roll if dragged out of the tray: that die's group
+ * from the pool with its keep modifier, the roll mode and the modifier — or a single die if none
+ * of that type has been added.
+ * @returns {{formula: string, fromPool: boolean}}
+ */
+export function formulaForDie(faces) {
+  const dice = state.pool.filter(f => f === faces);
+  const fromPool = dice.length > 0;
+  const formula = buildFormula({ ...state, pool: fromPool ? dice : [faces] },
+    { nativeAdvantage: systemSupportsAdvantage() });
+  return { formula, fromPool };
+}
+
+/**
  * Pull the formula out of a chat-bar roll command ("/r 2d6", "/roll 1d20 + 2").
  * @returns {string|null} null when the text isn't a roll command.
  */

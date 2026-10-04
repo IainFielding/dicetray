@@ -1,5 +1,6 @@
 import { registerSettings } from "./settings.mjs";
 import { clearPool } from "./state.mjs";
+import { onDropCanvasData, onHotbarDrop } from "./roll.mjs";
 import { injectDiceTray, injectToggleButton, removeAll } from "./tray.mjs";
 
 Hooks.once("init", registerSettings);
@@ -25,3 +26,7 @@ Hooks.on("changeSidebarTab", () => {
 
 // A message sent from the chat bar uses up the pool.
 Hooks.on("chatMessage", () => clearPool());
+
+// Dice dragged out of the tray: roll them on the canvas, or keep them as a hotbar macro.
+Hooks.on("dropCanvasData", onDropCanvasData);
+Hooks.on("hotbarDrop", onHotbarDrop);

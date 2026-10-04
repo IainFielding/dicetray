@@ -3,8 +3,8 @@ import {
   addDie, adjustKeep, adjustModifier, getDiceGroups, getKeepCount, onStateChange, removeDie, setModifier, state,
   toggleMode
 } from "./state.mjs";
-import { currentFormula } from "./formula.mjs";
-import { rollFormula, rollPool } from "./roll.mjs";
+import { currentFormula, formulaForDie } from "./formula.mjs";
+import { DRAG_TYPE, rollFormula, rollPool } from "./roll.mjs";
 import { getChatInput } from "./chat-input.mjs";
 
 const KEEP_BUTTONS = [
@@ -51,11 +51,13 @@ function stackedPair(...buttons) {
 
 function createDieButton(faces) {
   const btn = button(["dice-tray-die-btn"], { action: "die", faces });
+  btn.draggable = true;
   btn.title = game.i18n.format("SOGROM_DICETRAY.TooltipAddDie", { die: `D${faces}` });
   const img = document.createElement("img");
   img.src = `modules/${MODULE_ID}/assets/icons/d${faces}-grey.svg`;
   img.alt = `D${faces}`;
   img.classList.add("dice-tray-die-icon");
+  img.draggable = false;
   img.addEventListener("error", () => {
     const fallback = document.createElement("span");
     fallback.classList.add("dice-tray-die-fallback");
@@ -132,6 +134,7 @@ function createDiceTray() {
   tray.addEventListener("input", onTrayInput);
   tray.addEventListener("change", onTrayChange);
   tray.addEventListener("keydown", onTrayKeyDown);
+  tray.addEventListener("dragstart", onTrayDragStart);
 
   trays.add(tray);
   refreshTray(tray);
@@ -172,6 +175,15 @@ function onTrayContextMenu(event) {
       event.preventDefault();
       return adjustKeep(btn.dataset.keep, -1);
   }
+}
+
+function onTrayDragStart(event) {
+  const btn = event.target.closest?.(".dice-tray-die-btn");
+  if ( !btn ) return;
+  const faces = Number(btn.dataset.faces);
+  const { formula, fromPool } = formulaForDie(faces);
+  event.dataTransfer.setData("text/plain", JSON.stringify({ type: DRAG_TYPE, formula, fromPool, faces }));
+  event.dataTransfer.effectAllowed = "copy";
 }
 
 function onModifierWheel(event) {
