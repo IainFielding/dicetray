@@ -27,10 +27,12 @@ export const MAX_FACES = 100;
 /** @returns {Stats} */
 export const emptyStats = () => ({ version: STATS_VERSION, rolls: 0, dice: {}, days: {} });
 
-/** Local date as "YYYY-MM-DD". */
+/**
+ * The day a roll belongs to, as "YYYY-MM-DD" in UTC. Every player's rolls are filed by the same
+ * clock, so "today" means the same day for a GM and players in different time zones.
+ */
 export function dayKey(date = new Date()) {
-  const pad = n => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  return date.toISOString().slice(0, 10);
 }
 
 /** A stored value, cleaned up: anything malformed becomes empty rather than breaking the totals. */
@@ -143,12 +145,15 @@ export function summariseStats(stats, day = null) {
 }
 
 /**
- * Pull the dice out of a roll as plain data: each die term's size and every result rolled.
- * @param {{dice: {faces: number, results: {result: number}[]}[]}[]} rolls  Foundry Roll objects.
+ * Pull the numbered dice out of rolls as plain data: each die term's size and every result rolled.
+ * Other dice — Fate dice, coins, a system's own narrative dice — aren't numbered 1 to N, so they
+ * aren't counted.
+ * @param {{dice: {denomination: string, faces: number, results: {result: number}[]}[]}[]} rolls  Foundry Rolls.
  */
 export function diceFromRolls(rolls) {
-  return rolls.flatMap(roll => (roll.dice ?? []).map(term => ({
-    faces: term.faces,
-    results: (term.results ?? []).map(r => r.result)
-  })));
+  return rolls.flatMap(roll => (roll.dice ?? [])
+    // The class's DENOMINATION is "d" for numbered dice ("f" Fate, "c" coin, …); an instance's own
+    // `denomination` includes the faces ("d20"), so it's only the fallback for plain data.
+    .filter(term => (term.constructor?.DENOMINATION ?? term.denomination ?? "d") === "d")
+    .map(term => ({ faces: term.faces, results: (term.results ?? []).map(r => r.result) })));
 }

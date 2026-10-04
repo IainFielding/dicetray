@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { allButtons, normaliseRows } from "../scripts/dice.mjs";
 import {
-  GENERIC_MODES, SYSTEM_ALIASES, SYSTEM_MAPS, registerSystemMap, systemMap, systemModes, systemRows
+  GENERIC_MODES, SYSTEM_ALIASES, SYSTEM_MAPS, registerSystemMap, systemMap, systemModes, systemRows, unregisterSystemMap
 } from "../scripts/systems.mjs";
 
 describe("built-in system maps", () => {
@@ -33,6 +33,8 @@ describe("built-in system maps", () => {
 });
 
 describe("system modes", () => {
+  afterEach(() => ["dcc", "test-null", "test-partial"].forEach(unregisterSystemMap));
+
   it("gives unknown systems the standard dice and generic advantage", () => {
     expect(systemRows("some-new-system")).toEqual([[
       { formula: "d4" }, { formula: "d6" }, { formula: "d8" }, { formula: "d10" }, { formula: "d12" }, { formula: "d20" },
@@ -52,6 +54,18 @@ describe("system modes", () => {
     expect(systemModes("dcc")).toEqual({});
   });
 
+  it("keeps generic modes a map doesn't mention", () => {
+    registerSystemMap("test-partial", { modes: { advantage: { label: "X.Edge" }, boost: { style: "extraDie", die: "1d4", op: "+" } } });
+    const modes = systemModes("test-partial");
+    expect(Object.keys(modes)).toEqual(["advantage", "disadvantage", "boost"]);
+    expect(modes.advantage.label).toBe("X.Edge");
+    expect(modes.disadvantage).toEqual(GENERIC_MODES.disadvantage);
+  });
+
+  it("gives SWADE only its wild die", () => {
+    expect(Object.keys(systemModes("swade"))).toEqual(["wild"]);
+  });
+
   it("drops a mode set to null and keeps the rest", () => {
     registerSystemMap("test-null", { modes: { advantage: {}, disadvantage: null } });
     expect(Object.keys(systemModes("test-null"))).toEqual(["advantage"]);
@@ -62,5 +76,7 @@ describe("system modes", () => {
     expect(systemRows("dcc")).toEqual([[{ formula: "d20" }]]);
     expect(systemModes("dcc")).toBe(GENERIC_MODES);
     expect(systemMap("dcc")).not.toBe(SYSTEM_MAPS.dcc);
+    unregisterSystemMap("dcc");
+    expect(systemMap("dcc")).toBe(SYSTEM_MAPS.dcc);
   });
 });

@@ -48,6 +48,8 @@ describe("buildFormula with non-numeric and modified dice", () => {
     expect(buildFormula(pool({ pool: ["dF", "dF"], mode: "disadvantage" }))).toBe("{2dF,2dF}kl");
     expect(buildFormula(pool({ pool: ["dF", "d20"], mode: "advantage" }), { nativeAdvantage: true }))
       .toBe("1d20adv + {1dF,1dF}kh");
+    expect(buildFormula(pool({ pool: ["d6", "d6", "d6"], mode: "advantage", keep: { d6: { type: "kh", count: 2 } } }),
+      { nativeAdvantage: true })).toBe("{3d6kh2,3d6kh2}kh");
   });
 });
 

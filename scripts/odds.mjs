@@ -15,6 +15,7 @@
  */
 
 import { parseDieTerm } from "./dice.mjs";
+import { getDiceGroups } from "./state.mjs";
 
 /** Exploding dice are followed until the chance of going further is below this. */
 const EXPLODE_EPSILON = 1e-7;
@@ -255,14 +256,14 @@ function modeDie(formula) {
  * @returns {Distribution|null} null for dice the odds can't be worked out for (a system's own dice,
  *   rerolls, success counting, …).
  */
-function groupDistribution(key, count, keep) {
+function groupDistribution(key, count, keep, fateDice) {
   const term = parseDieTerm(key);
   if ( !term ) return null;
   const { faces, modifiers } = term;
-  if ( (typeof faces !== "number") && (faces !== "F") ) return null;
+  if ( (typeof faces !== "number") && !((faces === "F") && fateDice) ) return null;
   if ( modifiers && (modifiers !== "x") ) return null;
   const explode = modifiers === "x";
-  if ( explode && (faces < 2) ) return null;
+  if ( explode && ((faces === "F") || (faces < 2)) ) return null;
   const k = keep?.count > 0 ? keep : null;
 
   if ( !k ) {
@@ -280,16 +281,17 @@ function groupDistribution(key, count, keep) {
  * @param {{pool: string[], mode: string, modifier: number, keep: object}} state
  * @param {object} [options]
  * @param {Record<string, object>} [options.modes]  The system's modes.
+ * @param {boolean} [options.fateDice]  Whether dF is the core Fate die (-1/0/+1). Some systems use
+ *   the letter for a die of their own, such as Star Wars FFG's Force die.
  * @returns {Distribution|null} null for an empty pool, or one with dice the odds can't cover.
  */
-export function poolDistribution({ pool, mode, modifier, keep }, { modes = {} } = {}) {
+export function poolDistribution({ pool, mode, modifier, keep }, { modes = {}, fateDice = true } = {}) {
   if ( !pool.length ) return null;
-  const groups = {};
-  for ( const key of pool ) groups[key] = (groups[key] || 0) + 1;
+  const groups = getDiceGroups(pool);
   const active = modes[mode];
   let total = null;
   for ( const [key, count] of Object.entries(groups) ) {
-    let d = groupDistribution(key, count, keep[key]);
+    let d = groupDistribution(key, count, keep[key], fateDice);
     if ( !d ) return null;
     if ( active?.style === "repeat" ) d = extreme(d, d, active.keep !== "kl");
     else if ( active?.style === "wildDie" ) {

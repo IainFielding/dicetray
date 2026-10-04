@@ -51,7 +51,7 @@ Nothing changes for players until you click **Save**.
 
 ### Dragging Dice
 
-- **Drag a die onto the canvas** to roll it there and then. If you've added that die to the pool, the whole group rolls (with its keep modifier, roll mode and modifier) and those dice leave the pool; otherwise a single die is rolled.
+- **Drag a die onto the canvas** to roll it there and then. If you've added that die to the pool, its whole group rolls (with its keep modifier and roll mode) and those dice leave the pool; otherwise one click's worth is rolled. The flat modifier, and a mode that adds a die (such as Daggerheart's advantage), go with the group only when it's the whole pool; otherwise they stay for the rest of the roll.
 - **Drag a die onto the macro hotbar** to keep that roll as a macro you can click any time.
 
 ### Roll Modifiers
@@ -90,7 +90,7 @@ As dice are added and a mode selcted, the formula preview updates in real time t
 ### Rolling and Clearing
 
 - **Roll** — Evaluates the current formula and posts the result as a chat message with a flavor label indicating the roll mode (if any).
-- **Clear** — Resets the entire dice pool and deselects any active roll mode.
+- **Clear** (the eraser at the bottom left of the tray) — Resets the entire dice pool: dice, keep modifiers, roll mode and modifier.
 
 
 ### Toggling the Dice Tray

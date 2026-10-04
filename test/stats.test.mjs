@@ -25,12 +25,20 @@ describe("recording rolls", () => {
   });
 
   it("reads dice out of Foundry rolls", () => {
-    const rolls = [{ dice: [{ faces: 20, results: [{ result: 12 }, { result: 3, discarded: true }] }] }, { dice: [] }];
+    const rolls = [{ dice: [{ denomination: "d", faces: 20, results: [{ result: 12 }, { result: 3, discarded: true }] },
+      { denomination: "f", faces: 3, results: [{ result: -1 }, { result: 1 }] },
+      { denomination: "c", faces: 2, results: [{ result: 0 }] }] }, { dice: [] }];
     expect(diceFromRolls(rolls)).toEqual([d20(12, 3)]);
   });
 
-  it("formats a local date key", () => {
-    expect(dayKey(new Date(2026, 0, 5))).toBe("2026-01-05");
+  it("tells numbered dice by their class, as Foundry's terms report denomination with the faces", () => {
+    class Die { static DENOMINATION = "d"; denomination = "d20"; faces = 20; results = [{ result: 7 }]; }
+    class FateDie { static DENOMINATION = "f"; denomination = "df"; faces = 3; results = [{ result: 1 }]; }
+    expect(diceFromRolls([{ dice: [new Die(), new FateDie()] }])).toEqual([d20(7)]);
+  });
+
+  it("files rolls by UTC day", () => {
+    expect(dayKey(new Date(Date.UTC(2026, 0, 5, 23, 30)))).toBe("2026-01-05");
   });
 });
 
@@ -46,7 +54,7 @@ describe("merging and summarising", () => {
 
   it(`keeps only the last ${DAYS_KEPT} days`, () => {
     const delta = emptyStats();
-    for ( let day = 1; day <= DAYS_KEPT + 5; day++ ) recordRoll(delta, [d20(5)], dayKey(new Date(2026, 0, day)));
+    for ( let day = 1; day <= DAYS_KEPT + 5; day++ ) recordRoll(delta, [d20(5)], dayKey(new Date(Date.UTC(2026, 0, day))));
     const merged = mergeStats(emptyStats(), delta);
     expect(Object.keys(merged.days)).toHaveLength(DAYS_KEPT);
     expect(merged.days["2026-01-01"]).toBeUndefined();

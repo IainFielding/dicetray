@@ -89,6 +89,7 @@
   "SOGROM_DICETRAY.StatsScope": "Which rolls",
   "SOGROM_DICETRAY.StatsAllTime": "All Time",
   "SOGROM_DICETRAY.StatsToday": "Today",
+  "SOGROM_DICETRAY.StatsTodayHint": "Rolls made today, by the UTC clock, so everyone's \"today\" is the same day.",
   "SOGROM_DICETRAY.StatsOff": "The GM has turned roll statistics off, so new rolls aren't being counted.",
   "SOGROM_DICETRAY.StatsEmpty": "No rolls counted yet. Roll some dice!",
   "SOGROM_DICETRAY.StatsLuckiest": "Rolling hottest:",

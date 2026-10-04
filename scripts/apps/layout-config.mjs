@@ -1,6 +1,6 @@
 import { ICON_PATH, MODULE_ID } from "../constants.mjs";
 import {
-  EXTRA_DICE, STANDARD_DICE, buttonImage, buttonText, diceButtons, normaliseButton, normaliseRows
+  EXTRA_DICE, STANDARD_DICE, buttonImage, buttonText, cssUrl, diceButtons, normaliseButton, normaliseRows
 } from "../dice.mjs";
 import { defaultRows, getRows } from "../layout.mjs";
 
@@ -20,7 +20,7 @@ const escape = value => foundry.utils.escapeHTML(value ?? "");
 /** What a button looks like in the editor: the same face the tray gives it. */
 function face(button) {
   const img = buttonImage(button, ICON_PATH);
-  return { img, mask: img ? encodeURI(img) : null, text: buttonText(button), color: button.color };
+  return { img, mask: img ? cssUrl(img) : null, text: buttonText(button), color: button.color };
 }
 
 /**

@@ -1,7 +1,7 @@
 <section class="dice-stats">
   <nav class="dice-stats-scope" aria-label="{{localize "SOGROM_DICETRAY.StatsScope"}}">
     <button type="button" data-action="scope" data-scope="all" class="{{#if scopeAll}}active{{/if}}">{{localize "SOGROM_DICETRAY.StatsAllTime"}}</button>
-    <button type="button" data-action="scope" data-scope="today" class="{{#unless scopeAll}}active{{/unless}}">{{localize "SOGROM_DICETRAY.StatsToday"}}</button>
+    <button type="button" data-action="scope" data-scope="today" data-tooltip="SOGROM_DICETRAY.StatsTodayHint" class="{{#unless scopeAll}}active{{/unless}}">{{localize "SOGROM_DICETRAY.StatsToday"}}</button>
   </nav>
 
   {{#unless tracking}}

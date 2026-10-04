@@ -1,11 +1,11 @@
 import { ICON_PATH, MAX_DICE_PER_TYPE, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
-import { buttonImage, buttonText, dieName, isCommand, parseDieTerm } from "./dice.mjs";
+import { buttonImage, buttonText, cssUrl, dieName, isCommand, parseDieTerm } from "./dice.mjs";
 import { getModes, getRows } from "./layout.mjs";
 import {
-  addDice, adjustKeep, adjustModifier, getDiceGroups, getKeepCount, onStateChange, removeDice, setModifier, state,
+  addDice, adjustKeep, adjustModifier, clearPool, getDiceGroups, getKeepCount, onStateChange, removeDice, setModifier, state,
   toggleMode
 } from "./state.mjs";
-import { currentFormula, formulaForDie } from "./formula.mjs";
+import { currentFormula, formulaForDie, parseRollCommand } from "./formula.mjs";
 import { DRAG_TYPE, rollFormula, rollPool } from "./roll.mjs";
 import { DiceStatsWindow } from "./apps/stats-window.mjs";
 import { getChatInput } from "./chat-input.mjs";
@@ -18,6 +18,17 @@ const KEEP_BUTTONS = [
 
 /** Trays currently on the page. Detached trays are pruned on the next refresh. */
 const trays = new Set();
+
+/** Set while a command button's own chat command is being sent, so it doesn't count as using the pool. */
+let sendingCommand = false;
+
+/**
+ * Whether a message sent through chat used up the pool: a roll command typed or edited in the chat
+ * bar. A command button's own command, or any other chat, leaves the pool alone.
+ */
+export function messageUsesPool(message) {
+  return !sendingCommand && (parseRollCommand(String(message ?? "")) !== null) && (state.pool.length > 0);
+}
 
 /** How long a button with a drawer is held before the drawer opens. */
 const DRAWER_HOLD_MS = 300;
@@ -43,9 +54,15 @@ function forEachTray(callback) {
   for ( const tray of trays ) callback(tray);
 }
 
-/** Forget trays no longer on the page, so nothing keeps a removed tray (and its buttons) alive. */
+/** Trays that have been on the page. A tray built but not attached yet (the pop-out's, mid-render) isn't. */
+const attached = new WeakSet();
+
+/** Forget trays that have left the page, so nothing keeps a removed tray (and its buttons) alive. */
 function pruneTrays() {
-  for ( const tray of trays ) if ( !tray.isConnected ) trays.delete(tray);
+  for ( const tray of trays ) {
+    if ( tray.isConnected ) attached.add(tray);
+    else if ( attached.has(tray) ) trays.delete(tray);
+  }
 }
 
 /* -------------------------------------------- */
@@ -172,6 +189,8 @@ function onTrayPointerDown(event) {
   const tray = event.currentTarget;
   const hold = holdState(tray);
   cancelHold(tray);
+  // A new press starts afresh: the press that opened a drawer may have ended anywhere.
+  hold.opened = null;
   hold.timer = setTimeout(() => {
     hold.timer = null;
     hold.opened = btn;
@@ -210,7 +229,7 @@ function buttonFace(def) {
     tinted.classList.add("dice-tray-die-icon", "dice-tray-die-tinted");
     // Set inline, so a relative path resolves against the page like an <img> src would; inside a
     // stylesheet it would resolve against the stylesheet's folder instead.
-    const mask = `url("${encodeURI(src)}")`;
+    const mask = `url("${cssUrl(src)}")`;
     tinted.style.maskImage = mask;
     tinted.style.webkitMaskImage = mask;
     tinted.style.backgroundColor = def.color;
@@ -292,8 +311,8 @@ export function createDiceTray({ popout = false } = {}) {
   const controlsRow = document.createElement("div");
   controlsRow.classList.add("dice-tray-controls-row");
   const columns = [modifierGroup, stackedPair(...keepButtons)];
-  // Systems without advantage-style modes (Fate, DCC, …) get no mode column at all.
-  if ( modeButtons.length ) columns.push(stackedPair(...modeButtons));
+  // Modes stack two to a column; systems without any (Fate, DCC, …) get no mode column at all.
+  for ( let i = 0; i < modeButtons.length; i += 2 ) columns.push(stackedPair(...modeButtons.slice(i, i + 2)));
   columns.push(roll);
   controlsRow.append(...columns);
   controlsRow.style.gridTemplateColumns = `repeat(${columns.length}, 1fr)`;
@@ -309,7 +328,15 @@ export function createDiceTray({ popout = false } = {}) {
   statsButton.dataset.tooltip = t("StatsTitle");
   statsButton.setAttribute("aria-label", t("StatsTitle"));
   statsButton.innerHTML = '<i class="fas fa-chart-column"></i>';
-  titleBar.append(statsButton);
+  const clearButton = document.createElement("button");
+  clearButton.type = "button";
+  clearButton.classList.add("dice-tray-title-btn", "dice-tray-clear-btn");
+  clearButton.dataset.action = "clear";
+  clearButton.dataset.tooltip = t("ButtonClear");
+  clearButton.setAttribute("aria-label", t("ButtonClear"));
+  clearButton.innerHTML = '<i class="fas fa-eraser"></i>';
+  statsButton.classList.add("dice-tray-title-btn");
+  titleBar.append(clearButton, statsButton);
 
   if ( popout ) {
     const preview = document.createElement("div");
@@ -357,6 +384,7 @@ function onTrayClick(event) {
     case "mode": return toggleMode(btn.dataset.mode);
     case "roll": return rollPool();
     case "stats": return DiceStatsWindow.open();
+    case "clear": return clearPool();
   }
 }
 
@@ -373,7 +401,7 @@ function onTrayContextMenu(event) {
       event.preventDefault();
       const { key, count } = btn.dataset;
       if ( game.settings.get(MODULE_ID, "rightClick") === "roll" ) {
-        return rollFormula(`${count}${key}`, { flavor: t("FlavorBase"), source: "rightClick" });
+        return rollFormula(`1${key}`, { flavor: t("FlavorBase"), source: "rightClick" });
       }
       return removeDice(key, Number(count));
     }
@@ -456,7 +484,15 @@ function warnMaxDice(key) {
 
 /** Run a command button's chat command ("/dr", …) as if it had been typed into the chat bar. */
 function runCommand(command) {
-  Promise.resolve(ui.chat.processMessage(command)).catch(err => {
+  // processMessage fires the chatMessage hook before its first await, so the flag covers it.
+  sendingCommand = true;
+  let result;
+  try {
+    result = ui.chat.processMessage(command);
+  } finally {
+    sendingCommand = false;
+  }
+  Promise.resolve(result).catch(err => {
     console.error(`${MODULE_ID} | Command error:`, err);
     ui.notifications.error(game.i18n.format("SOGROM_DICETRAY.CommandError", { command }));
   });
@@ -533,13 +569,23 @@ function refreshTray(tray) {
   }
 }
 
-/** Mirror the pool into the chat bar as a /r command, so it can be edited before rolling. */
+/** The text the tray last put in the chat bar. */
+let mirrored = "";
+
+/**
+ * Mirror the pool into the chat bar as a /r command, so it can be edited before rolling. Only text
+ * the tray owns is replaced — empty, what it wrote last, or a roll command — never a message the
+ * player is typing.
+ */
 function updateChatInput() {
   const chat = getChatInput();
   if ( !chat ) return;
   const formula = currentFormula();
   const value = formula ? `/r ${formula}` : "";
-  if ( chat.value !== value ) chat.value = value;
+  const current = chat.value.trim();
+  const ours = !current || (current === mirrored) || (parseRollCommand(current) !== null);
+  if ( ours && (chat.value !== value) ) chat.value = value;
+  if ( ours ) mirrored = value;
 }
 
 function refreshAll() {

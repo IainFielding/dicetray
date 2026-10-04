@@ -92,6 +92,8 @@ describe("pool odds", () => {
   it("gives up on dice it can't cover", () => {
     expect(poolDistribution(pool({ pool: ["dp"] }))).toBeNull();
     expect(poolDistribution(pool({ pool: ["d10r1"] }))).toBeNull();
+    expect(poolDistribution(pool({ pool: ["dFx", "dFx"] }))).toBeNull();
+    expect(poolDistribution(pool({ pool: ["dF"] }), { fateDice: false })).toBeNull();
     expect(poolDistribution(pool())).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  allButtons, buttonImage, buttonText, dieName, isCommand, normaliseButton, normaliseRows, parseDieTerm
+  allButtons, buttonImage, buttonText, cssUrl, dieName, isCommand, normaliseButton, normaliseRows, parseDieTerm
 } from "../scripts/dice.mjs";
 
 describe("parseDieTerm", () => {
@@ -10,6 +10,7 @@ describe("parseDieTerm", () => {
     expect(parseDieTerm("4df")).toMatchObject({ key: "dF" });
     expect(parseDieTerm("d%")).toMatchObject({ faces: 100, key: "d100" });
     expect(parseDieTerm("2d10r1")).toEqual({ count: 2, faces: 10, modifiers: "r1", key: "d10r1" });
+    expect(parseDieTerm("d6xo")).toMatchObject({ key: "d6xo" });
     expect(parseDieTerm(" d6x ")).toMatchObject({ key: "d6x" });
     expect(parseDieTerm("1d20cs>=11")).toMatchObject({ key: "d20cs>=11" });
     expect(parseDieTerm("dP")).toEqual({ count: 1, faces: "p", modifiers: "", key: "dp" });
@@ -17,7 +18,7 @@ describe("parseDieTerm", () => {
   });
 
   it("rejects anything that isn't a single dice term", () => {
-    for ( const bad of ["", "6", "d", "d0", "0d6", "2d6+1", "d6 + d8", "/r 1d20", "100d6", "dog", "d6y", "d6x!", null, undefined] ) {
+    for ( const bad of ["", "6", "d", "d0", "0d6", "2d6+1", "d6 + d8", "/r 1d20", "100d6", "dog", "d6y", "d6x!", "4d6kh3", "2d20kl", "4d6dl1", null, undefined] ) {
       expect(parseDieTerm(bad), String(bad)).toBeNull();
     }
   });
@@ -85,5 +86,12 @@ describe("button faces", () => {
   it("falls back to the label, then the formula", () => {
     expect(buttonText({ formula: "4dF", label: "Fate" })).toBe("Fate");
     expect(buttonText({ formula: "4dF" })).toBe("4dF");
+  });
+});
+
+describe("cssUrl", () => {
+  it("escapes what would break url(\"…\") and leaves encoded paths alone", () => {
+    expect(cssUrl("worlds/x/my%20die.svg")).toBe("worlds/x/my%20die.svg");
+    expect(cssUrl('a b"(c)\'.png')).toBe("a%20b%22%28c%29%27.png");
   });
 });

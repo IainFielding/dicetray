@@ -69,7 +69,7 @@ jobs:
             echo ""
             echo "To fix:"
             echo "    git commit --amend -s --no-edit      # the most recent commit"
-            echo "    git rebase --signoff origin/main     # every commit on your branch"
+            echo "    git rebase --signoff origin/master    # every commit on your branch"
             echo "Then force-push the branch."
             exit 1
           fi

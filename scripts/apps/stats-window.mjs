@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../constants.mjs";
 import { combineStats, dayKey, summariseStats } from "../stats.mjs";
-import { STATS_FLAG, resetStats, statsFor } from "../stats-tracker.mjs";
+import { STATS_FLAG, canSeeStats, resetStats, statsFor } from "../stats-tracker.mjs";
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -78,8 +78,7 @@ export class DiceStatsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** The users whose statistics this user may see. */
   #visibleUsers() {
-    const everyone = game.user.isGM || (game.settings.get(MODULE_ID, "statsVisibility") === "all");
-    return game.users.filter(u => (everyone || (u === game.user)) && (u.getFlag(MODULE_ID, STATS_FLAG) || (u === game.user)));
+    return game.users.filter(u => canSeeStats(u) && (u.getFlag(MODULE_ID, STATS_FLAG) || (u === game.user)));
   }
 
   /** @override */

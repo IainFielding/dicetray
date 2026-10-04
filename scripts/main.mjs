@@ -5,8 +5,8 @@ import { DiceTrayWindow, onGetSceneControlButtons } from "./popout.mjs";
 import { registerSettings } from "./settings.mjs";
 import { clearPool, onStateChange, snapshot } from "./state.mjs";
 import { onDropCanvasData, onHotbarDrop } from "./roll.mjs";
-import { onCreateChatMessage, saveOnHide } from "./stats-tracker.mjs";
-import { injectDiceTray, injectToggleButton, rebuildTrays } from "./tray.mjs";
+import { onPreCreateChatMessage, saveOnHide } from "./stats-tracker.mjs";
+import { injectDiceTray, injectToggleButton, messageUsesPool, rebuildTrays } from "./tray.mjs";
 
 Hooks.once("init", () => {
   registerSettings();
@@ -40,13 +40,15 @@ Hooks.once("ready", () => {
   Hooks.callAll(HOOKS.ready, game.modules.get(MODULE_ID).api);
 });
 
-// Roll statistics: each client counts its own user's rolls.
-Hooks.on("createChatMessage", onCreateChatMessage);
+// Roll statistics: counted by the client that makes each message (pre-create hooks run only there).
+Hooks.on("preCreateChatMessage", onPreCreateChatMessage);
 
 Hooks.on("getSceneControlButtons", onGetSceneControlButtons);
 
-// A message sent from the chat bar uses up the pool.
-Hooks.on("chatMessage", () => clearPool());
+// A roll command sent from the chat bar (the mirrored pool, perhaps edited) uses up the pool.
+Hooks.on("chatMessage", (_log, message) => {
+  if ( messageUsesPool(message) ) clearPool();
+});
 
 // Dice dragged out of the tray: roll them on the canvas, or keep them as a hotbar macro.
 Hooks.on("dropCanvasData", onDropCanvasData);

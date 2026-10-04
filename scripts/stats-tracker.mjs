@@ -11,13 +11,17 @@ const SAVE_DELAY_MS = 3000;
 let pending = null;
 let timer = null;
 
+/** The save in progress, if any. Saves run one after another so none overwrites another. */
+let saving = null;
+
 /**
- * Count a new chat message's dice, if this client's user made it. Every client sees every
- * message, so only the author's counts it. Blind rolls are skipped: their results are hidden from
- * the player who made them, and their statistics would give them away.
+ * Count a chat message's dice as it is made. Pre-create hooks run only on the client making the
+ * message, so each roll is counted exactly once — even with the same user logged in twice. Blind
+ * rolls are skipped: their results are hidden from the player who made them, and their statistics
+ * would give them away.
  */
-export function onCreateChatMessage(message, _options, userId) {
-  if ( (userId !== game.user.id) || message.blind || !message.rolls?.length ) return;
+export function onPreCreateChatMessage(message) {
+  if ( message.blind || !message.rolls?.length ) return;
   if ( !game.settings.get(MODULE_ID, "trackStats") ) return;
   pending ??= emptyStats();
   const before = pending.rolls;
@@ -26,19 +30,32 @@ export function onCreateChatMessage(message, _options, userId) {
 }
 
 /** Write the rolls made since the last save to this user's statistics. */
-export async function saveStats() {
+export function saveStats() {
   if ( timer ) clearTimeout(timer);
   timer = null;
+  saving = (saving ?? Promise.resolve()).then(saveNow).finally(() => { saving = null; });
+  return saving;
+}
+
+async function saveNow() {
   if ( !pending ) return;
   const delta = pending;
   pending = null;
+  // Read after any earlier save has landed, so this one builds on it.
   const merged = mergeStats(game.user.getFlag(MODULE_ID, STATS_FLAG), delta);
   try {
     // Replace the value outright, so days that have dropped off are really removed.
     await game.user.update({ [`flags.${MODULE_ID}.${STATS_FLAG}`]: foundry.data.operators.ForcedReplacement.create(merged) });
   } catch ( err ) {
+    // Keep the rolls for the next save rather than losing them.
+    pending = pending ? mergeStats(delta, pending) : delta;
     console.error(`${MODULE_ID} | Could not save roll statistics:`, err);
   }
+}
+
+/** Whether the current user may see a user's statistics under "Who Sees Roll Statistics". */
+export function canSeeStats(user) {
+  return game.user.isGM || (user === game.user) || (game.settings.get(MODULE_ID, "statsVisibility") === "all");
 }
 
 /**

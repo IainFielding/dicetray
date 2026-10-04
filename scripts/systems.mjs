@@ -24,10 +24,11 @@
  * @typedef {object} SystemMap
  * @property {() => import("./dice.mjs").DiceButton[][]} [rows]  The default layout.
  * @property {Record<string, Partial<RollMode>|null>|null} [modes]  The mode buttons. Entries are
- *   merged over the generic advantage/disadvantage, and a null entry drops that mode; `{}` or null
- *   hides the mode buttons.
+ *   merged over the generic advantage/disadvantage, which stay unless an entry sets them to null;
+ *   other keys add modes. `modes: null` hides the mode buttons altogether.
  */
 
+import { ICON_PATH } from "./constants.mjs";
 import { diceButtons, STANDARD_DICE } from "./dice.mjs";
 
 /** Advantage and disadvantage as most d20 games play them. */
@@ -89,9 +90,11 @@ export const SYSTEM_MAPS = {
 
   swade: {
     // Trait and damage dice ace (explode); a Wild Card rolls the wild die alongside and keeps the higher.
-    rows: () => [[4, 6, 8, 10, 12].map(f => ({ formula: `d${f}x`, img: `modules/sogrom-dicetray/assets/icons/d${f}-grey.svg`,
+    rows: () => [[4, 6, 8, 10, 12].map(f => ({ formula: `d${f}x`, img: `${ICON_PATH}/d${f}-grey.svg`,
       tooltip: "SOGROM_DICETRAY.SwadeAcingDie" }))],
     modes: {
+      advantage: null,
+      disadvantage: null,
       wild: {
         style: "wildDie", die: "1dw", icon: "fa-star", label: "SOGROM_DICETRAY.SwadeWild",
         tooltip: "SOGROM_DICETRAY.SwadeWildTooltip", flavor: "SOGROM_DICETRAY.SwadeWildFlavor"
@@ -171,6 +174,11 @@ export function registerSystemMap(id, map) {
   registered.set(id, map ?? {});
 }
 
+/** Remove a map added with registerSystemMap, so the built-in one (if any) applies again. */
+export function unregisterSystemMap(id) {
+  registered.delete(id);
+}
+
 /** The map for a system id, following aliases; an empty map (standard dice) if there is none. */
 export function systemMap(id) {
   if ( registered.has(id) ) return registered.get(id);
@@ -195,10 +203,11 @@ export function systemModes(id) {
   const map = systemMap(id);
   if ( !("modes" in map) ) return GENERIC_MODES;
   if ( !map.modes ) return {};
-  const modes = {};
+  // Overrides merge over the generic modes, which stay unless set to null; new keys add modes.
+  const modes = { ...GENERIC_MODES };
   for ( const [key, override] of Object.entries(map.modes) ) {
-    if ( override === null ) continue;
-    modes[key] = { ...(GENERIC_MODES[key] ?? {}), ...override };
+    if ( override === null ) delete modes[key];
+    else modes[key] = { ...(GENERIC_MODES[key] ?? {}), ...override };
   }
   return modes;
 }

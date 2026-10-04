@@ -7,7 +7,7 @@ import { DiceTrayWindow } from "./popout.mjs";
 import { rollFormula, rollPool } from "./roll.mjs";
 import { refreshLayout } from "./settings.mjs";
 import { addDice, clearPool, removeDice, setMode, setModifier, snapshot } from "./state.mjs";
-import { statsFor } from "./stats-tracker.mjs";
+import { canSeeStats, statsFor } from "./stats-tracker.mjs";
 import { dayKey, summariseStats } from "./stats.mjs";
 import { registerSystemMap } from "./systems.mjs";
 
@@ -25,8 +25,15 @@ export function createApi() {
     registerSystem(systemId, map) {
       if ( (typeof systemId !== "string") || !systemId ) throw new Error(`${MODULE_ID} | registerSystem needs a system id`);
       if ( map && (typeof map !== "object") ) throw new Error(`${MODULE_ID} | registerSystem needs a map object`);
+      if ( (map?.rows !== undefined) && (typeof map.rows !== "function") ) {
+        throw new Error(`${MODULE_ID} | registerSystem: rows must be a function returning rows of buttons`);
+      }
+      if ( (map?.modes !== undefined) && (map.modes !== null) && (typeof map.modes !== "object") ) {
+        throw new Error(`${MODULE_ID} | registerSystem: modes must be an object or null`);
+      }
       registerSystemMap(systemId, map);
-      if ( game.ready ) refreshLayout();
+      // Always forget the cached layout and modes; rebuild trays that are already drawn.
+      refreshLayout();
     },
 
     /** The rows of buttons the tray shows (a copy). */
@@ -78,7 +85,7 @@ export function createApi() {
 
     /** Turn on one of the system's modes ("advantage", …), or turn them off with null. */
     setMode(mode) {
-      setMode(mode && (mode in getModes()) ? mode : "normal");
+      setMode(mode && Object.hasOwn(getModes(), mode) ? mode : "normal");
     },
 
     /** Empty the pool. */
@@ -112,11 +119,14 @@ export function createApi() {
 
     /**
      * A user's roll statistics: rolls, d20 average and natural 20s/1s, and each die size's average.
+     * Respects "Who Sees Roll Statistics": a player may only read others' when everyone may.
      * @param {User} [user]          Defaults to the current user.
      * @param {object} [options]
      * @param {boolean} [options.today]  Only today's rolls.
+     * @returns {object|null} null when this user may not see that user's statistics.
      */
     getStats(user = game.user, { today = false } = {}) {
+      if ( !canSeeStats(user) ) return null;
       return summariseStats(statsFor(user), today ? dayKey() : null);
     },
 

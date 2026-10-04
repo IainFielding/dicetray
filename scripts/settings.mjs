@@ -3,10 +3,12 @@ import { DiceLayoutConfig } from "./apps/layout-config.mjs";
 import { DiceStatsMenu } from "./apps/stats-window.mjs";
 import { invalidateLayout } from "./layout.mjs";
 import { DiceTrayWindow } from "./popout.mjs";
+import { scheduleOdds } from "./odds-display.mjs";
 import { applyTheme, rebuildTrays } from "./tray.mjs";
 
 /** The layout or the system map behind it changed: rebuild every open tray from it. */
 export function refreshLayout() {
+  // Safe before the UI exists: rebuildTrays and refresh do nothing until there is something drawn.
   invalidateLayout();
   rebuildTrays();
   DiceTrayWindow.refresh();
@@ -102,7 +104,7 @@ export function registerSettings() {
     config: true,
     type: Boolean,
     default: true,
-    onChange: () => rebuildTrays()
+    onChange: () => scheduleOdds()
   });
 
   game.settings.registerMenu(MODULE_ID, "stats", {

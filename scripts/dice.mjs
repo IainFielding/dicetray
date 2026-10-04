@@ -30,8 +30,13 @@ const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 /** A dice term: count, "d", faces (a number, %, or a system's letter such as F or p), modifiers. */
 const TERM = /^(\d*)d(\d+|%|[a-z])(\S*)$/i;
 
-/** Modifiers Foundry's dice understand: x, xo, r, rr, k, kh, kl, d, dh, dl, min, max, cs, … with a target. */
-const MODIFIERS = /^(?:(?:xo?|rr?|k[hl]?|d[hl]?|min|max|even|odd|c[sf]|df|sf|ms)(?:[<>]=?|=)?\d*)*$/i;
+/**
+ * Modifiers a button's die may carry: per-die ones Foundry understands (x, xo, r, rr, min, max, cs,
+ * …) with a target. Keep and drop (k, kh, kl, d, dh, dl) aren't allowed: they act on a whole group,
+ * and clicks merge into one group, so "4d6kh3" clicked twice would become "8d6kh3". The tray's own
+ * KH/KL buttons cover keeping.
+ */
+const MODIFIERS = /^(?:(?:xo?|rr?|min|max|even|odd|c[sf]|df|sf|ms)(?:[<>]=?|=)?\d*)*$/i;
 
 /**
  * Parse a dice term as written on a button.
@@ -130,6 +135,13 @@ export function buttonImage(button, iconPath) {
   }
   return null;
 }
+
+/**
+ * An image path made safe to put inside CSS url("…"): quotes, backslashes, brackets and spaces are
+ * escaped, and nothing else is touched, so an already percent-encoded path isn't encoded twice.
+ */
+export const cssUrl = path => String(path)
+  .replace(/["'\\()\s]/g, c => `%${c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
 
 /** Text a button shows when it has no image: its label, or the formula itself. */
 export const buttonText = button => button.label || button.formula;

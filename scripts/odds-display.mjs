@@ -20,7 +20,10 @@ const t = key => game.i18n.localize(`SOGROM_DICETRAY.${key}`);
 export function createOddsLine() {
   const line = document.createElement("div");
   line.classList.add("dice-tray-odds");
-  line.hidden = true;
+  // Hidden only when the odds are turned off; with no odds to show it stays, empty, so adding the
+  // first die doesn't push the tray's buttons out from under the cursor.
+  line.hidden = !game.settings.get(MODULE_ID, "showOdds");
+  line.classList.add("empty");
   line.title = t("OddsHint");
 
   const summary = document.createElement("span");
@@ -66,18 +69,20 @@ function updateOdds() {
   timer = null;
   const lines = document.querySelectorAll(".sogrom-dice-tray .dice-tray-odds");
   if ( !lines.length ) return;
-  if ( !game.settings.get(MODULE_ID, "showOdds") ) {
-    for ( const line of lines ) line.hidden = true;
-    return;
-  }
+  const show = game.settings.get(MODULE_ID, "showOdds");
+  for ( const line of lines ) line.hidden = !show;
+  if ( !show ) return;
 
-  const key = JSON.stringify([state.pool, state.mode, state.modifier, state.keep, game.system.id]);
-  if ( key !== cache.key ) cache = { key, distribution: poolDistribution(state, { modes: getModes() }) };
+  const modes = getModes();
+  const fateDice = CONFIG.Dice.terms.f === foundry.dice.terms.FateDie;
+  // The mode definitions are part of the key: a system map registered later can change what a mode does.
+  const key = JSON.stringify([state.pool, state.mode, state.modifier, state.keep, modes, fateDice]);
+  if ( key !== cache.key ) cache = { key, distribution: poolDistribution(state, { modes, fateDice }) };
   const { distribution } = cache;
 
   const odds = distribution && summarise(distribution, target);
   for ( const line of lines ) {
-    line.hidden = !odds;
+    line.classList.toggle("empty", !odds);
     if ( !odds ) continue;
     const prefix = odds.approximate ? "≈" : "";
     const max = odds.unbounded ? `${odds.min}+` : `${odds.min}–${odds.max}`;
