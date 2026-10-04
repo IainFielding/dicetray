@@ -412,3 +412,149 @@
 .dice-tray-keep-indicator[data-type="kl"] {
   background: var(--dice-tray-keep-lowest, #9b59b6);
 }
+
+/* ========================================
+    Dice Layout Editor
+   ======================================== */
+
+.sogrom-dice-layout-config .dice-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dice-layout-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dice-layout-row {
+  display: grid;
+  grid-template-columns: 4em 1fr auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.dice-layout-row-label {
+  font-size: var(--font-size-12, 0.75rem);
+  opacity: 0.7;
+}
+
+.dice-layout-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 3.4em;
+  padding: 4px;
+  border: 1px dashed var(--color-border, #7a7971);
+  border-radius: 4px;
+}
+
+.dice-layout-buttons.drop-into {
+  border-color: var(--color-warm-2, #ff6400);
+}
+
+.dice-layout-button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 3.4em;
+  height: 3.4em;
+  border: 1px solid var(--color-border, #7a7971);
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+}
+
+.dice-layout-button:hover,
+.dice-layout-button:focus-visible {
+  border-color: var(--color-warm-2, #ff6400);
+}
+
+.dice-layout-button.dragging {
+  opacity: 0.4;
+}
+
+.dice-layout-button.drop-before {
+  box-shadow: -3px 0 0 var(--color-warm-2, #ff6400);
+}
+
+.dice-layout-button.drop-after {
+  box-shadow: 3px 0 0 var(--color-warm-2, #ff6400);
+}
+
+.dice-layout-face {
+  width: 1.8em;
+  height: 1.8em;
+  object-fit: contain;
+  border: none;
+}
+
+.dice-layout-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 3em;
+  overflow: hidden;
+  font-size: var(--font-size-11, 0.7rem);
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.dice-layout-formula {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--font-size-10, 0.6rem);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.7;
+}
+
+.dice-layout-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--color-warm-2, #ff6400);
+  color: #fff;
+  font-size: 9px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.dice-layout-button:hover .dice-layout-remove,
+.dice-layout-button:focus-within .dice-layout-remove {
+  display: block;
+}
+
+.dice-layout-add {
+  width: 3.4em;
+  height: 3.4em;
+}
+
+.dice-layout-row-remove {
+  width: 2em;
+}
+
+.dice-layout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dice-layout-actions button {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.dice-layout-empty {
+  text-align: center;
+  opacity: 0.7;
+}

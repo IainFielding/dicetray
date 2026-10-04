@@ -34,6 +34,11 @@ describe("normaliseButton", () => {
       .toEqual({ formula: "d8", label: "Eight" });
   });
 
+  it("only accepts hex colours", () => {
+    expect(normaliseButton({ formula: "d6", color: "#3fa7ff" })).toEqual({ formula: "d6", color: "#3fa7ff" });
+    expect(normaliseButton({ formula: "d6", color: "red; background: url(x)" })).toEqual({ formula: "d6" });
+  });
+
   it("accepts chat commands", () => {
     expect(isCommand("/dr")).toBe(true);
     expect(normaliseButton({ formula: "/dr", label: "Duality" })).toEqual({ formula: "/dr", label: "Duality" });

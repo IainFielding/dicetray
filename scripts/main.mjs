@@ -9,6 +9,9 @@ import { injectDiceTray, injectToggleButton, rebuildTrays } from "./tray.mjs";
 Hooks.once("init", () => {
   registerSettings();
   registerKeybindings();
+  foundry.applications.handlebars.loadTemplates({
+    "sogrom-dicetray.layout-face": `modules/${MODULE_ID}/templates/layout-face.hbs`
+  });
 });
 
 Hooks.on("renderChatLog", (_app, element) => {

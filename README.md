@@ -13,7 +13,7 @@ I created this Foundry module because the exsisting dice-tray module wasn't work
 
 - Build dice pools by clicking dice buttons directly in the Dice Tray
 - Support for all standard D&D dice: D4, D6, D8, D10, D12, D20, and D100
-- An optional second row of less common dice: D2, D3, D5, D7, D14, D16, D24 and D30
+- A GM editor for the tray's dice: add rows, extra dice (D2–D30), Fate or exploding dice, chat commands, custom images and colours
 - Roll modifiers: Keep Highest, Advantage, Disadvantage, and Keep Lowest
 - Live formula preview as you build your pool
 - Toggle the tray on/off with a D20 button
@@ -27,9 +27,26 @@ I created this Foundry module because the exsisting dice-tray module wasn't work
 - **Left-click** any dice button (D4–D100) to add that die to the pool. A badge appears on the button showing how many of that die are added.
 - **Right-click** a dice button to remove one die of that type from the pool. In the module settings you can change **Right-click on a die** to *Roll one immediately* instead, which rolls a single die of that type without touching the pool you're building.
 
-### Extra Dice
+### Configuring the Dice (GM)
 
-The GM can turn on **Show Extra Dice** in the module settings to add a second row with D2, D3, D5, D7, D14, D16, D24 and D30 to everyone's tray.
+In the module settings, **Dice Layout → Configure Dice** opens an editor for the buttons every player's tray shows.
+
+- **Add Standard Dice Row** / **Add Extra Dice Row** add a ready-made row: D4–D100, or D2, D3, D5, D7, D14, D16, D24 and D30.
+- **Add Row** starts an empty row, and **+** adds a button to it.
+- Click a button to edit it, drag it to move it within or between rows, and right-click it (or use its **×**) to remove it.
+- **Reset to Default** goes back to the standard dice.
+
+Each button has:
+
+| Field | What it does |
+|-------|--------------|
+| **Formula** | What one click adds: a die (`d6`), several (`4dF` for Fate dice), or a die with modifiers (`d6x` explodes, `d10r1` rerolls 1s). A chat command starting with `/` runs straight away instead. |
+| **Label** | Text shown when the button has no image. |
+| **Image** | Your own image; standard dice use the built-in icons. |
+| **Tooltip** | Hover text. |
+| **Colour** | Tints the image, or colours the label. |
+
+Nothing changes for players until you click **Save**.
 
 ### Dragging Dice
 

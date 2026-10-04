@@ -1,0 +1,45 @@
+<section class="dice-layout">
+  <p class="hint">{{localize "SOGROM_DICETRAY.LayoutHint"}}</p>
+
+  <div class="dice-layout-rows">
+    {{#each rows as |row|}}
+    <div class="dice-layout-row" data-row="{{row.index}}">
+      <span class="dice-layout-row-label">{{row.label}}</span>
+      <div class="dice-layout-buttons" data-row="{{row.index}}">
+        {{#each row.buttons as |button|}}
+        <div class="dice-layout-button" draggable="true" data-action="editButton" data-row="{{row.index}}"
+             data-index="{{button.index}}" data-tooltip="{{button.formula}}" role="button" tabindex="0">
+          {{> "sogrom-dicetray.layout-face" face=button.face}}
+          <span class="dice-layout-formula">{{button.formula}}</span>
+          <a class="dice-layout-remove" data-action="removeButton" data-row="{{row.index}}" data-index="{{button.index}}"
+             data-tooltip="SOGROM_DICETRAY.LayoutRemoveButton" aria-label="{{localize "SOGROM_DICETRAY.LayoutRemoveButton"}}">
+            <i class="fas fa-times"></i>
+          </a>
+        </div>
+        {{/each}}
+        {{#if row.canAdd}}
+        <button type="button" class="dice-layout-add" data-action="addButton" data-row="{{row.index}}"
+                data-tooltip="SOGROM_DICETRAY.LayoutAddButton" aria-label="{{localize "SOGROM_DICETRAY.LayoutAddButton"}}">
+          <i class="fas fa-plus"></i>
+        </button>
+        {{/if}}
+      </div>
+      <button type="button" class="dice-layout-row-remove icon fas fa-trash" data-action="removeRow" data-row="{{row.index}}"
+              data-tooltip="SOGROM_DICETRAY.LayoutRemoveRow" aria-label="{{localize "SOGROM_DICETRAY.LayoutRemoveRow"}}"></button>
+    </div>
+    {{else}}
+    <p class="dice-layout-empty">{{localize "SOGROM_DICETRAY.LayoutEmpty"}}</p>
+    {{/each}}
+  </div>
+
+  {{#if canAddRow}}
+  <div class="dice-layout-actions">
+    <button type="button" data-action="addRow"><i class="fas fa-plus"></i> {{localize "SOGROM_DICETRAY.LayoutAddRow"}}</button>
+    <button type="button" data-action="addPreset" data-preset="standard"><i class="fas fa-dice"></i> {{localize "SOGROM_DICETRAY.LayoutAddStandard"}}</button>
+    <button type="button" data-action="addPreset" data-preset="extra"><i class="fas fa-dice-d6"></i> {{localize "SOGROM_DICETRAY.LayoutAddExtra"}}</button>
+  </div>
+  {{/if}}
+  <div class="dice-layout-actions">
+    <button type="button" data-action="reset"><i class="fas fa-undo"></i> {{localize "SOGROM_DICETRAY.LayoutReset"}}</button>
+  </div>
+</section>

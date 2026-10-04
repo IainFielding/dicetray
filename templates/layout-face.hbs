@@ -1,0 +1,9 @@
+{{#if face.img}}
+  {{#if face.color}}
+  <span class="dice-layout-face dice-tray-die-tinted" style="mask-image: url(&quot;{{face.mask}}&quot;); -webkit-mask-image: url(&quot;{{face.mask}}&quot;); background-color: {{face.color}};"></span>
+  {{else}}
+  <img class="dice-layout-face" src="{{face.img}}" alt="" draggable="false">
+  {{/if}}
+{{else}}
+  <span class="dice-layout-face dice-layout-text" {{#if face.color}}style="color: {{face.color}};"{{/if}}>{{face.text}}</span>
+{{/if}}

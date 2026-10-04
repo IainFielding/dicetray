@@ -9,7 +9,7 @@
  * @property {string} [label]     Text shown on the button when there is no image.
  * @property {string} [img]       Image path. Defaults to the module's icon for standard dice.
  * @property {string} [tooltip]   Hover text. Defaults to "Add a <die>".
- * @property {string} [color]     CSS colour the image is tinted with.
+ * @property {string} [color]     Hex colour ("#3fa7ff") the image is tinted with.
  * @property {DiceButton[]} [drawer]  Further buttons that open from this one.
  */
 
@@ -24,6 +24,8 @@ export const EXTRA_DICE = [2, 3, 5, 7, 14, 16, 24, 30];
 
 /** Most dice one button may add per click. Foundry rejects terms over 999 dice. */
 const MAX_COUNT_PER_CLICK = 99;
+
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 const TERM = /^(\d*)d(\d+|F|%)([a-z<>=0-9]*)$/i;
 
@@ -74,10 +76,13 @@ export function normaliseButton(data, { allowDrawer = true } = {}) {
   const formula = String(data.formula ?? "").trim();
   if ( !formula || (!isCommand(formula) && !parseDieTerm(formula)) ) return null;
   const button = { formula };
-  for ( const key of ["label", "img", "tooltip", "color"] ) {
+  for ( const key of ["label", "img", "tooltip"] ) {
     const value = (typeof data[key] === "string") ? data[key].trim() : "";
     if ( value ) button[key] = value;
   }
+  // Colours end up in inline styles, so only plain hex colours are accepted.
+  const color = (typeof data.color === "string") ? data.color.trim() : "";
+  if ( HEX_COLOR.test(color) ) button.color = color;
   if ( allowDrawer && Array.isArray(data.drawer) ) {
     const drawer = data.drawer.map(d => normaliseButton(d, { allowDrawer: false })).filter(Boolean);
     if ( drawer.length ) button.drawer = drawer;

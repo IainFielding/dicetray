@@ -1,4 +1,5 @@
 import { MODULE_ID, THEME_CHOICES } from "./constants.mjs";
+import { DiceLayoutConfig } from "./apps/layout-config.mjs";
 import { invalidateRows } from "./layout.mjs";
 import { DiceTrayWindow } from "./popout.mjs";
 import { applyTheme, rebuildTrays } from "./tray.mjs";
@@ -44,14 +45,13 @@ export function registerSettings() {
     }
   });
 
-  game.settings.register(MODULE_ID, "extraDice", {
-    name: "SOGROM_DICETRAY.SettingExtraDice",
-    hint: "SOGROM_DICETRAY.SettingExtraDiceHint",
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: false,
-    onChange: onLayoutChange
+  game.settings.registerMenu(MODULE_ID, "layout", {
+    name: "SOGROM_DICETRAY.LayoutMenu",
+    label: "SOGROM_DICETRAY.LayoutMenuLabel",
+    hint: "SOGROM_DICETRAY.LayoutMenuHint",
+    icon: "fas fa-dice",
+    type: DiceLayoutConfig,
+    restricted: true
   });
 
   // The GM's dice layout: rows of button definitions (see dice.mjs). Empty means the default.

@@ -1,4 +1,4 @@
-import { MAX_DICE_PER_TYPE, MODE_CONFIG, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
+import { ICON_PATH, MAX_DICE_PER_TYPE, MODE_CONFIG, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
 import { buttonImage, buttonText, dieName, isCommand, parseDieTerm } from "./dice.mjs";
 import { getRows } from "./layout.mjs";
 import {
@@ -25,7 +25,6 @@ const pending = new Map();
 
 const t = key => game.i18n.localize(`SOGROM_DICETRAY.${key}`);
 
-const ICON_PATH = `modules/${MODULE_ID}/assets/icons`;
 
 function forEachTray(callback) {
   for ( const tray of trays ) {

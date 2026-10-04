@@ -1,14 +1,12 @@
 import { MODULE_ID } from "./constants.mjs";
-import { EXTRA_DICE, STANDARD_DICE, diceButtons, normaliseRows } from "./dice.mjs";
+import { STANDARD_DICE, diceButtons, normaliseRows } from "./dice.mjs";
 
 /** The normalised layout, cached until the setting behind it changes. */
 let cached = null;
 
 /** The layout a world starts with, before the GM changes anything. */
 export function defaultRows() {
-  const rows = [diceButtons(STANDARD_DICE)];
-  if ( game.settings.get(MODULE_ID, "extraDice") ) rows.push(diceButtons(EXTRA_DICE));
-  return rows;
+  return [diceButtons(STANDARD_DICE)];
 }
 
 /**

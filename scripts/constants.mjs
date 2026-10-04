@@ -1,5 +1,8 @@
 export const MODULE_ID = "sogrom-dicetray";
 
+/** Folder of the module's die icons. */
+export const ICON_PATH = `modules/${MODULE_ID}/assets/icons`;
+
 export const MODE_CONFIG = {
   advantage:    { suffix: "adv", keep: "kh", flavorKey: "FlavorAdvantage",    icon: "fa-angle-double-up",   labelKey: "Advantage",    tooltipKey: "TooltipAdvantage" },
   disadvantage: { suffix: "dis", keep: "kl", flavorKey: "FlavorDisadvantage", icon: "fa-angle-double-down", labelKey: "Disadvantage", tooltipKey: "TooltipDisadvantage" }
