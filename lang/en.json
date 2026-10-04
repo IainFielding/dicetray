@@ -37,6 +37,7 @@
   "SOGROM_DICETRAY.TooltipKeepLowestFor": "Keep Lowest for {die}",
   "SOGROM_DICETRAY.TooltipModifierPlus": "Increase modifier (+1)",
   "SOGROM_DICETRAY.TooltipModifierMinus": "Decrease modifier (-1)",
+  "SOGROM_DICETRAY.TooltipModifierInput": "Modifier: type a number, or scroll to change it. Enter rolls.",
 
   "SOGROM_DICETRAY.MaxDiceReached": "Maximum of {max} {die} dice reached."
 }

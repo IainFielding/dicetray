@@ -38,6 +38,14 @@ The tray provides four roll modifier modes. Only one can be active at a time —
 | **DIS** | Disadvantage | Rolls with disadvantage — doubles the dice and keeps the worse half  |
 | **KL** | Keep Lowest | Rolls the pool and keeps only the lowest result from each die group  |
 
+### Modifier
+
+The box on the left of the controls is a flat modifier added to the roll.
+
+- Click **+** / **−**, scroll the mouse wheel over it, or use the arrow keys, to change it by one.
+- Click into it and type a number such as `5`, `+3` or `-2`.
+- Press **Enter** in the box to roll straight away.
+
 ### Formula Display
 
 As dice are added and a mode selcted, the formula preview updates in real time to show exactly what will be rolled.

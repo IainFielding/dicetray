@@ -1,6 +1,7 @@
 import { DICE_TYPES, MAX_DICE_PER_TYPE, MODE_CONFIG, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
 import {
-  addDie, adjustKeep, adjustModifier, getDiceGroups, getKeepCount, onStateChange, removeDie, state, toggleMode
+  addDie, adjustKeep, adjustModifier, getDiceGroups, getKeepCount, onStateChange, removeDie, setModifier, state,
+  toggleMode
 } from "./state.mjs";
 import { currentFormula } from "./formula.mjs";
 import { rollPool } from "./roll.mjs";
@@ -82,6 +83,21 @@ function createDiceTray() {
   minus.title = t("TooltipModifierMinus");
   minus.innerHTML = '<i class="fas fa-minus"></i>';
 
+  const modInput = document.createElement("input");
+  modInput.type = "text";
+  modInput.inputMode = "numeric";
+  modInput.autocomplete = "off";
+  modInput.classList.add("dice-tray-modifier-input");
+  modInput.title = t("TooltipModifierInput");
+  modInput.setAttribute("aria-label", t("TooltipModifierInput"));
+
+  const modifierGroup = document.createElement("div");
+  modifierGroup.classList.add("dice-tray-modifier-group");
+  modifierGroup.append(modInput, stackedPair(plus, minus));
+  // Scrolling over the modifier changes it. Not passive, so the chat log doesn't scroll as well;
+  // attached to this group only, so scrolling anywhere else stays passive.
+  modifierGroup.addEventListener("wheel", onModifierWheel, { passive: false });
+
   const keepButtons = KEEP_BUTTONS.map(cfg => {
     const btn = button(["dice-tray-keep-btn"], { action: "keep", keep: cfg.type });
     btn.innerHTML = `<i class="fas ${cfg.icon}"></i> <span class="dice-tray-label"></span>`;
@@ -101,7 +117,7 @@ function createDiceTray() {
 
   const controlsRow = document.createElement("div");
   controlsRow.classList.add("dice-tray-controls-row");
-  controlsRow.append(stackedPair(plus, minus), stackedPair(...keepButtons), stackedPair(...modeButtons), roll);
+  controlsRow.append(modifierGroup, stackedPair(...keepButtons), stackedPair(...modeButtons), roll);
 
   const titleBar = document.createElement("div");
   titleBar.classList.add("dice-tray-title");
@@ -113,6 +129,9 @@ function createDiceTray() {
   // One delegated listener per event type for the whole tray, rather than one per button.
   tray.addEventListener("click", onTrayClick);
   tray.addEventListener("contextmenu", onTrayContextMenu);
+  tray.addEventListener("input", onTrayInput);
+  tray.addEventListener("change", onTrayChange);
+  tray.addEventListener("keydown", onTrayKeyDown);
 
   trays.add(tray);
   refreshTray(tray);
@@ -151,6 +170,50 @@ function onTrayContextMenu(event) {
       return adjustKeep(btn.dataset.keep, -1);
   }
 }
+
+function onModifierWheel(event) {
+  if ( !event.deltaY ) return;
+  event.preventDefault();
+  adjustModifier(event.deltaY < 0 ? 1 : -1);
+}
+
+/** Parse what was typed into the modifier field: "+3", "-2", "4". */
+function parseModifier(text) {
+  const value = Number(String(text).replace(/\s+/g, ""));
+  return Number.isFinite(value) ? value : null;
+}
+
+function onTrayInput(event) {
+  if ( !event.target.matches(".dice-tray-modifier-input") ) return;
+  // Apply as the user types, but leave the field's text alone until they finish ("-" on its own
+  // is a valid step towards "-2").
+  const value = parseModifier(event.target.value);
+  if ( value !== null ) setModifier(value);
+}
+
+function onTrayChange(event) {
+  if ( !event.target.matches(".dice-tray-modifier-input") ) return;
+  setModifier(parseModifier(event.target.value) ?? 0);
+  event.target.value = formatModifier(state.modifier);
+}
+
+function onTrayKeyDown(event) {
+  if ( !event.target.matches(".dice-tray-modifier-input") ) return;
+  switch ( event.key ) {
+    case "ArrowUp":
+      event.preventDefault();
+      return adjustModifier(1);
+    case "ArrowDown":
+      event.preventDefault();
+      return adjustModifier(-1);
+    case "Enter":
+      event.preventDefault();
+      setModifier(parseModifier(event.target.value) ?? 0);
+      return rollPool();
+  }
+}
+
+const formatModifier = value => ((value > 0) ? `+${value}` : String(value));
 
 function warnMaxDice(faces) {
   ui.notifications.warn(game.i18n.format("SOGROM_DICETRAY.MaxDiceReached", {
@@ -197,6 +260,18 @@ function refreshTray(tray) {
 
   for ( const btn of tray.querySelectorAll(".dice-tray-mode-btn") ) {
     btn.classList.toggle("active", btn.dataset.mode === state.mode);
+  }
+
+  const modInput = tray.querySelector(".dice-tray-modifier-input");
+  if ( modInput ) {
+    // Don't rewrite the field under the user's cursor while what they're typing already says the
+    // same thing, or is half-typed ("-" on its way to "-2"). Anything else, such as the pool being
+    // cleared by a roll, is shown even while the field has focus.
+    const text = formatModifier(state.modifier);
+    const typed = parseModifier(modInput.value);
+    const typing = (document.activeElement === modInput) && ((typed === null) || (typed === state.modifier));
+    if ( !typing && (modInput.value !== text) ) modInput.value = text;
+    modInput.classList.toggle("active", state.modifier !== 0);
   }
 
   for ( const btn of tray.querySelectorAll(".dice-tray-keep-btn") ) {
