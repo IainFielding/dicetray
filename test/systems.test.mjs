@@ -52,6 +52,11 @@ describe("system modes", () => {
     expect(systemModes("dcc")).toEqual({});
   });
 
+  it("drops a mode set to null and keeps the rest", () => {
+    registerSystemMap("test-null", { modes: { advantage: {}, disadvantage: null } });
+    expect(Object.keys(systemModes("test-null"))).toEqual(["advantage"]);
+  });
+
   it("lets a registered map replace a built-in one", () => {
     registerSystemMap("dcc", { rows: () => [[{ formula: "d20" }]] });
     expect(systemRows("dcc")).toEqual([[{ formula: "d20" }]]);

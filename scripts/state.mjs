@@ -119,6 +119,22 @@ export function setModifier(value) {
   changed();
 }
 
+/** Set the roll mode outright: "normal", or a mode id. */
+export function setMode(mode) {
+  state.mode = mode || "normal";
+  changed();
+}
+
+/** A copy of the pool for other code to read: { dice: { d6: 2, … }, mode, modifier, keep }. */
+export function snapshot() {
+  return {
+    dice: getDiceGroups(),
+    mode: state.mode,
+    modifier: state.modifier,
+    keep: Object.fromEntries(Object.entries(state.keep).map(([key, mod]) => [key, { ...mod }]))
+  };
+}
+
 /** Toggle a roll mode: selecting the active mode returns to a normal roll. */
 export function toggleMode(mode) {
   state.mode = (state.mode === mode) ? "normal" : mode;

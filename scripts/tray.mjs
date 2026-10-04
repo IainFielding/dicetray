@@ -357,7 +357,7 @@ function onTrayContextMenu(event) {
       event.preventDefault();
       const { key, count } = btn.dataset;
       if ( game.settings.get(MODULE_ID, "rightClick") === "roll" ) {
-        return rollFormula(`${count}${key}`, { flavor: t("FlavorBase") });
+        return rollFormula(`${count}${key}`, { flavor: t("FlavorBase"), source: "rightClick" });
       }
       return removeDice(key, Number(count));
     }

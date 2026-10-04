@@ -122,6 +122,10 @@ The tray works with any system. Some systems start with dice and roll modes that
 | Shadow of the Demon Lord | D3, D6, D20 | **BOON / BANE** add or take away a d6 |
 | Anything else | D4–D100 | ADV / DIS roll twice and keep the better or worse result |
 
+## For Developers
+
+Modules, systems and macros can drive the tray, react to its rolls, or give a game system its own dice and mode buttons. See [docs/API.md](docs/API.md).
+
 ## Compatibility
 
 - **Foundry VTT**: v14+

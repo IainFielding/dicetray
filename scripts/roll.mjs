@@ -1,4 +1,4 @@
-import { MODULE_ID } from "./constants.mjs";
+import { HOOKS, MODULE_ID } from "./constants.mjs";
 import { getModes } from "./layout.mjs";
 import { currentFormula, parseRollCommand } from "./formula.mjs";
 import { clearPool, removeAllOf, state } from "./state.mjs";
@@ -23,30 +23,47 @@ function rollFlavor() {
 /**
  * Evaluate a formula and post it to chat. The message uses the core chat message mode
  * (public, GM, blind, self) the user has selected, which Roll#toMessage applies by default.
- * @returns {Promise<boolean>} Whether the roll was posted.
+ *
+ * Every roll the tray makes comes through here, so other modules see them all: the preRoll hook
+ * can change the formula or flavor, or cancel the roll, and the roll hook follows the message.
+ * @param {string} formula
+ * @param {object} [options]
+ * @param {string} [options.flavor]
+ * @param {"tray"|"rightClick"|"drop"|"api"} [options.source]  What asked for the roll.
+ * @returns {Promise<ChatMessage|null>} The message, or null if cancelled or the roll failed.
  */
-export async function rollFormula(formula, { flavor } = {}) {
+export async function rollFormula(formula, { flavor, source = "tray" } = {}) {
+  const data = { formula, flavor, source };
+  if ( Hooks.call(HOOKS.preRoll, data) === false ) return null;
   try {
-    const roll = new Roll(formula);
+    const roll = new Roll(data.formula);
     await roll.evaluate();
-    await roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor });
-    return true;
+    const message = await roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: data.flavor });
+    Hooks.callAll(HOOKS.roll, roll, message, data);
+    return message ?? null;
   } catch ( err ) {
     console.error(`${MODULE_ID} | Roll error:`, err);
     ui.notifications.error(game.i18n.localize("SOGROM_DICETRAY.RollError"));
-    return false;
+    return null;
   }
 }
 
-/** Roll the current pool, honouring any edits the user made to the /r command in the chat bar. */
-export async function rollPool() {
+/**
+ * Roll the current pool, honouring any edits the user made to the /r command in the chat bar.
+ * @param {object} [options]
+ * @param {string} [options.source]  What asked for the roll; see rollFormula.
+ * @returns {Promise<ChatMessage|null>}
+ */
+export async function rollPool({ source = "tray" } = {}) {
   const chatText = getChatInput()?.value ?? "";
   const formula = parseRollCommand(chatText) ?? currentFormula();
   if ( !formula ) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
-    return;
+    return null;
   }
-  if ( await rollFormula(formula, { flavor: rollFlavor() }) ) clearPool();
+  const message = await rollFormula(formula, { flavor: rollFlavor(), source });
+  if ( message ) clearPool();
+  return message;
 }
 
 /**
@@ -56,7 +73,7 @@ export async function rollPool() {
  */
 export function onDropCanvasData(_canvas, data) {
   if ( data?.type !== DRAG_TYPE ) return;
-  rollFormula(data.formula, { flavor: rollFlavor() }).then(rolled => {
+  rollFormula(data.formula, { flavor: rollFlavor(), source: "drop" }).then(rolled => {
     if ( rolled && data.fromPool ) removeAllOf(data.key);
   });
   return false;

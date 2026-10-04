@@ -23,8 +23,9 @@
  *
  * @typedef {object} SystemMap
  * @property {() => import("./dice.mjs").DiceButton[][]} [rows]  The default layout.
- * @property {Record<string, Partial<RollMode>>|null} [modes]  The mode buttons. Entries are merged
- *   over the generic advantage/disadvantage; `{}` or null hides the mode buttons.
+ * @property {Record<string, Partial<RollMode>|null>|null} [modes]  The mode buttons. Entries are
+ *   merged over the generic advantage/disadvantage, and a null entry drops that mode; `{}` or null
+ *   hides the mode buttons.
  */
 
 import { diceButtons, STANDARD_DICE } from "./dice.mjs";
@@ -196,6 +197,7 @@ export function systemModes(id) {
   if ( !map.modes ) return {};
   const modes = {};
   for ( const [key, override] of Object.entries(map.modes) ) {
+    if ( override === null ) continue;
     modes[key] = { ...(GENERIC_MODES[key] ?? {}), ...override };
   }
   return modes;

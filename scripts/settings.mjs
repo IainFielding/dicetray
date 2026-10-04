@@ -4,8 +4,8 @@ import { invalidateLayout } from "./layout.mjs";
 import { DiceTrayWindow } from "./popout.mjs";
 import { applyTheme, rebuildTrays } from "./tray.mjs";
 
-/** The layout changed: rebuild every open tray from it. */
-function onLayoutChange() {
+/** The layout or the system map behind it changed: rebuild every open tray from it. */
+export function refreshLayout() {
   invalidateLayout();
   rebuildTrays();
   DiceTrayWindow.refresh();
@@ -60,7 +60,7 @@ export function registerSettings() {
     config: false,
     type: Array,
     default: [],
-    onChange: onLayoutChange
+    onChange: refreshLayout
   });
 
   game.settings.register(MODULE_ID, "popoutButton", {

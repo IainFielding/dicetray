@@ -1,8 +1,9 @@
-import { MODULE_ID } from "./constants.mjs";
+import { createApi } from "./api.mjs";
+import { HOOKS, MODULE_ID } from "./constants.mjs";
 import { registerKeybindings } from "./keybindings.mjs";
 import { DiceTrayWindow, onGetSceneControlButtons } from "./popout.mjs";
 import { registerSettings } from "./settings.mjs";
-import { clearPool } from "./state.mjs";
+import { clearPool, onStateChange, snapshot } from "./state.mjs";
 import { onDropCanvasData, onHotbarDrop } from "./roll.mjs";
 import { injectDiceTray, injectToggleButton, rebuildTrays } from "./tray.mjs";
 
@@ -12,7 +13,12 @@ Hooks.once("init", () => {
   foundry.applications.handlebars.loadTemplates({
     "sogrom-dicetray.layout-face": `modules/${MODULE_ID}/templates/layout-face.hbs`
   });
+  const api = createApi();
+  game.modules.get(MODULE_ID).api = api;
+  Hooks.callAll(HOOKS.init, api);
 });
+
+onStateChange(() => Hooks.callAll(HOOKS.poolChanged, snapshot()));
 
 Hooks.on("renderChatLog", (_app, element) => {
   injectDiceTray(element);
@@ -29,6 +35,7 @@ Hooks.on("changeSidebarTab", () => {
 
 Hooks.once("ready", () => {
   if ( game.settings.get(MODULE_ID, "popoutAutoOpen") ) DiceTrayWindow.toggle(true);
+  Hooks.callAll(HOOKS.ready, game.modules.get(MODULE_ID).api);
 });
 
 Hooks.on("getSceneControlButtons", onGetSceneControlButtons);
