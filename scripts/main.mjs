@@ -1,4 +1,6 @@
+import { MODULE_ID } from "./constants.mjs";
 import { registerKeybindings } from "./keybindings.mjs";
+import { DiceTrayWindow, onGetSceneControlButtons } from "./popout.mjs";
 import { registerSettings } from "./settings.mjs";
 import { clearPool } from "./state.mjs";
 import { onDropCanvasData, onHotbarDrop } from "./roll.mjs";
@@ -21,6 +23,12 @@ Hooks.on("changeSidebarTab", () => {
   const element = ui.chat?.element;
   if ( element ) injectDiceTray(element);
 });
+
+Hooks.once("ready", () => {
+  if ( game.settings.get(MODULE_ID, "popoutAutoOpen") ) DiceTrayWindow.toggle(true);
+});
+
+Hooks.on("getSceneControlButtons", onGetSceneControlButtons);
 
 // A message sent from the chat bar uses up the pool.
 Hooks.on("chatMessage", () => clearPool());

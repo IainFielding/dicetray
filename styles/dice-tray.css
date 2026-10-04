@@ -184,6 +184,33 @@
   align-self: stretch;
 }
 
+/* Pop-out window */
+
+.sogrom-dice-tray-window .window-content {
+  padding: 0;
+}
+
+.sogrom-dice-tray.dice-tray-popout {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.dice-tray-formula {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 2px 4px 4px;
+  overflow-wrap: anywhere;
+  color: var(--tray-text);
+}
+
+.dice-tray-formula.empty {
+  opacity: 0.5;
+  font-family: inherit;
+  font-style: italic;
+}
+
 .sogrom-dice-tray.dice-tray-hidden {
   display: none;
 }

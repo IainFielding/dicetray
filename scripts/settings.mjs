@@ -1,11 +1,13 @@
 import { MODULE_ID, THEME_CHOICES } from "./constants.mjs";
 import { invalidateRows } from "./layout.mjs";
+import { DiceTrayWindow } from "./popout.mjs";
 import { applyTheme, rebuildTrays } from "./tray.mjs";
 
 /** The layout changed: rebuild every open tray from it. */
 function onLayoutChange() {
   invalidateRows();
   rebuildTrays();
+  DiceTrayWindow.refresh();
 }
 
 export function registerSettings() {
@@ -59,5 +61,36 @@ export function registerSettings() {
     type: Array,
     default: [],
     onChange: onLayoutChange
+  });
+
+  game.settings.register(MODULE_ID, "popoutButton", {
+    name: "SOGROM_DICETRAY.SettingPopoutButton",
+    hint: "SOGROM_DICETRAY.SettingPopoutButtonHint",
+    scope: "client",
+    config: true,
+    type: String,
+    default: "tokens",
+    choices: {
+      none: "SOGROM_DICETRAY.PopoutButtonNone",
+      tokens: "SOGROM_DICETRAY.PopoutButtonTokens",
+      all: "SOGROM_DICETRAY.PopoutButtonAll"
+    },
+    onChange: () => ui.controls?.render({ reset: true })
+  });
+
+  game.settings.register(MODULE_ID, "popoutAutoOpen", {
+    name: "SOGROM_DICETRAY.SettingPopoutAutoOpen",
+    hint: "SOGROM_DICETRAY.SettingPopoutAutoOpenHint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false
+  });
+
+  game.settings.register(MODULE_ID, "popoutPosition", {
+    scope: "client",
+    config: false,
+    type: Object,
+    default: {}
   });
 }

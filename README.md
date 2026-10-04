@@ -72,9 +72,17 @@ As dice are added and a mode selcted, the formula preview updates in real time t
 
 A **D20 icon button** is added to the chat sidebar header (next to the export button). Click it to show or hide the dice tray. Your preference is saved per client and persists between sessions.
 
+### Pop-out Tray
+
+The tray can also open in its own window that you can move anywhere on screen. It shares the same dice pool as the sidebar tray, and shows the formula at the top, since the chat bar may be out of sight.
+
+- Click the **Dice Tray** button in the token controls on the left of the screen to open or close it. The **Pop-out Tray Button** setting moves the button to every set of controls, or hides it.
+- Turn on **Open the Pop-out Tray on Load** to have it open every time you join.
+- The window remembers where you left it.
+
 ### Keyboard Shortcuts
 
-Under **Game Settings → Configure Controls** you can bind keys to **Show or Hide the Dice Tray**, **Roll the Dice Pool** and **Clear the Dice Pool**. They have no keys by default, so they never clash with another module's shortcuts.
+Under **Game Settings → Configure Controls** you can bind keys to **Show or Hide the Dice Tray**, **Open or Close the Pop-out Tray**, **Roll the Dice Pool** and **Clear the Dice Pool**. They have no keys by default, so they never clash with another module's shortcuts.
 
 ---
 

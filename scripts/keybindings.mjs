@@ -1,6 +1,7 @@
 import { MODULE_ID } from "./constants.mjs";
 import { rollPool } from "./roll.mjs";
 import { clearPool } from "./state.mjs";
+import { DiceTrayWindow } from "./popout.mjs";
 import { toggleTrayVisible } from "./tray.mjs";
 
 /**
@@ -14,6 +15,11 @@ export function registerKeybindings() {
       name: "SOGROM_DICETRAY.KeybindingToggleTray",
       hint: "SOGROM_DICETRAY.KeybindingToggleTrayHint",
       run: () => { toggleTrayVisible(); }
+    },
+    togglePopout: {
+      name: "SOGROM_DICETRAY.KeybindingTogglePopout",
+      hint: "SOGROM_DICETRAY.KeybindingTogglePopoutHint",
+      run: () => { DiceTrayWindow.toggle(); }
     },
     rollPool: {
       name: "SOGROM_DICETRAY.KeybindingRollPool",

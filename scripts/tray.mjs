@@ -106,9 +106,20 @@ function buttonFace(def) {
   return img;
 }
 
-function createDiceTray() {
+/** Sidebar trays only — not the one in the pop-out window. */
+const SIDEBAR_TRAY = ".sogrom-dice-tray:not(.dice-tray-popout)";
+
+/**
+ * Build a tray. It registers itself for state updates and is dropped again once it leaves the page.
+ * @param {object} [options]
+ * @param {boolean} [options.popout]  For the pop-out window: adds a formula preview, since the chat
+ *                                    bar that normally shows the formula may not be on screen.
+ * @returns {HTMLElement}
+ */
+export function createDiceTray({ popout = false } = {}) {
   const tray = document.createElement("div");
   tray.classList.add("sogrom-dice-tray");
+  if ( popout ) tray.classList.add("dice-tray-popout");
   const theme = game.settings.get(MODULE_ID, "theme");
   if ( theme ) tray.classList.add(theme);
 
@@ -168,6 +179,12 @@ function createDiceTray() {
   const version = game.modules.get(MODULE_ID)?.version ?? "";
   titleBar.innerHTML = `<i class="fas fa-dice-d20"></i> ${t("Title")} <span class="dice-tray-version">v${version}</span>`;
 
+  if ( popout ) {
+    const preview = document.createElement("div");
+    preview.classList.add("dice-tray-formula");
+    preview.setAttribute("aria-live", "polite");
+    tray.append(preview);
+  }
   tray.append(...rows, controlsRow, titleBar);
 
   // One delegated listener per event type for the whole tray, rather than one per button.
@@ -307,6 +324,13 @@ function setBadge(btn, count, className = "dice-tray-badge") {
 
 /** Bring one tray's buttons in line with the shared state. Only touches what differs. */
 function refreshTray(tray) {
+  const preview = tray.querySelector(".dice-tray-formula");
+  if ( preview ) {
+    const formula = currentFormula();
+    preview.textContent = formula || t("FormulaEmpty");
+    preview.classList.toggle("empty", !formula);
+  }
+
   const groups = getDiceGroups();
   for ( const btn of tray.querySelectorAll('.dice-tray-die-btn[data-action="die"]') ) {
     const key = btn.dataset.key;
@@ -403,7 +427,7 @@ export function injectDiceTray(root) {
     const chatMessage = root.querySelector("#chat-message") ?? document.getElementById("chat-message");
     if ( !chatMessage ) return false;
     // Replace any existing tray rather than stacking a second one beside it.
-    chatMessage.parentElement?.querySelector(".sogrom-dice-tray")?.remove();
+    chatMessage.parentElement?.querySelector(SIDEBAR_TRAY)?.remove();
     const tray = createDiceTray();
     if ( !game.settings.get(MODULE_ID, "showDiceTray") ) tray.classList.add("dice-tray-hidden");
     tray.style.flex = "0 0";
@@ -412,7 +436,7 @@ export function injectDiceTray(root) {
     chatMessage.after(tray);
     return true;
   }, () => {
-    if ( !root.querySelector(".sogrom-dice-tray") ) {
+    if ( !root.querySelector(SIDEBAR_TRAY) ) {
       console.warn(`${MODULE_ID} | Dice tray injection timed out — #chat-message not found`);
     }
   });
@@ -455,9 +479,9 @@ export async function toggleTrayVisible(visible = !game.settings.get(MODULE_ID, 
   await game.settings.set(MODULE_ID, "showDiceTray", visible);
 
   // If the tray was removed while hidden, put a fresh one back.
-  if ( visible && !document.querySelector(".sogrom-dice-tray") && ui.chat?.element ) injectDiceTray(ui.chat.element);
+  if ( visible && !document.querySelector(SIDEBAR_TRAY) && ui.chat?.element ) injectDiceTray(ui.chat.element);
 
-  forEachTray(tray => tray.classList.toggle("dice-tray-hidden", !visible));
+  for ( const tray of document.querySelectorAll(SIDEBAR_TRAY) ) tray.classList.toggle("dice-tray-hidden", !visible);
   for ( const btn of document.querySelectorAll(".sogrom-dice-tray-toggle") ) {
     btn.classList.toggle("toggled-off", !visible);
     btn.classList.toggle("tray-visible", visible);
@@ -477,8 +501,8 @@ export function rebuildTrays() {
 export function removeAll() {
   for ( const cancel of pending.values() ) cancel();
   pending.clear();
-  for ( const el of document.querySelectorAll(".sogrom-dice-tray, .sogrom-dice-tray-toggle") ) el.remove();
-  trays.clear();
+  // The pop-out window's tray belongs to the window and stays.
+  for ( const el of document.querySelectorAll(`${SIDEBAR_TRAY}, .sogrom-dice-tray-toggle`) ) el.remove();
 }
 
 export function applyTheme(theme) {
