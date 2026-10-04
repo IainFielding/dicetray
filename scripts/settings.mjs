@@ -21,4 +21,17 @@ export function registerSettings() {
     type: Boolean,
     default: true
   });
+
+  game.settings.register(MODULE_ID, "rightClick", {
+    name: "SOGROM_DICETRAY.SettingRightClick",
+    hint: "SOGROM_DICETRAY.SettingRightClickHint",
+    scope: "user",
+    config: true,
+    type: String,
+    default: "remove",
+    choices: {
+      remove: "SOGROM_DICETRAY.RightClickRemove",
+      roll: "SOGROM_DICETRAY.RightClickRoll"
+    }
+  });
 }

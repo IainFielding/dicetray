@@ -4,7 +4,7 @@ import {
   toggleMode
 } from "./state.mjs";
 import { currentFormula } from "./formula.mjs";
-import { rollPool } from "./roll.mjs";
+import { rollFormula, rollPool } from "./roll.mjs";
 import { getChatInput } from "./chat-input.mjs";
 
 const KEEP_BUTTONS = [
@@ -162,9 +162,12 @@ function onTrayContextMenu(event) {
   const btn = event.target.closest("button[data-action]");
   if ( !btn ) return;
   switch ( btn.dataset.action ) {
-    case "die":
+    case "die": {
       event.preventDefault();
-      return removeDie(Number(btn.dataset.faces));
+      const faces = Number(btn.dataset.faces);
+      if ( game.settings.get(MODULE_ID, "rightClick") === "roll" ) return rollFormula(`1d${faces}`, { flavor: t("FlavorBase") });
+      return removeDie(faces);
+    }
     case "keep":
       event.preventDefault();
       return adjustKeep(btn.dataset.keep, -1);
