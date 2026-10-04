@@ -1,4 +1,5 @@
-import { MODE_CONFIG, MODULE_ID } from "./constants.mjs";
+import { MODULE_ID } from "./constants.mjs";
+import { getModes } from "./layout.mjs";
 import { currentFormula, parseRollCommand } from "./formula.mjs";
 import { clearPool, removeAllOf, state } from "./state.mjs";
 import { getChatInput } from "./chat-input.mjs";
@@ -11,10 +12,11 @@ function rollFlavor() {
   let flavor = game.i18n.localize("SOGROM_DICETRAY.FlavorBase");
   const keeps = Object.values(state.keep);
   let detail;
-  if ( MODE_CONFIG[state.mode] ) detail = MODE_CONFIG[state.mode].flavorKey;
-  else if ( keeps.some(m => m.type === "kh") ) detail = "FlavorKeepHighest";
-  else if ( keeps.some(m => m.type === "kl") ) detail = "FlavorKeepLowest";
-  if ( detail ) flavor += ` (${game.i18n.localize(`SOGROM_DICETRAY.${detail}`)})`;
+  const mode = getModes()[state.mode];
+  if ( mode ) detail = mode.flavor;
+  else if ( keeps.some(m => m.type === "kh") ) detail = "SOGROM_DICETRAY.FlavorKeepHighest";
+  else if ( keeps.some(m => m.type === "kl") ) detail = "SOGROM_DICETRAY.FlavorKeepLowest";
+  if ( detail ) flavor += ` (${game.i18n.localize(detail)})`;
   return flavor;
 }
 

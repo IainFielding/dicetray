@@ -11,10 +11,13 @@ describe("parseDieTerm", () => {
     expect(parseDieTerm("d%")).toMatchObject({ faces: 100, key: "d100" });
     expect(parseDieTerm("2d10r1")).toEqual({ count: 2, faces: 10, modifiers: "r1", key: "d10r1" });
     expect(parseDieTerm(" d6x ")).toMatchObject({ key: "d6x" });
+    expect(parseDieTerm("1d20cs>=11")).toMatchObject({ key: "d20cs>=11" });
+    expect(parseDieTerm("dP")).toEqual({ count: 1, faces: "p", modifiers: "", key: "dp" });
+    expect(parseDieTerm("2dw")).toMatchObject({ count: 2, key: "dw" });
   });
 
   it("rejects anything that isn't a single dice term", () => {
-    for ( const bad of ["", "6", "d", "d0", "0d6", "2d6+1", "d6 + d8", "/r 1d20", "100d6", null, undefined] ) {
+    for ( const bad of ["", "6", "d", "d0", "0d6", "2d6+1", "d6 + d8", "/r 1d20", "100d6", "dog", "d6y", "d6x!", null, undefined] ) {
       expect(parseDieTerm(bad), String(bad)).toBeNull();
     }
   });

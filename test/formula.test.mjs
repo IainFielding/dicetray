@@ -51,6 +51,27 @@ describe("buildFormula with non-numeric and modified dice", () => {
   });
 });
 
+describe("buildFormula with a system's own modes", () => {
+  const modes = {
+    hope: { style: "extraDie", die: "1d6", op: "+" },
+    fear: { style: "extraDie", die: "1d6", op: "-" },
+    wild: { style: "wildDie", die: "1dw" }
+  };
+
+  it("adds or subtracts an extra die once", () => {
+    expect(buildFormula(pool({ pool: ["d12", "d12"], mode: "hope", modifier: 2 }), { modes })).toBe("2d12 + 1d6 + 2");
+    expect(buildFormula(pool({ pool: ["d20"], mode: "fear" }), { modes })).toBe("1d20 - 1d6");
+  });
+
+  it("rolls the wild die alongside each group", () => {
+    expect(buildFormula(pool({ pool: ["d8x"], mode: "wild" }), { modes })).toBe("{1d8x,1dw}kh");
+  });
+
+  it("ignores a mode the system doesn't have", () => {
+    expect(buildFormula(pool({ pool: ["d20"], mode: "advantage" }), { modes })).toBe("1d20");
+  });
+});
+
 describe("parseRollCommand", () => {
   it("extracts the formula from /r and /roll", () => {
     expect(parseRollCommand("/r 2d6 + 1")).toBe("2d6 + 1");

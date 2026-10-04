@@ -1,6 +1,7 @@
-import { MODE_CONFIG } from "./constants.mjs";
 import { facesOf } from "./dice.mjs";
+import { getModes } from "./layout.mjs";
 import { getDiceGroups, state } from "./state.mjs";
+import { GENERIC_MODES } from "./systems.mjs";
 
 /** Numbered dice smallest first, then any others (dF, …) in the order they were added. */
 function groupOrder(a, b) {
@@ -14,31 +15,40 @@ function groupOrder(a, b) {
  * Build the roll formula for a pool, e.g. "2d6 + 1d20kh + 3".
  * Pure: depends only on the arguments, so it can be unit-tested outside Foundry.
  *
- * Advantage and disadvantage roll each group twice and keep the better (or worse) set. Systems
- * whose dice understand `adv`/`dis` (dnd5e) get those modifiers, so their own chat cards and
- * automation recognise the roll; everywhere else the same thing is written with core dice pools:
- * `2d20kh` for a single die, `{3d6,3d6}kh` for several.
+ * The active mode (see {@link import("./systems.mjs").RollMode}) changes it:
+ * - repeat (advantage/disadvantage): each group is rolled twice and the better or worse set kept.
+ *   Systems whose dice understand `adv`/`dis` (dnd5e) get those modifiers on numbered dice, so their
+ *   own chat cards and automation recognise the roll; everything else is written with core dice
+ *   pools: `2d20kh` for a single die, `{3d6,3d6}kh` for several.
+ * - extraDie: a die is added to or taken from the total once, e.g. `1d20 + 1d6`.
+ * - wildDie: each group is rolled alongside the wild die, keeping the higher: `{1d8x,1dw}kh`.
  *
  * @param {{pool: string[], mode: string, modifier: number, keep: object}} state
  * @param {object} [options]
  * @param {boolean} [options.nativeAdvantage]  Whether the system's dice support `adv`/`dis`.
+ * @param {Record<string, object>} [options.modes]  The system's modes; generic advantage by default.
  * @returns {string} "" when the pool is empty.
  */
-export function buildFormula({ pool, mode, modifier, keep }, { nativeAdvantage = false } = {}) {
+export function buildFormula({ pool, mode, modifier, keep }, { nativeAdvantage = false, modes = GENERIC_MODES } = {}) {
   if ( !pool.length ) return "";
   const groups = getDiceGroups(pool);
-  const advantage = MODE_CONFIG[mode];
+  const active = modes[mode];
   let formula = Object.keys(groups).sort(groupOrder).map(key => {
     const count = groups[key];
     const mod = keep[key];
     const keepSuffix = (mod?.count > 0) ? ((mod.count === 1) ? mod.type : `${mod.type}${mod.count}`) : "";
     const term = `${count}${key}${keepSuffix}`;
-    if ( !advantage ) return term;
-    // The system's adv/dis belongs to its numbered dice; Fate dice and the like use the pool form.
-    if ( nativeAdvantage && !Number.isNaN(facesOf(key)) ) return `${term}${advantage.suffix}`;
-    if ( (count === 1) && !keepSuffix && (key === `d${facesOf(key)}`) ) return `2${key}${advantage.keep}`;
-    return `{${term},${term}}${advantage.keep}`;
+    switch ( active?.style ) {
+      case "wildDie": return `{${term},${active.die}}kh`;
+      case "repeat":
+        // The system's adv/dis belongs to its numbered dice; Fate dice and the like use the pool form.
+        if ( nativeAdvantage && active.suffix && !Number.isNaN(facesOf(key)) ) return `${term}${active.suffix}`;
+        if ( (count === 1) && !keepSuffix && (key === `d${facesOf(key)}`) ) return `2${key}${active.keep}`;
+        return `{${term},${term}}${active.keep}`;
+      default: return term;
+    }
   }).join(" + ");
+  if ( active?.style === "extraDie" ) formula += ` ${active.op} ${active.die}`;
   if ( modifier > 0 ) formula += ` + ${modifier}`;
   else if ( modifier < 0 ) formula += ` - ${Math.abs(modifier)}`;
   return formula;
@@ -52,7 +62,7 @@ export function systemSupportsAdvantage() {
 
 /** The formula for the shared pool, written for the active system. */
 export function currentFormula() {
-  return buildFormula(state, { nativeAdvantage: systemSupportsAdvantage() });
+  return buildFormula(state, { nativeAdvantage: systemSupportsAdvantage(), modes: getModes() });
 }
 
 /**
@@ -67,7 +77,7 @@ export function formulaForDie(key, count = 1) {
   const dice = state.pool.filter(k => k === key);
   const fromPool = dice.length > 0;
   const formula = buildFormula({ ...state, pool: fromPool ? dice : Array(count).fill(key) },
-    { nativeAdvantage: systemSupportsAdvantage() });
+    { nativeAdvantage: systemSupportsAdvantage(), modes: getModes() });
   return { formula, fromPool };
 }
 

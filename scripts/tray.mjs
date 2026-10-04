@@ -1,6 +1,6 @@
-import { ICON_PATH, MAX_DICE_PER_TYPE, MODE_CONFIG, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
+import { ICON_PATH, MAX_DICE_PER_TYPE, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
 import { buttonImage, buttonText, dieName, isCommand, parseDieTerm } from "./dice.mjs";
-import { getRows } from "./layout.mjs";
+import { getModes, getRows } from "./layout.mjs";
 import {
   addDice, adjustKeep, adjustModifier, getDiceGroups, getKeepCount, onStateChange, removeDice, setModifier, state,
   toggleMode
@@ -71,12 +71,15 @@ function createDieButton(def) {
   let btn;
   if ( isCommand(def.formula) ) {
     btn = button(["dice-tray-die-btn", "dice-tray-command-btn"], { action: "command", formula: def.formula });
-    btn.title = def.tooltip || def.label || def.formula;
+    btn.title = game.i18n.localize(def.tooltip || def.label || def.formula);
   } else {
     const { key, count } = parseDieTerm(def.formula);
     btn = button(["dice-tray-die-btn"], { action: "die", key, count });
     btn.draggable = true;
-    btn.title = def.tooltip || game.i18n.format("SOGROM_DICETRAY.TooltipAddDie", { die: def.label || dieName(key) });
+    // Tooltips and labels from a system map are lang keys; a GM's own are plain text, which
+    // localize() hands back unchanged.
+    btn.title = def.tooltip ? game.i18n.localize(def.tooltip)
+      : game.i18n.format("SOGROM_DICETRAY.TooltipAddDie", { die: def.label ? game.i18n.localize(def.label) : dieName(key) });
   }
   btn.append(buttonFace(def));
   if ( !def.drawer?.length ) {
@@ -191,7 +194,7 @@ function buttonFace(def) {
   const text = () => {
     const span = document.createElement("span");
     span.classList.add("dice-tray-die-fallback");
-    span.textContent = buttonText(def);
+    span.textContent = game.i18n.localize(buttonText(def));
     if ( def.color ) span.style.color = def.color;
     return span;
   };
@@ -270,10 +273,10 @@ export function createDiceTray({ popout = false } = {}) {
     return btn;
   });
 
-  const modeButtons = Object.entries(MODE_CONFIG).map(([mode, cfg]) => {
+  const modeButtons = Object.entries(getModes()).map(([mode, cfg]) => {
     const btn = button(["dice-tray-mode-btn"], { action: "mode", mode });
-    btn.title = t(cfg.tooltipKey);
-    btn.innerHTML = `<i class="fas ${cfg.icon}"></i> ${t(cfg.labelKey)}`;
+    btn.title = game.i18n.localize(cfg.tooltip);
+    btn.innerHTML = `<i class="fas ${cfg.icon}"></i> ${game.i18n.localize(cfg.label)}`;
     return btn;
   });
 
@@ -283,7 +286,12 @@ export function createDiceTray({ popout = false } = {}) {
 
   const controlsRow = document.createElement("div");
   controlsRow.classList.add("dice-tray-controls-row");
-  controlsRow.append(modifierGroup, stackedPair(...keepButtons), stackedPair(...modeButtons), roll);
+  const columns = [modifierGroup, stackedPair(...keepButtons)];
+  // Systems without advantage-style modes (Fate, DCC, …) get no mode column at all.
+  if ( modeButtons.length ) columns.push(stackedPair(...modeButtons));
+  columns.push(roll);
+  controlsRow.append(...columns);
+  controlsRow.style.gridTemplateColumns = `repeat(${columns.length}, 1fr)`;
 
   const titleBar = document.createElement("div");
   titleBar.classList.add("dice-tray-title");

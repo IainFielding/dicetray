@@ -104,10 +104,28 @@ Under **Game Settings → Configure Controls** you can bind keys to **Show or Hi
 
 ---
 
+## Game Systems
+
+The tray works with any system. Some systems start with dice and roll modes that suit them; the GM can change the dice in **Configure Dice** as usual.
+
+| System | Starting dice | Mode buttons |
+|--------|---------------|--------------|
+| D&D 5e | D4–D100 | **ADV / DIS** use the system's own advantage, so its chat cards recognise the roll |
+| Pathfinder 2e, Starfinder 2e | D4–D100; hold the D20 for DC 5 and DC 11 flat checks | **FOR / MIS**: fortune and misfortune |
+| Daggerheart | D4–D20 and **Duality**; hold it for a Hope or Fear Fate roll (the system's `/dr` and `/fr` commands) | **ADV / DIS** add or take away a d6 |
+| Savage Worlds (SWADE) | D4–D12, all acing | **WILD**: rolls the Wild Die alongside and keeps the higher |
+| Dungeon Crawl Classics | The full dice chain, D3–D100 | none |
+| Fate | 4dF, dF and D6 | none |
+| Star Wars FFG, Genesys | The narrative dice, with the system's art | none |
+| Alien RPG | Base and Stress dice | none |
+| Cosmere RPG | D4–D20 and the Plot die | ADV / DIS |
+| Shadow of the Demon Lord | D3, D6, D20 | **BOON / BANE** add or take away a d6 |
+| Anything else | D4–D100 | ADV / DIS roll twice and keep the better or worse result |
+
 ## Compatibility
 
 - **Foundry VTT**: v14+
-- **Systems**: System Agnostic however I've only  tested with Dungeons & Dragons 5e.
+- **Systems**: any; see [Game Systems](#game-systems). Tested in play with Dungeons & Dragons 5e.
 
 ---
 

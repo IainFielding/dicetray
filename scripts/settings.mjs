@@ -1,12 +1,12 @@
 import { MODULE_ID, THEME_CHOICES } from "./constants.mjs";
 import { DiceLayoutConfig } from "./apps/layout-config.mjs";
-import { invalidateRows } from "./layout.mjs";
+import { invalidateLayout } from "./layout.mjs";
 import { DiceTrayWindow } from "./popout.mjs";
 import { applyTheme, rebuildTrays } from "./tray.mjs";
 
 /** The layout changed: rebuild every open tray from it. */
 function onLayoutChange() {
-  invalidateRows();
+  invalidateLayout();
   rebuildTrays();
   DiceTrayWindow.refresh();
 }

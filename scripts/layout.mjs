@@ -1,12 +1,14 @@
 import { MODULE_ID } from "./constants.mjs";
-import { STANDARD_DICE, diceButtons, normaliseRows } from "./dice.mjs";
+import { normaliseRows } from "./dice.mjs";
+import { activeSystemId, systemModes, systemRows } from "./systems.mjs";
 
-/** The normalised layout, cached until the setting behind it changes. */
-let cached = null;
+/** The normalised layout and modes, cached until something they depend on changes. */
+let cachedRows = null;
+let cachedModes = null;
 
-/** The layout a world starts with, before the GM changes anything. */
+/** The layout a world starts with, before the GM changes anything: its game system's dice. */
 export function defaultRows() {
-  return [diceButtons(STANDARD_DICE)];
+  return systemRows(activeSystemId());
 }
 
 /**
@@ -15,13 +17,22 @@ export function defaultRows() {
  * @returns {import("./dice.mjs").DiceButton[][]}
  */
 export function getRows() {
-  if ( cached ) return cached;
+  if ( cachedRows ) return cachedRows;
   const saved = normaliseRows(game.settings.get(MODULE_ID, "diceRows"));
-  cached = saved.length ? saved : normaliseRows(defaultRows());
-  return cached;
+  cachedRows = saved.length ? saved : normaliseRows(defaultRows());
+  return cachedRows;
 }
 
-/** Forget the cached layout; the next getRows() reads the settings again. */
-export function invalidateRows() {
-  cached = null;
+/**
+ * The mode buttons (advantage and the like) for the world's game system.
+ * @returns {Record<string, import("./systems.mjs").RollMode>}
+ */
+export function getModes() {
+  return (cachedModes ??= systemModes(activeSystemId()));
+}
+
+/** Forget the cached layout and modes; the next read works them out again. */
+export function invalidateLayout() {
+  cachedRows = null;
+  cachedModes = null;
 }

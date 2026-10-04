@@ -7,7 +7,7 @@ import { MAX_DICE_PER_TYPE, MAX_MODIFIER } from "./constants.mjs";
 export const state = {
   /** Key of every die added ("d6", "dF", "d6x"), in the order they were added. */
   pool: [],
-  /** "normal", or a key of MODE_CONFIG. */
+  /** "normal", or the id of one of the system's modes (see systems.mjs). */
   mode: "normal",
   /** The key of the die type keep-highest/lowest applies to: the last die added. */
   lastDie: null,

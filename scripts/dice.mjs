@@ -27,11 +27,15 @@ const MAX_COUNT_PER_CLICK = 99;
 
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
-const TERM = /^(\d*)d(\d+|F|%)([a-z<>=0-9]*)$/i;
+/** A dice term: count, "d", faces (a number, %, or a system's letter such as F or p), modifiers. */
+const TERM = /^(\d*)d(\d+|%|[a-z])(\S*)$/i;
+
+/** Modifiers Foundry's dice understand: x, xo, r, rr, k, kh, kl, d, dh, dl, min, max, cs, … with a target. */
+const MODIFIERS = /^(?:(?:xo?|rr?|k[hl]?|d[hl]?|min|max|even|odd|c[sf]|df|sf|ms)(?:[<>]=?|=)?\d*)*$/i;
 
 /**
  * Parse a dice term as written on a button.
- * @param {string} formula  e.g. "d6", "4dF", "d6x", "2d10r1"
+ * @param {string} formula  e.g. "d6", "4dF", "d6x", "2d10r1", "dp" (a system's own die)
  * @returns {{count: number, faces: number|string, modifiers: string, key: string}|null}
  *   `key` identifies the kind of die in the pool ("d6", "dF", "d6x"), so two buttons for the same
  *   die share one group. null when it isn't a single dice term.
@@ -41,11 +45,14 @@ export function parseDieTerm(formula) {
   if ( !match ) return null;
   const count = match[1] ? Number(match[1]) : 1;
   if ( (count < 1) || (count > MAX_COUNT_PER_CLICK) ) return null;
-  let faces = match[2].toUpperCase();
+  let faces = match[2];
   if ( faces === "%" ) faces = 100;
-  else if ( faces !== "F" ) faces = Number(faces);
+  else if ( /^\d+$/.test(faces) ) faces = Number(faces);
+  // Letters are a system's own dice. Fate dice are written dF by convention; the rest lower case.
+  else faces = (faces.toLowerCase() === "f") ? "F" : faces.toLowerCase();
   if ( faces === 0 ) return null;
   const modifiers = match[3];
+  if ( !MODIFIERS.test(modifiers) ) return null;
   return { count, faces, modifiers, key: `d${faces}${modifiers}` };
 }
 
