@@ -8,6 +8,7 @@ import {
 import { currentFormula, formulaForDie } from "./formula.mjs";
 import { DRAG_TYPE, rollFormula, rollPool } from "./roll.mjs";
 import { getChatInput } from "./chat-input.mjs";
+import { createOddsLine, scheduleOdds, setTarget } from "./odds-display.mjs";
 
 const KEEP_BUTTONS = [
   { type: "kh", icon: "fa-arrow-up", labelKey: "KeepHighest", tooltipKey: "TooltipKeepHighest", forKey: "TooltipKeepHighestFor" },
@@ -304,7 +305,7 @@ export function createDiceTray({ popout = false } = {}) {
     preview.setAttribute("aria-live", "polite");
     tray.append(preview);
   }
-  tray.append(...rows, controlsRow, titleBar);
+  tray.append(...rows, controlsRow, createOddsLine(), titleBar);
 
   // One delegated listener per event type for the whole tray, rather than one per button.
   tray.addEventListener("click", onTrayClick);
@@ -320,6 +321,7 @@ export function createDiceTray({ popout = false } = {}) {
 
   trays.add(tray);
   refreshTray(tray);
+  scheduleOdds();
   return tray;
 }
 
@@ -389,6 +391,7 @@ function parseModifier(text) {
 }
 
 function onTrayInput(event) {
+  if ( event.target.matches(".dice-tray-target") ) return setTarget(event.target.value);
   if ( !event.target.matches(".dice-tray-modifier-input") ) return;
   // Apply as the user types, but leave the field's text alone until they finish ("-" on its own
   // is a valid step towards "-2").
@@ -409,6 +412,10 @@ function onTrayKeyDown(event) {
     openDrawer(event.target);
     event.target.nextElementSibling?.querySelector("button")?.focus();
     return;
+  }
+  if ( event.target.matches(".dice-tray-target") && (event.key === "Enter") ) {
+    event.preventDefault();
+    return rollPool();
   }
   if ( !event.target.matches(".dice-tray-modifier-input") ) return;
   switch ( event.key ) {
@@ -524,6 +531,7 @@ function updateChatInput() {
 function refreshAll() {
   forEachTray(refreshTray);
   updateChatInput();
+  scheduleOdds();
 }
 
 onStateChange(refreshAll);

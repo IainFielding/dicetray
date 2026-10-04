@@ -93,4 +93,14 @@ export function registerSettings() {
     type: Object,
     default: {}
   });
+
+  game.settings.register(MODULE_ID, "showOdds", {
+    name: "SOGROM_DICETRAY.SettingShowOdds",
+    hint: "SOGROM_DICETRAY.SettingShowOddsHint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: () => rebuildTrays()
+  });
 }

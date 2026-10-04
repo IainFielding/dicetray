@@ -218,6 +218,65 @@
   align-self: stretch;
 }
 
+/* Odds line */
+
+.dice-tray-odds {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 1.4em;
+  padding: 0 2px;
+  font-size: 0.7rem;
+  color: var(--tray-text);
+}
+
+.dice-tray-odds[hidden] {
+  display: none;
+}
+
+.dice-tray-odds-summary {
+  flex: 1;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dice-tray-odds-target {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.85;
+}
+
+.sogrom-dice-tray .dice-tray-target {
+  width: 3em;
+  height: 1.5em;
+  padding: 0 2px;
+  border: 1px solid var(--tray-border);
+  border-radius: 3px;
+  background: var(--tray-btn-bg);
+  color: var(--tray-text);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.sogrom-dice-tray .dice-tray-target:focus {
+  border-color: var(--color-warm-2, #ff6400);
+  outline: none;
+}
+
+.dice-tray-odds-chance {
+  min-width: 3em;
+  font-weight: bold;
+  text-align: right;
+}
+
+.dice-tray-odds-chance[data-band="good"] { color: #2ecc71; }
+.dice-tray-odds-chance[data-band="even"] { color: #f1c40f; }
+.dice-tray-odds-chance[data-band="poor"] { color: #e74c3c; }
+
 /* Pop-out window */
 
 .sogrom-dice-tray-window .window-content {
