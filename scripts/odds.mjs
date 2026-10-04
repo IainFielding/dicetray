@@ -27,6 +27,9 @@ const SAMPLES = 20000;
 /** Above this many steps, keep-highest/lowest is simulated instead of worked out exactly. */
 const MAX_EXACT_KEEP_WORK = 4e6;
 
+/** Pools whose highest total could pass this aren't covered at all (simulated totals are 32-bit). */
+const MAX_SIMULATED_TOTAL = 1e8;
+
 /** Totals wider than this are simulated too, to bound memory. */
 const MAX_SPAN = 20000;
 
@@ -200,6 +203,9 @@ function fromSamples(totals, unbounded) {
     if ( v < min ) min = v;
     if ( v > max ) max = v;
   }
+  // Totals spread over millions of values (a d1000000000) would need an array that size; the odds
+  // of such a pool aren't worth showing.
+  if ( (max - min + 1) > MAX_SPAN ) return null;
   const p = new Float64Array(max - min + 1);
   for ( const v of totals ) p[v - min] += 1 / totals.length;
   return dist(min, p, { approximate: true, unbounded });
@@ -264,7 +270,9 @@ function groupDistribution(key, count, keep, fateDice) {
   const explode = modifiers === "x";
   if ( explode && ((faces === "F") || (faces < 2)) ) return null;
   const k = keep?.count > 0 ? keep : null;
-  // Work out the size before building anything: a d1000000000 must not allocate its faces.
+  // Dice too large for any useful odds (and for 32-bit simulated totals) aren't covered.
+  if ( (typeof faces === "number") && ((faces * count) > MAX_SIMULATED_TOTAL) ) return null;
+  // Work out the size before building anything: a d1000000 must not allocate its faces.
   const width = (faces === "F") ? 3 : faces;
   if ( !k && ((width * count) <= MAX_SPAN) ) {
     const one = explode ? explodingDistribution(faces) : dieDistribution(faces);
@@ -292,6 +300,7 @@ export function poolDistribution({ pool, mode, modifier, keep }, { modes = {}, f
   let total = null;
   for ( const [key, count] of Object.entries(groups) ) {
     let d = groupDistribution(key, count, keep[key], fateDice);
+    // groupDistribution may simulate, and a simulation too wide to keep gives null too.
     if ( !d ) return null;
     if ( active?.style === "repeat" ) d = extreme(d, d, active.keep !== "kl");
     else if ( active?.style === "wildDie" ) {

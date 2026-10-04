@@ -66,6 +66,11 @@ describe("system modes", () => {
     expect(Object.keys(systemModes("swade"))).toEqual(["wild"]);
   });
 
+  it("treats modes: undefined as leaving the modes out", () => {
+    registerSystemMap("test-null", { modes: undefined });
+    expect(systemModes("test-null")).toBe(GENERIC_MODES);
+  });
+
   it("drops a mode set to null and keeps the rest", () => {
     registerSystemMap("test-null", { modes: { advantage: {}, disadvantage: null } });
     expect(Object.keys(systemModes("test-null"))).toEqual(["advantage"]);

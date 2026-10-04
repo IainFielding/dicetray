@@ -169,10 +169,11 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   static async #onAddButton(_event, target) {
-    const row = Number(target.dataset.row);
+    // Hold the row itself, not its number: rows may be added or removed while the dialog is open.
+    const row = this.#rows[Number(target.dataset.row)];
     const button = await this.#promptButton();
-    if ( !button || !this.#rows[row] || (this.#rows[row].length >= MAX_PER_ROW) ) return;
-    this.#rows[row].push(button);
+    if ( !button || !row || !this.#rows.includes(row) || (row.length >= MAX_PER_ROW) ) return;
+    row.push(button);
     this.render();
   }
 
@@ -214,16 +215,19 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   static async #onRemoveRow(_event, target) {
-    const row = Number(target.dataset.row);
-    if ( !this.#rows[row] ) return;
-    if ( this.#rows[row].length ) {
+    // Hold the row itself, not its number: rows may be removed while the dialog is open.
+    const row = this.#rows[Number(target.dataset.row)];
+    if ( !row ) return;
+    if ( row.length ) {
       const confirmed = await DialogV2.confirm({
         window: { title: "SOGROM_DICETRAY.LayoutRemoveRow" },
         content: `<p>${t("LayoutRemoveRowConfirm")}</p>`
       });
       if ( !confirmed ) return;
     }
-    this.#rows.splice(row, 1);
+    const at = this.#rows.indexOf(row);
+    if ( at === -1 ) return;
+    this.#rows.splice(at, 1);
     this.render();
   }
 
@@ -295,18 +299,18 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   #canMove(from, moving, target, destination) {
     const warn = key => {
-      ui.notifications.warn(game.i18n.format(`SOGROM_DICETRAY.${key}`, { max: (key === "LayoutRowFull") ? MAX_PER_ROW : MAX_PER_DRAWER }));
+      ui.notifications.warn(game.i18n.format(key, { max: (key === "SOGROM_DICETRAY.LayoutRowFull") ? MAX_PER_ROW : MAX_PER_DRAWER }));
       return false;
     };
     const intoDrawer = (target.mode === "into") || (target.sub !== undefined);
-    if ( intoDrawer && moving.drawer?.length ) return warn("LayoutNestedDrawer");
+    if ( intoDrawer && moving.drawer?.length ) return warn("SOGROM_DICETRAY.LayoutNestedDrawer");
     if ( destination === moving ) return false;
     const sameList = intoDrawer
       ? ((from.sub !== undefined) && (from.row === target.row) && (from.index === target.index))
       : ((from.sub === undefined) && (from.row === target.row));
     if ( sameList ) return true;
     const size = intoDrawer ? (destination.drawer?.length ?? 0) : this.#rows[target.row].length;
-    if ( size >= (intoDrawer ? MAX_PER_DRAWER : MAX_PER_ROW) ) return warn(intoDrawer ? "LayoutDrawerFull" : "LayoutRowFull");
+    if ( size >= (intoDrawer ? MAX_PER_DRAWER : MAX_PER_ROW) ) return warn(intoDrawer ? "SOGROM_DICETRAY.LayoutDrawerFull" : "SOGROM_DICETRAY.LayoutRowFull");
     return true;
   }
 

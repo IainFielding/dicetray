@@ -98,9 +98,10 @@ describe("pool odds", () => {
   });
 
   it("doesn't build distributions for absurdly large dice", () => {
-    const huge = odds({ pool: ["d1000000000"] });
-    expect(huge.approximate).toBe(true);
-    expect(huge.mean).toBeGreaterThan(4e8);
+    expect(poolDistribution(pool({ pool: ["d1000000000"] }))).toBeNull();
+    expect(poolDistribution(pool({ pool: Array(99).fill("d1000000") }))).toBeNull();
+    // Totals spread wider than can be kept give up too, rather than allocating.
+    expect(poolDistribution(pool({ pool: ["d100000"] }))).toBeNull();
   });
 
   it("gives up on dice it can't cover", () => {

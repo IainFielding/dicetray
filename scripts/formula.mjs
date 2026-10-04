@@ -85,7 +85,7 @@ export function formulaForDie(key, count = 1) {
   const fromPool = dice.length > 0;
   const modes = getModes();
   const wholePool = fromPool ? (dice.length === state.pool.length) : !state.pool.length;
-  const partial = { ...state, pool: fromPool ? dice : Array(count).fill(key) };
+  const partial = { ...state, pool: fromPool ? dice : Array(count).fill(key), keep: state.keep[key] ? { [key]: state.keep[key] } : {} };
   if ( !wholePool ) {
     partial.modifier = 0;
     if ( modes[state.mode]?.style === "extraDie" ) partial.mode = "normal";

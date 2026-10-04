@@ -16,26 +16,22 @@ const KEEP_BUTTONS = [
   { type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", tooltipKey: "TooltipKeepLowest", forKey: "TooltipKeepLowestFor" }
 ];
 
-/** Trays currently on the page. Detached trays are pruned on the next refresh. */
-const trays = new Set();
-
-/** Set while a command button's own chat command is being sent, so it doesn't count as using the pool. */
-let sendingCommand = false;
-
-/** When a roll command was sent from the chat bar with dice in the pool; 0 when none is waiting. */
-let poolSentAt = 0;
-
-/** A sent roll command's message has this long to appear before it stops counting as the pool. */
-const POOL_SEND_WINDOW_MS = 10000;
+/** Flag on a chat message: it is the pool, sent as a roll command from the chat bar. */
+const POOL_FLAG = "pool";
 
 /**
  * chatMessage hook: a dice command sent from the chat bar (the mirrored pool, perhaps edited, with
- * any of /r, /gmr, /br, /sr, /pr) is the pool being rolled. It is only used up once the roll's
- * message exists ({@link onPoolMessageCreated}), so a typo or a cancelled roll loses nothing.
- * A command button's own command, or any other chat, doesn't count.
+ * any of /r, /gmr, /br, /sr, /pr) is the pool being rolled. The message about to be made from
+ * `chatData` is tagged, and the pool is used up only when that very message exists
+ * ({@link onPoolMessageCreated}): a typo or a cancelled roll loses nothing, and no other roll —
+ * a chat macro, a command button, a sheet — can be mistaken for it. "From the chat bar" means the
+ * text sent is what the chat bar holds; Foundry clears the bar only once the message is made.
  */
-export function onChatMessageSent(message) {
-  poolSentAt = (!sendingCommand && state.pool.length && parseRollCommand(plainText(message))) ? Date.now() : 0;
+export function onChatMessageSent(message, chatData) {
+  if ( !state.pool.length || !chatData ) return;
+  const text = plainText(message).trim();
+  if ( !parseRollCommand(text) || (text !== (getChatInput()?.value ?? "").trim()) ) return;
+  foundry.utils.setProperty(chatData, `flags.${MODULE_ID}.${POOL_FLAG}`, true);
 }
 
 /**
@@ -48,12 +44,9 @@ function plainText(html) {
   return new DOMParser().parseFromString(text, "text/html").body.textContent ?? "";
 }
 
-/** createChatMessage hook: the roll sent from the chat bar has landed, so the pool is used up. */
+/** createChatMessage hook: the pool's own roll message has landed, so the pool is used up. */
 export function onPoolMessageCreated(message, _options, userId) {
-  if ( !poolSentAt || (userId !== game.user.id) || !message.rolls?.length ) return;
-  const recent = (Date.now() - poolSentAt) < POOL_SEND_WINDOW_MS;
-  poolSentAt = 0;
-  if ( recent ) clearPool();
+  if ( (userId === game.user.id) && message.getFlag(MODULE_ID, POOL_FLAG) ) clearPool();
 }
 
 /** How long a button with a drawer is held before the drawer opens. */
@@ -74,20 +67,13 @@ const pending = new Map();
 
 
 
+/**
+ * Every tray on the page. The page itself is the list, so a tray that leaves it — rebuilt, or its
+ * window closed — is simply gone: nothing here can keep it alive. A tray still being attached (the
+ * pop-out's, mid-render) was brought up to date when it was built.
+ */
 function forEachTray(callback) {
-  pruneTrays();
-  for ( const tray of trays ) callback(tray);
-}
-
-/** Trays that have been on the page. A tray built but not attached yet (the pop-out's, mid-render) isn't. */
-const attached = new WeakSet();
-
-/** Forget trays that have left the page, so nothing keeps a removed tray (and its buttons) alive. */
-function pruneTrays() {
-  for ( const tray of trays ) {
-    if ( tray.isConnected ) attached.add(tray);
-    else if ( attached.has(tray) ) trays.delete(tray);
-  }
+  for ( const tray of document.querySelectorAll(".sogrom-dice-tray") ) callback(tray);
 }
 
 /* -------------------------------------------- */
@@ -387,8 +373,6 @@ export function createDiceTray({ popout = false } = {}) {
     tray.addEventListener(type, onTrayPointerEnd);
   }
 
-  pruneTrays();
-  trays.add(tray);
   refreshTray(tray);
   scheduleOdds();
   return tray;
@@ -515,15 +499,7 @@ function warnMaxDice(key) {
 
 /** Run a command button's chat command ("/dr", …) as if it had been typed into the chat bar. */
 function runCommand(command) {
-  // processMessage fires the chatMessage hook before its first await, so the flag covers it.
-  sendingCommand = true;
-  let result;
-  try {
-    result = ui.chat.processMessage(command);
-  } finally {
-    sendingCommand = false;
-  }
-  Promise.resolve(result).catch(err => {
+  Promise.resolve(ui.chat.processMessage(command)).catch(err => {
     console.error(`${MODULE_ID} | Command error:`, err);
     ui.notifications.error(game.i18n.format("SOGROM_DICETRAY.CommandError", { command }));
   });
@@ -613,7 +589,9 @@ function updateChatInput() {
   if ( !chat ) return;
   const current = chat.value.trim();
   const command = parseRollCommand(current);
-  const ours = !current || (current === mirrored) || !!command;
+  // A roll command is the pool's (perhaps edited) only while there is a pool; with none, it's one
+  // the player typed by hand, and changing the mode or modifier mustn't wipe it.
+  const ours = !current || (current === mirrored) || (!!command && (state.pool.length > 0));
   if ( !ours ) return;
   // Keep the player's own command (/gmr, /br, …) and flavor as the dice change under them.
   const formula = currentFormula();
@@ -666,6 +644,11 @@ function whenReady(key, root, attempt, onTimeout) {
  * popped-out chat). Move the tray to follow it, as it is — pool, focus and open drawers intact —
  * rather than building a new one; build one only if there isn't one yet.
  */
+/** renderChatLog hook: build the tray if there isn't one. An existing one is kept as it is; followChatInput moves it. */
+export function ensureTray(root) {
+  if ( !document.querySelector(SIDEBAR_TRAY) ) injectDiceTray(root);
+}
+
 export function followChatInput(input) {
   const tray = document.querySelector(SIDEBAR_TRAY);
   if ( !tray ) {
@@ -756,7 +739,6 @@ export function removeAll() {
   pending.clear();
   // The pop-out window's tray belongs to the window and stays.
   for ( const el of document.querySelectorAll(`${SIDEBAR_TRAY}, .sogrom-dice-tray-toggle`) ) el.remove();
-  pruneTrays();
 }
 
 export function applyTheme(theme) {

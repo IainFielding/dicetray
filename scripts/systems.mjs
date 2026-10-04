@@ -201,7 +201,7 @@ export function systemRows(id) {
  */
 export function systemModes(id) {
   const map = systemMap(id);
-  if ( !("modes" in map) ) return GENERIC_MODES;
+  if ( map.modes === undefined ) return GENERIC_MODES;
   if ( !map.modes ) return {};
   // Overrides merge over the generic modes, which stay unless set to null; new keys add modes.
   const modes = { ...GENERIC_MODES };

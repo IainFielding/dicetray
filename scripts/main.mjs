@@ -7,7 +7,7 @@ import { onStateChange, snapshot } from "./state.mjs";
 import { onDropCanvasData, onHotbarDrop } from "./roll.mjs";
 import { onCreateChatMessage, onPreCreateChatMessage, saveOnHide } from "./stats-tracker.mjs";
 import {
-  followChatInput, injectDiceTray, injectToggleButton, onChatMessageSent, onPoolMessageCreated
+  ensureTray, followChatInput, injectToggleButton, onChatMessageSent, onPoolMessageCreated
 } from "./tray.mjs";
 
 Hooks.once("init", () => {
@@ -24,7 +24,7 @@ Hooks.once("init", () => {
 onStateChange(() => Hooks.callAll(HOOKS.poolChanged, snapshot()));
 
 Hooks.on("renderChatLog", (_app, element) => {
-  injectDiceTray(element);
+  ensureTray(element);
   injectToggleButton(element);
 });
 
@@ -49,7 +49,7 @@ Hooks.on("createChatMessage", (message, options, userId) => {
 Hooks.on("getSceneControlButtons", onGetSceneControlButtons);
 
 // A roll command sent from the chat bar is the pool being rolled; it's used up once the roll lands.
-Hooks.on("chatMessage", (_log, message) => onChatMessageSent(message));
+Hooks.on("chatMessage", (_log, message, chatData) => onChatMessageSent(message, chatData));
 
 // Dice dragged out of the tray: roll them on the canvas, or keep them as a hotbar macro.
 Hooks.on("dropCanvasData", onDropCanvasData);

@@ -26,7 +26,7 @@ const making = new Map();
 const MAX_MAKING = 100;
 
 /** The current reset generation: a GM reset moves it on, which makes older figures count as empty. */
-const currentEpoch = () => game.settings.get(MODULE_ID, "statsEpoch") ?? 0;
+export const currentEpoch = () => game.settings.get(MODULE_ID, "statsEpoch") ?? 0;
 
 /**
  * preCreateChatMessage: this client is making a message. Pre-create hooks run only on the client
