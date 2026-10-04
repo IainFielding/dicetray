@@ -23,9 +23,18 @@ describe("buildFormula", () => {
     expect(buildFormula(pool({ pool: [8, 20, 20], keep: { 20: { type: "kl", count: 1 } } }))).toBe("1d8 + 2d20kl");
   });
 
-  it("applies the roll mode suffix to every group", () => {
-    expect(buildFormula(pool({ pool: [20], mode: "advantage" }))).toBe("1d20adv");
-    expect(buildFormula(pool({ pool: [20, 4], mode: "disadvantage" }))).toBe("1d4dis + 1d20dis");
+  it("uses the system's adv/dis modifiers when its dice support them", () => {
+    const native = { nativeAdvantage: true };
+    expect(buildFormula(pool({ pool: [20], mode: "advantage" }), native)).toBe("1d20adv");
+    expect(buildFormula(pool({ pool: [20, 4], mode: "disadvantage" }), native)).toBe("1d4dis + 1d20dis");
+  });
+
+  it("writes advantage with core dice pools for other systems", () => {
+    expect(buildFormula(pool({ pool: [20], mode: "advantage", modifier: 2 }))).toBe("2d20kh + 2");
+    expect(buildFormula(pool({ pool: [20], mode: "disadvantage" }))).toBe("2d20kl");
+    expect(buildFormula(pool({ pool: [6, 6, 6], mode: "advantage" }))).toBe("{3d6,3d6}kh");
+    expect(buildFormula(pool({ pool: [20, 20], mode: "advantage", keep: { 20: { type: "kh", count: 1 } } })))
+      .toBe("{2d20kh,2d20kh}kh");
   });
 });
 

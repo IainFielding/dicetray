@@ -1,5 +1,5 @@
 import { MODE_CONFIG, MODULE_ID } from "./constants.mjs";
-import { buildFormula, parseRollCommand } from "./formula.mjs";
+import { currentFormula, parseRollCommand } from "./formula.mjs";
 import { clearPool, state } from "./state.mjs";
 import { getChatInput } from "./chat-input.mjs";
 
@@ -36,7 +36,7 @@ export async function rollFormula(formula, { flavor } = {}) {
 /** Roll the current pool, honouring any edits the user made to the /r command in the chat bar. */
 export async function rollPool() {
   const chatText = getChatInput()?.value ?? "";
-  const formula = parseRollCommand(chatText) ?? buildFormula(state);
+  const formula = parseRollCommand(chatText) ?? currentFormula();
   if ( !formula ) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
     return;

@@ -2,7 +2,7 @@ import { DICE_TYPES, MAX_DICE_PER_TYPE, MODE_CONFIG, MODULE_ID, THEME_CLASSES } 
 import {
   addDie, adjustKeep, adjustModifier, getDiceGroups, getKeepCount, onStateChange, removeDie, state, toggleMode
 } from "./state.mjs";
-import { buildFormula } from "./formula.mjs";
+import { currentFormula } from "./formula.mjs";
 import { rollPool } from "./roll.mjs";
 import { getChatInput } from "./chat-input.mjs";
 
@@ -214,7 +214,7 @@ function refreshTray(tray) {
 function updateChatInput() {
   const chat = getChatInput();
   if ( !chat ) return;
-  const formula = buildFormula(state);
+  const formula = currentFormula();
   const value = formula ? `/r ${formula}` : "";
   if ( chat.value !== value ) chat.value = value;
 }

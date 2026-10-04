@@ -3,8 +3,8 @@ export const MODULE_ID = "sogrom-dicetray";
 export const DICE_TYPES = [4, 6, 8, 10, 12, 20, 100];
 
 export const MODE_CONFIG = {
-  advantage:    { suffix: "adv", flavorKey: "FlavorAdvantage",    icon: "fa-angle-double-up",   labelKey: "Advantage",    tooltipKey: "TooltipAdvantage" },
-  disadvantage: { suffix: "dis", flavorKey: "FlavorDisadvantage", icon: "fa-angle-double-down", labelKey: "Disadvantage", tooltipKey: "TooltipDisadvantage" }
+  advantage:    { suffix: "adv", keep: "kh", flavorKey: "FlavorAdvantage",    icon: "fa-angle-double-up",   labelKey: "Advantage",    tooltipKey: "TooltipAdvantage" },
+  disadvantage: { suffix: "dis", keep: "kl", flavorKey: "FlavorDisadvantage", icon: "fa-angle-double-down", labelKey: "Disadvantage", tooltipKey: "TooltipDisadvantage" }
 };
 
 export const THEME_CHOICES = {
