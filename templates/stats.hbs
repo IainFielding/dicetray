@@ -1,0 +1,79 @@
+<section class="dice-stats">
+  <nav class="dice-stats-scope" aria-label="{{localize "SOGROM_DICETRAY.StatsScope"}}">
+    <button type="button" data-action="scope" data-scope="all" class="{{#if scopeAll}}active{{/if}}">{{localize "SOGROM_DICETRAY.StatsAllTime"}}</button>
+    <button type="button" data-action="scope" data-scope="today" data-tooltip="SOGROM_DICETRAY.StatsTodayHint" class="{{#unless scopeAll}}active{{/unless}}">{{localize "SOGROM_DICETRAY.StatsToday"}}</button>
+  </nav>
+
+  {{#unless tracking}}
+  <p class="notification warning">{{localize "SOGROM_DICETRAY.StatsOff"}}</p>
+  {{/unless}}
+
+  {{#if empty}}
+  <p class="dice-stats-empty">{{localize "SOGROM_DICETRAY.StatsEmpty"}}</p>
+  {{else}}
+
+  {{#if luckiest}}
+  <p class="dice-stats-highlight"><i class="fas fa-fire"></i>
+    {{localize "SOGROM_DICETRAY.StatsLuckiest" }} <strong style="color: {{luckiest.color}}">{{luckiest.name}}</strong> ({{luckiest.mean}})</p>
+  {{/if}}
+
+  <table class="dice-stats-players">
+    <thead>
+      <tr>
+        <th>{{localize "SOGROM_DICETRAY.StatsPlayer"}}</th>
+        <th>{{localize "SOGROM_DICETRAY.StatsRolls"}}</th>
+        <th>{{localize "SOGROM_DICETRAY.StatsD20s"}}</th>
+        <th data-tooltip="SOGROM_DICETRAY.StatsAverageHint">{{localize "SOGROM_DICETRAY.StatsAverage"}}</th>
+        <th>{{localize "SOGROM_DICETRAY.StatsNat20"}}</th>
+        <th>{{localize "SOGROM_DICETRAY.StatsNat1"}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="{{#if partySelected}}selected{{/if}}" data-action="select" data-user="">
+        <td><strong>{{localize "SOGROM_DICETRAY.StatsParty"}}</strong></td>
+        <td colspan="5" class="dice-stats-hint">{{localize "SOGROM_DICETRAY.StatsSelectHint"}}</td>
+      </tr>
+      {{#each players as |p|}}
+      <tr class="{{#if p.selected}}selected{{/if}}" data-action="select" data-user="{{p.id}}">
+        <td><span class="dice-stats-swatch" style="background: {{p.color}}"></span>{{p.name}}</td>
+        <td>{{p.rolls}}</td>
+        <td>{{p.d20s}}</td>
+        <td class="dice-stats-luck {{p.luck}}">{{p.mean}}</td>
+        <td>{{p.nat20}} <span class="dice-stats-rate">{{p.nat20Rate}}</span></td>
+        <td>{{p.nat1}} <span class="dice-stats-rate">{{p.nat1Rate}}</span></td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <h3>{{localize "SOGROM_DICETRAY.StatsD20Spread"}}: {{selectedName}}
+    <span class="dice-stats-hint">({{d20.count}} · {{localize "SOGROM_DICETRAY.StatsAverage"}} {{d20.mean}})</span></h3>
+  {{#if chart}}{{{chart}}}<p class="dice-stats-hint">{{localize "SOGROM_DICETRAY.StatsChartHint"}}</p>
+  {{else}}<p class="dice-stats-hint">{{localize "SOGROM_DICETRAY.StatsNoD20"}}</p>{{/if}}
+
+  {{#if dice.length}}
+  <table class="dice-stats-dice">
+    <thead>
+      <tr>
+        <th>{{localize "SOGROM_DICETRAY.StatsDie"}}</th>
+        <th>{{localize "SOGROM_DICETRAY.StatsRolled"}}</th>
+        <th>{{localize "SOGROM_DICETRAY.StatsAverage"}}</th>
+        <th>{{localize "SOGROM_DICETRAY.StatsExpected"}}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each dice as |d|}}
+      <tr><td>{{d.name}}</td><td>{{d.count}}</td><td>{{d.mean}}</td><td>{{d.expected}}</td><td class="dice-stats-rate">{{d.diff}}</td></tr>
+      {{/each}}
+    </tbody>
+  </table>
+  {{/if}}
+  {{/if}}
+
+  {{#if canReset}}
+  <footer class="dice-stats-footer">
+    <button type="button" data-action="reset"><i class="fas fa-trash"></i> {{localize "SOGROM_DICETRAY.StatsReset"}}</button>
+  </footer>
+  {{/if}}
+</section>

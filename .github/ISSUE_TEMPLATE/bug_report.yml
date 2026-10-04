@@ -1,0 +1,108 @@
+name: Bug report
+description: Something in the dice tray doesn't work as expected.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        Before you file: please try reproducing the problem with **only** this module
+        enabled. Most odd behaviour turns out to be a conflict with another module that
+        also changes the chat sidebar, and knowing that up front saves a lot of back-and-forth.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem, and what you expected to happen instead.
+      placeholder: |
+        I added two d20s, clicked ADV and then Roll. The chat card showed 4d20 instead of 2d20.
+        I expected advantage to be applied to the two d20s I added.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact clicks needed to see the problem. Include the dice, modifiers and roll mode involved — those usually matter.
+      placeholder: |
+        1. Open the Chat tab
+        2. Click the d20 twice
+        3. Click ADV, then Roll
+        4. The chat card shows 4d20
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen?
+      description: Which part of the module is involved? Pick the closest match.
+      options:
+        - Dice tray in the chat sidebar
+        - Pop-out dice tray window
+        - Roll result in chat
+        - Dice row configuration (GM settings)
+        - Module settings
+        - Game system support
+        - Something else / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: foundry-version
+    attributes:
+      label: Foundry VTT version
+      description: Found in the bottom-left of the Foundry setup screen, e.g. 14.368.
+      placeholder: "14.368"
+    validations:
+      required: true
+
+  - type: input
+    id: system
+    attributes:
+      label: Game system and version
+      description: Shown in Game Settings → Support & Issues, e.g. dnd5e 6.0.5.
+      placeholder: "dnd5e 6.0.5"
+    validations:
+      required: true
+
+  - type: input
+    id: module-version
+    attributes:
+      label: Sogrom's Dice Tray version
+      description: Shown in the Manage Modules list next to the module name, and at the bottom of the tray.
+      placeholder: "2.0.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors
+      description: >-
+        Press F12 to open the developer tools, switch to the Console tab, reproduce the
+        problem, then paste any red error text here. This is automatically formatted as
+        code, so no backticks needed.
+      render: text
+
+  - type: textarea
+    id: other-modules
+    attributes:
+      label: Other dice or chat modules in use
+      description: >-
+        Dice So Nice, chat enhancement modules, roll automation (Midi-QOL and similar) and so on.
+        These are the most common source of conflicts.
+      placeholder: "Dice So Nice, Midi-QOL"
+
+  - type: checkboxes
+    id: isolated
+    attributes:
+      label: Confirmations
+      options:
+        - label: I reproduced this with only this module enabled.
+        - label: I searched the existing issues and this hasn't been reported yet.
+          required: true
