@@ -5,6 +5,7 @@ import { DiceTrayWindow, onGetSceneControlButtons } from "./popout.mjs";
 import { registerSettings } from "./settings.mjs";
 import { clearPool, onStateChange, snapshot } from "./state.mjs";
 import { onDropCanvasData, onHotbarDrop } from "./roll.mjs";
+import { onCreateChatMessage, saveOnHide } from "./stats-tracker.mjs";
 import { injectDiceTray, injectToggleButton, rebuildTrays } from "./tray.mjs";
 
 Hooks.once("init", () => {
@@ -35,8 +36,12 @@ Hooks.on("changeSidebarTab", () => {
 
 Hooks.once("ready", () => {
   if ( game.settings.get(MODULE_ID, "popoutAutoOpen") ) DiceTrayWindow.toggle(true);
+  saveOnHide();
   Hooks.callAll(HOOKS.ready, game.modules.get(MODULE_ID).api);
 });
+
+// Roll statistics: each client counts its own user's rolls.
+Hooks.on("createChatMessage", onCreateChatMessage);
 
 Hooks.on("getSceneControlButtons", onGetSceneControlButtons);
 

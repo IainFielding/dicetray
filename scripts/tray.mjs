@@ -7,6 +7,7 @@ import {
 } from "./state.mjs";
 import { currentFormula, formulaForDie } from "./formula.mjs";
 import { DRAG_TYPE, rollFormula, rollPool } from "./roll.mjs";
+import { DiceStatsWindow } from "./apps/stats-window.mjs";
 import { getChatInput } from "./chat-input.mjs";
 import { createOddsLine, scheduleOdds, setTarget } from "./odds-display.mjs";
 
@@ -298,6 +299,14 @@ export function createDiceTray({ popout = false } = {}) {
   titleBar.classList.add("dice-tray-title");
   const version = game.modules.get(MODULE_ID)?.version ?? "";
   titleBar.innerHTML = `<i class="fas fa-dice-d20"></i> ${t("Title")} <span class="dice-tray-version">v${version}</span>`;
+  const statsButton = document.createElement("button");
+  statsButton.type = "button";
+  statsButton.classList.add("dice-tray-stats-btn");
+  statsButton.dataset.action = "stats";
+  statsButton.dataset.tooltip = t("StatsTitle");
+  statsButton.setAttribute("aria-label", t("StatsTitle"));
+  statsButton.innerHTML = '<i class="fas fa-chart-column"></i>';
+  titleBar.append(statsButton);
 
   if ( popout ) {
     const preview = document.createElement("div");
@@ -343,6 +352,7 @@ function onTrayClick(event) {
     case "keep": return adjustKeep(btn.dataset.keep, 1);
     case "mode": return toggleMode(btn.dataset.mode);
     case "roll": return rollPool();
+    case "stats": return DiceStatsWindow.open();
   }
 }
 

@@ -27,6 +27,8 @@ it does), so a system or module can register a system map before any tray is dra
 | `roll()` | `Promise<ChatMessage \| null>` | Roll the pool to chat, then empty it. |
 | `rollFormula(formula, {flavor})` | `Promise<ChatMessage \| null>` | Roll any formula to chat the way the tray does, hooks included. |
 | `toggleWindow(open)` | `Promise` | Open (`true`), close (`false`) or toggle (omitted) the pop-out tray window. |
+| `getStats(user = game.user, {today})` | `object` | A user's roll statistics: `{ rolls, d20: { count, mean, nat20, nat1, faces }, dice: [{ faces, count, mean, expected }] }`, for all time or (with `today: true`) today. |
+| `openStats()` | `Promise` | Open the roll statistics window. |
 
 Rolls use the chat message mode (public, GM, blind, self) the player has selected.
 

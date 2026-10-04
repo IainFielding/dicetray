@@ -29,6 +29,36 @@
   margin-right: 4px;
 }
 
+.dice-tray-title {
+  position: relative;
+}
+
+.sogrom-dice-tray .dice-tray-stats-btn {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  padding: 1px 3px;
+  border: none;
+  background: none;
+  color: var(--tray-text);
+  font-size: 0.7rem;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.sogrom-dice-tray .dice-tray-stats-btn:hover {
+  opacity: 1;
+  color: var(--color-warm-2, #ff6400);
+  box-shadow: none;
+}
+
+.sogrom-dice-tray .dice-tray-stats-btn i {
+  margin: 0;
+}
+
 .dice-tray-dice-row,
 .dice-tray-controls-row {
   min-height: 0;
@@ -692,4 +722,103 @@
 .dice-layout-empty {
   text-align: center;
   opacity: 0.7;
+}
+
+/* ========================================
+    Roll Statistics
+   ======================================== */
+
+.sogrom-dice-stats .dice-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dice-stats-scope {
+  display: flex;
+  gap: 4px;
+}
+
+.dice-stats-scope button.active {
+  border-color: var(--color-warm-2, #ff6400);
+  box-shadow: 0 0 4px rgba(255, 100, 0, 0.4);
+}
+
+.dice-stats-players tbody tr {
+  cursor: pointer;
+}
+
+.dice-stats-players tbody tr.selected {
+  outline: 1px solid var(--color-warm-2, #ff6400);
+}
+
+.dice-stats-players td,
+.dice-stats-players th,
+.dice-stats-dice td,
+.dice-stats-dice th {
+  text-align: center;
+}
+
+.dice-stats-players td:first-child,
+.dice-stats-players th:first-child {
+  text-align: left;
+}
+
+.dice-stats-swatch {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  margin-right: 4px;
+  border-radius: 50%;
+}
+
+.dice-stats-luck.hot { color: #2ecc71; font-weight: bold; }
+.dice-stats-luck.cold { color: #e74c3c; font-weight: bold; }
+
+.dice-stats-rate,
+.dice-stats-hint {
+  font-size: var(--font-size-11, 0.7rem);
+  opacity: 0.7;
+}
+
+.dice-stats-highlight {
+  margin: 0;
+}
+
+.dice-stats-highlight i {
+  color: var(--color-warm-2, #ff6400);
+}
+
+.dice-stats-chart {
+  width: 100%;
+  height: auto;
+}
+
+.dice-stats-bar {
+  fill: var(--color-text-secondary, #888);
+}
+
+.dice-stats-bar.nat20 { fill: #2ecc71; }
+.dice-stats-bar.nat1 { fill: #e74c3c; }
+
+.dice-stats-fair {
+  stroke: var(--color-warm-2, #ff6400);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.dice-stats-chart text {
+  fill: currentColor;
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.dice-stats-empty {
+  text-align: center;
+  opacity: 0.7;
+}
+
+.dice-stats-footer {
+  display: flex;
+  justify-content: flex-end;
 }

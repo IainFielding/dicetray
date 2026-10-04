@@ -1,5 +1,6 @@
 import { MODULE_ID, THEME_CHOICES } from "./constants.mjs";
 import { DiceLayoutConfig } from "./apps/layout-config.mjs";
+import { DiceStatsMenu } from "./apps/stats-window.mjs";
 import { invalidateLayout } from "./layout.mjs";
 import { DiceTrayWindow } from "./popout.mjs";
 import { applyTheme, rebuildTrays } from "./tray.mjs";
@@ -102,5 +103,36 @@ export function registerSettings() {
     type: Boolean,
     default: true,
     onChange: () => rebuildTrays()
+  });
+
+  game.settings.registerMenu(MODULE_ID, "stats", {
+    name: "SOGROM_DICETRAY.StatsMenu",
+    label: "SOGROM_DICETRAY.StatsMenuLabel",
+    hint: "SOGROM_DICETRAY.StatsMenuHint",
+    icon: "fas fa-chart-column",
+    type: DiceStatsMenu,
+    restricted: false
+  });
+
+  game.settings.register(MODULE_ID, "trackStats", {
+    name: "SOGROM_DICETRAY.SettingTrackStats",
+    hint: "SOGROM_DICETRAY.SettingTrackStatsHint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE_ID, "statsVisibility", {
+    name: "SOGROM_DICETRAY.SettingStatsVisibility",
+    hint: "SOGROM_DICETRAY.SettingStatsVisibilityHint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "all",
+    choices: {
+      all: "SOGROM_DICETRAY.StatsVisibilityAll",
+      own: "SOGROM_DICETRAY.StatsVisibilityOwn"
+    }
   });
 }

@@ -1,3 +1,4 @@
+import { DiceStatsWindow } from "./apps/stats-window.mjs";
 import { MODULE_ID } from "./constants.mjs";
 import { parseDieTerm } from "./dice.mjs";
 import { currentFormula } from "./formula.mjs";
@@ -6,6 +7,8 @@ import { DiceTrayWindow } from "./popout.mjs";
 import { rollFormula, rollPool } from "./roll.mjs";
 import { refreshLayout } from "./settings.mjs";
 import { addDice, clearPool, removeDice, setMode, setModifier, snapshot } from "./state.mjs";
+import { statsFor } from "./stats-tracker.mjs";
+import { dayKey, summariseStats } from "./stats.mjs";
 import { registerSystemMap } from "./systems.mjs";
 
 /**
@@ -105,6 +108,21 @@ export function createApi() {
     /** Open (true), close (false) or toggle (omitted) the pop-out tray window. */
     toggleWindow(open) {
       return DiceTrayWindow.toggle(open);
+    },
+
+    /**
+     * A user's roll statistics: rolls, d20 average and natural 20s/1s, and each die size's average.
+     * @param {User} [user]          Defaults to the current user.
+     * @param {object} [options]
+     * @param {boolean} [options.today]  Only today's rolls.
+     */
+    getStats(user = game.user, { today = false } = {}) {
+      return summariseStats(statsFor(user), today ? dayKey() : null);
+    },
+
+    /** Open the roll statistics window. */
+    openStats() {
+      return DiceStatsWindow.open();
     }
   });
 }

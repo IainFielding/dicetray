@@ -106,6 +106,17 @@ The tray can also open in its own window that you can move anywhere on screen. I
 - Turn on **Open the Pop-out Tray on Load** to have it open every time you join.
 - The window remembers where you left it.
 
+### Roll Statistics
+
+Click the chart icon at the bottom right of the tray (or **Roll Statistics → Open Statistics** in the module settings) to see who's rolling hot and who's cursed:
+
+- every player's rolls, d20 average against the 10.5 a fair die gives, and natural 20s and 1s
+- the d20 spread for the whole party or one player, against what a fair die would give
+- the average for every die size
+- all time, or just today
+
+Every roll made in chat counts, whether from the tray, a character sheet or a macro. Blind rolls don't. The GM can turn counting off (**Keep Roll Statistics**), choose whether players see each other's figures (**Who Sees Roll Statistics**), and reset everything from the window.
+
 ### Keyboard Shortcuts
 
 Under **Game Settings → Configure Controls** you can bind keys to **Show or Hide the Dice Tray**, **Open or Close the Pop-out Tray**, **Roll the Dice Pool** and **Clear the Dice Pool**. They have no keys by default, so they never clash with another module's shortcuts.

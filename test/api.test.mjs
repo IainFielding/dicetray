@@ -32,7 +32,7 @@ describe("public API", () => {
   it("keeps its methods", () => {
     expect(methods).toEqual([
       "registerSystem", "getLayout", "getModes", "getPool", "getFormula", "add", "remove", "setModifier",
-      "setMode", "clear", "roll", "rollFormula", "toggleWindow"
+      "setMode", "clear", "roll", "rollFormula", "toggleWindow", "getStats", "openStats"
     ]);
   });
 
