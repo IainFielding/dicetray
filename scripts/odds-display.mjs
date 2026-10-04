@@ -1,4 +1,5 @@
 import { MODULE_ID, t } from "./constants.mjs";
+import { queryAll } from "./dom.mjs";
 import { getModes } from "./layout.mjs";
 import { poolDistribution, summarise } from "./odds.mjs";
 import { state } from "./state.mjs";
@@ -11,8 +12,12 @@ let target = null;
 
 let timer = null;
 
-/** The last pool worked out, and its distribution, so re-showing it (or changing the DC) is free. */
-let cache = { key: null, distribution: null };
+/**
+ * Pools worked out recently, and their distributions, so going back to one (or changing the DC) is
+ * free. Least recently used first; kept small.
+ */
+const cache = new Map();
+const CACHE_SIZE = 16;
 
 
 /** The odds line: average and range, a box for a DC, and the chance of reaching it. */
@@ -52,8 +57,8 @@ export function createOddsLine() {
 export function setTarget(text) {
   const value = Number.parseInt(String(text).trim(), 10);
   target = Number.isFinite(value) ? value : null;
-  for ( const input of document.querySelectorAll(".dice-tray-target") ) {
-    if ( document.activeElement !== input ) input.value = target ?? "";
+  for ( const input of queryAll(".dice-tray-target") ) {
+    if ( input.ownerDocument.activeElement !== input ) input.value = target ?? "";
   }
   updateOdds();
 }
@@ -66,18 +71,24 @@ export function scheduleOdds() {
 
 function updateOdds() {
   timer = null;
-  const lines = document.querySelectorAll(".sogrom-dice-tray .dice-tray-odds");
+  const lines = queryAll(".sogrom-dice-tray .dice-tray-odds");
   if ( !lines.length ) return;
   const show = game.settings.get(MODULE_ID, "showOdds");
   for ( const line of lines ) line.hidden = !show;
   if ( !show ) return;
 
   const modes = getModes();
-  const fateDice = CONFIG.Dice.terms.f === foundry.dice.terms.FateDie;
+  // dF is a Fate die if the system's f die is core's, or built on it.
+  const FateDie = foundry.dice.terms.FateDie;
+  const f = CONFIG.Dice.terms.f;
+  const fateDice = (f === FateDie) || (f?.prototype instanceof FateDie);
   // The mode definitions are part of the key: a system map registered later can change what a mode does.
   const key = JSON.stringify([state.pool, state.mode, state.modifier, state.keep, modes, fateDice]);
-  if ( key !== cache.key ) cache = { key, distribution: poolDistribution(state, { modes, fateDice }) };
-  const { distribution } = cache;
+  let distribution = cache.get(key);
+  if ( distribution === undefined ) distribution = poolDistribution(state, { modes, fateDice });
+  cache.delete(key);
+  cache.set(key, distribution);
+  if ( cache.size > CACHE_SIZE ) cache.delete(cache.keys().next().value);
 
   const odds = distribution && summarise(distribution, target);
   for ( const line of lines ) {

@@ -46,7 +46,9 @@ export async function rollFormula(formula, { flavor, messageMode = null, source 
     const speaker = ChatMessage.getSpeaker();
     const rollData = ChatMessage.getSpeakerActor(speaker)?.getRollData() ?? {};
     const roll = new Roll(data.formula, rollData);
-    await roll.evaluate();
+    // As core does: a blind roll is hidden from its roller, so it can't ask them to roll it.
+    const mode = data.messageMode ?? game.settings.get("core", "messageMode");
+    await roll.evaluate({ allowInteractive: mode !== "blind" });
     const options = data.messageMode ? { messageMode: data.messageMode } : {};
     const message = await roll.toMessage({ speaker, flavor: data.flavor }, options);
     Hooks.callAll(HOOKS.roll, roll, message, data);
@@ -65,8 +67,10 @@ export async function rollFormula(formula, { flavor, messageMode = null, source 
  * @returns {Promise<ChatMessage|null>}
  */
 export async function rollPool({ source = "tray" } = {}) {
-  // A roll command in the chat bar is the pool, perhaps edited: /gmr, # flavor and all.
-  const command = parseRollCommand(getChatInput()?.value ?? "");
+  // With dice in the pool, a roll command in the chat bar is the pool, perhaps edited: /gmr,
+  // # flavor and all. With none, there's nothing to roll — whatever the chat bar says.
+  const chat = getChatInput();
+  const command = state.pool.length ? parseRollCommand(chat?.value ?? "") : null;
   const formula = command?.formula ?? currentFormula();
   if ( !formula ) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
@@ -75,7 +79,11 @@ export async function rollPool({ source = "tray" } = {}) {
   const message = await rollFormula(formula, {
     flavor: command?.flavor ?? rollFlavor(), messageMode: command?.messageMode ?? null, source
   });
-  if ( message ) clearPool();
+  if ( message ) {
+    // The command was rolled; leave nothing behind to roll a second time.
+    if ( command && chat ) chat.value = "";
+    clearPool();
+  }
   return message;
 }
 

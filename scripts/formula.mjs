@@ -96,8 +96,9 @@ export function formulaForDie(key, count = 1) {
 /**
  * Foundry's dice commands, as its chat log recognises them: /r and /roll, and the ones that set a
  * message mode — /gmr, /br (/blindroll), /sr (/selfroll), /pr (/publicroll). Text after # is flavor.
+ * One line only: several lines are several commands, which the chat bar sends as they are.
  */
-const ROLL_COMMAND = /^(\/(?:r(?:oll)?|gmr(?:oll)?|b(?:lind)?r(?:oll)?|s(?:elf)?r(?:oll)?|p(?:ublic)?r(?:oll)?))\s+([^#]+?)\s*(?:#(.*))?$/i;
+const ROLL_COMMAND = /^(\/(?:r(?:oll)?|gmr(?:oll)?|b(?:lind)?r(?:oll)?|s(?:elf)?r(?:oll)?|p(?:ublic)?r(?:oll)?)) +([^#\n]+?)[ \t]*(?:#([^\n]*))?$/i;
 const COMMAND_MODES = { g: "gm", b: "blind", s: "self", p: "public" };
 
 /**

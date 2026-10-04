@@ -9,6 +9,7 @@ import { currentFormula, formulaForDie, parseRollCommand } from "./formula.mjs";
 import { DRAG_TYPE, rollFlavor, rollFormula, rollPool } from "./roll.mjs";
 import { DiceStatsWindow } from "./apps/stats-window.mjs";
 import { getChatInput } from "./chat-input.mjs";
+import { queryAll, queryOne } from "./dom.mjs";
 import { createOddsLine, scheduleOdds, setTarget } from "./odds-display.mjs";
 
 const KEEP_BUTTONS = [
@@ -16,8 +17,11 @@ const KEEP_BUTTONS = [
   { type: "kl", icon: "fa-arrow-down", labelKey: "KeepLowest", tooltipKey: "TooltipKeepLowest", forKey: "TooltipKeepLowestFor" }
 ];
 
-/** Flag on a chat message: it is the pool, sent as a roll command from the chat bar. */
+/** Flag on a chat message: it is this client's pool, sent as a roll command from the chat bar. */
 const POOL_FLAG = "pool";
+
+/** The token this client tags its pool's messages with, so another login of the same user ignores them. */
+const CLIENT_TOKEN = foundry.utils.randomID();
 
 /**
  * chatMessage hook: a dice command sent from the chat bar (the mirrored pool, perhaps edited, with
@@ -31,7 +35,7 @@ export function onChatMessageSent(message, chatData) {
   if ( !state.pool.length || !chatData ) return;
   const text = plainText(message).trim();
   if ( !parseRollCommand(text) || (text !== (getChatInput()?.value ?? "").trim()) ) return;
-  foundry.utils.setProperty(chatData, `flags.${MODULE_ID}.${POOL_FLAG}`, true);
+  foundry.utils.setProperty(chatData, `flags.${MODULE_ID}.${POOL_FLAG}`, CLIENT_TOKEN);
 }
 
 /**
@@ -46,7 +50,7 @@ function plainText(html) {
 
 /** createChatMessage hook: the pool's own roll message has landed, so the pool is used up. */
 export function onPoolMessageCreated(message, _options, userId) {
-  if ( (userId === game.user.id) && message.getFlag(MODULE_ID, POOL_FLAG) ) clearPool();
+  if ( (userId === game.user.id) && (message.getFlag(MODULE_ID, POOL_FLAG) === CLIENT_TOKEN) ) clearPool();
 }
 
 /** How long a button with a drawer is held before the drawer opens. */
@@ -73,7 +77,7 @@ const pending = new Map();
  * pop-out's, mid-render) was brought up to date when it was built.
  */
 function forEachTray(callback) {
-  for ( const tray of document.querySelectorAll(".sogrom-dice-tray") ) callback(tray);
+  for ( const tray of queryAll(".sogrom-dice-tray") ) callback(tray);
 }
 
 /* -------------------------------------------- */
@@ -143,14 +147,15 @@ function openDrawer(btn) {
   const drawer = btn.nextElementSibling;
   if ( !drawer?.classList.contains("dice-tray-drawer") ) return;
   if ( !drawer.matches(":popover-open") ) {
-    for ( const open of document.querySelectorAll(".dice-tray-drawer:popover-open") ) open.hidePopover();
+    for ( const open of queryAll(".dice-tray-drawer:popover-open") ) open.hidePopover();
     drawer.showPopover();
     dismissOnOutsideInput(drawer, btn);
   }
   const anchor = btn.getBoundingClientRect();
   const { width, height } = drawer.getBoundingClientRect();
   const margin = 4;
-  const left = Math.min(Math.max(anchor.left + (anchor.width / 2) - (width / 2), margin), window.innerWidth - width - margin);
+  const view = btn.ownerDocument.defaultView;
+  const left = Math.min(Math.max(anchor.left + (anchor.width / 2) - (width / 2), margin), view.innerWidth - width - margin);
   const above = anchor.top - height - margin;
   drawer.style.left = `${left}px`;
   drawer.style.top = `${(above >= margin) ? above : anchor.bottom + margin}px`;
@@ -168,12 +173,18 @@ function dismissOnOutsideInput(drawer, owner) {
     if ( drawer.isConnected && drawer.matches(":popover-open") ) drawer.hidePopover();
     controller.abort();
   };
-  document.addEventListener("pointerdown", event => {
+  // The drawer's own document: a detached window has its own.
+  const doc = drawer.ownerDocument;
+  doc.addEventListener("pointerdown", event => {
     if ( !drawer.isConnected ) return close();
     if ( !drawer.contains(event.target) && !owner.contains(event.target) ) close();
   }, { capture: true, signal });
-  document.addEventListener("keydown", event => {
-    if ( (event.key === "Escape") || !drawer.isConnected ) close();
+  doc.addEventListener("keydown", event => {
+    if ( !drawer.isConnected ) return close();
+    if ( event.key !== "Escape" ) return;
+    // Escape closes the drawer and nothing else: Foundry would otherwise close every open window.
+    event.stopPropagation();
+    close();
   }, { capture: true, signal });
   drawer.addEventListener("toggle", event => {
     if ( event.newState === "closed" ) controller.abort();
@@ -248,6 +259,11 @@ function buttonFace(def) {
     tinted.style.maskImage = mask;
     tinted.style.webkitMaskImage = mask;
     tinted.style.backgroundColor = def.color;
+    // A mask that fails to load leaves an empty square, so check the image first and fall back to
+    // the label, as an <img> does.
+    const probe = new Image();
+    probe.addEventListener("error", () => tinted.replaceWith(text()), { once: true });
+    probe.src = src;
     return tinted;
   }
   const img = document.createElement("img");
@@ -397,7 +413,7 @@ function onTrayClick(event) {
     case "mode": return toggleMode(btn.dataset.mode);
     case "roll": return rollPool();
     case "stats": return DiceStatsWindow.open();
-    case "clear": return clearPool();
+    case "clear": return clearPoolAndCommand();
   }
 }
 
@@ -462,7 +478,11 @@ function onTrayChange(event) {
   event.target.value = formatModifier(state.modifier);
 }
 
+/** Keys a focused tray button acts on itself; Foundry's keybindings (pan, pause, …) mustn't see them too. */
+const BUTTON_KEYS = new Set(["Enter", " ", "ArrowUp", "ArrowDown"]);
+
 function onTrayKeyDown(event) {
+  if ( event.target.matches?.("button") && BUTTON_KEYS.has(event.key) ) event.stopPropagation();
   // The keyboard way into a drawer: arrow up (or down) on its button.
   if ( event.target.matches?.(".has-drawer") && ["ArrowUp", "ArrowDown"].includes(event.key) ) {
     event.preventDefault();
@@ -560,7 +580,7 @@ function refreshTray(tray) {
     // cleared by a roll, is shown even while the field has focus.
     const text = formatModifier(state.modifier);
     const typed = parseModifier(modInput.value);
-    const typing = (document.activeElement === modInput) && ((typed === null) || (typed === state.modifier));
+    const typing = (modInput.ownerDocument.activeElement === modInput) && ((typed === null) || (typed === state.modifier));
     if ( !typing && (modInput.value !== text) ) modInput.value = text;
     modInput.classList.toggle("active", state.modifier !== 0);
   }
@@ -574,6 +594,19 @@ function refreshTray(tray) {
     btn.title = (count > 0) ? game.i18n.format(`SOGROM_DICETRAY.${cfg.forKey}`, { die }) : t(cfg.tooltipKey);
     setBadge(btn, count);
   }
+}
+
+/**
+ * Empty the pool, and the chat bar too if it holds the pool's roll command (perhaps edited), so it
+ * can't be rolled again. A chat message the player is typing is left alone.
+ */
+export function clearPoolAndCommand() {
+  const chat = getChatInput();
+  if ( chat && state.pool.length && parseRollCommand(chat.value.trim()) ) {
+    chat.value = "";
+    mirrored = "";
+  }
+  clearPool();
 }
 
 /** The text the tray last put in the chat bar. */
@@ -639,18 +672,18 @@ function whenReady(key, root, attempt, onTimeout) {
   pending.set(key, cancel);
 }
 
+/** renderChatLog hook: build the tray if there isn't one. An existing one is kept as it is; followChatInput moves it. */
+export function ensureTray(root) {
+  if ( !queryOne(SIDEBAR_TRAY) ) injectDiceTray(root);
+}
+
 /**
  * renderChatInput hook: Foundry has moved the chat input (sidebar, notifications area, or a
  * popped-out chat). Move the tray to follow it, as it is — pool, focus and open drawers intact —
  * rather than building a new one; build one only if there isn't one yet.
  */
-/** renderChatLog hook: build the tray if there isn't one. An existing one is kept as it is; followChatInput moves it. */
-export function ensureTray(root) {
-  if ( !document.querySelector(SIDEBAR_TRAY) ) injectDiceTray(root);
-}
-
 export function followChatInput(input) {
-  const tray = document.querySelector(SIDEBAR_TRAY);
+  const tray = queryOne(SIDEBAR_TRAY);
   if ( !tray ) {
     if ( ui.chat?.element ) injectDiceTray(ui.chat.element);
     return;
@@ -658,12 +691,12 @@ export function followChatInput(input) {
   if ( input?.isConnected && (tray.previousElementSibling !== input) ) input.after(tray);
 }
 
-export function injectDiceTray(root) {
+function injectDiceTray(root) {
   whenReady("tray", root, () => {
-    const chatMessage = root.querySelector("#chat-message") ?? document.getElementById("chat-message");
+    const chatMessage = root.querySelector("#chat-message") ?? queryOne("#chat-message");
     if ( !chatMessage ) return false;
     // Replace any existing tray, wherever it is, rather than stacking a second one.
-    for ( const old of document.querySelectorAll(SIDEBAR_TRAY) ) old.remove();
+    for ( const old of queryAll(SIDEBAR_TRAY) ) old.remove();
     const tray = createDiceTray();
     if ( !game.settings.get(MODULE_ID, "showDiceTray") ) tray.classList.add("dice-tray-hidden");
     tray.style.flex = "0 0";
@@ -679,9 +712,9 @@ export function injectDiceTray(root) {
 }
 
 export function injectToggleButton(root) {
-  if ( document.querySelector(".sogrom-dice-tray-toggle") ) return;
+  if ( queryOne(".sogrom-dice-tray-toggle") ) return;
   whenReady("toggle", root, () => {
-    const modes = root.querySelector("#message-modes") ?? document.getElementById("message-modes");
+    const modes = root.querySelector("#message-modes") ?? queryOne("#message-modes");
     const last = modes?.querySelector("button:last-of-type");
     if ( !last ) return false;
 
@@ -715,10 +748,10 @@ export async function toggleTrayVisible(visible = !game.settings.get(MODULE_ID, 
   await game.settings.set(MODULE_ID, "showDiceTray", visible);
 
   // If the tray was removed while hidden, put a fresh one back.
-  if ( visible && !document.querySelector(SIDEBAR_TRAY) && ui.chat?.element ) injectDiceTray(ui.chat.element);
+  if ( visible && !queryOne(SIDEBAR_TRAY) && ui.chat?.element ) injectDiceTray(ui.chat.element);
 
-  for ( const tray of document.querySelectorAll(SIDEBAR_TRAY) ) tray.classList.toggle("dice-tray-hidden", !visible);
-  for ( const btn of document.querySelectorAll(".sogrom-dice-tray-toggle") ) {
+  for ( const tray of queryAll(SIDEBAR_TRAY) ) tray.classList.toggle("dice-tray-hidden", !visible);
+  for ( const btn of queryAll(".sogrom-dice-tray-toggle") ) {
     btn.classList.toggle("toggled-off", !visible);
     btn.classList.toggle("tray-visible", visible);
   }
@@ -734,15 +767,15 @@ export function rebuildTrays() {
 }
 
 /** Remove every tray and toggle from the page, e.g. before the sidebar re-renders. */
-export function removeAll() {
+function removeAll() {
   for ( const cancel of pending.values() ) cancel();
   pending.clear();
   // The pop-out window's tray belongs to the window and stays.
-  for ( const el of document.querySelectorAll(`${SIDEBAR_TRAY}, .sogrom-dice-tray-toggle`) ) el.remove();
+  for ( const el of queryAll(`${SIDEBAR_TRAY}, .sogrom-dice-tray-toggle`) ) el.remove();
 }
 
 export function applyTheme(theme) {
-  for ( const el of document.querySelectorAll(".sogrom-dice-tray, .sogrom-dice-tray-toggle") ) {
+  for ( const el of queryAll(".sogrom-dice-tray, .sogrom-dice-tray-toggle") ) {
     el.classList.remove(...THEME_CLASSES);
     if ( theme ) el.classList.add(theme);
   }

@@ -220,22 +220,33 @@ function simulateGroup({ faces, n, keep, explode }, seedText) {
   const face = () => ((faces === "F") ? Math.floor(random() * 3) - 1 : Math.floor(random() * faces) + 1);
   const totals = new Int32Array(SAMPLES);
   // Like Foundry, each explosion is a result of its own, and keeping chooses among all the results.
-  const results = [];
+  // Every result is a face value, so the kept ones are found by counting faces rather than sorting.
+  const offset = (faces === "F") ? 1 : -1;                       // face value → index
+  const counts = new Int32Array((faces === "F") ? 3 : faces);
   for ( let s = 0; s < SAMPLES; s++ ) {
-    results.length = 0;
+    counts.fill(0);
+    let rolled = 0;
+    let total = 0;
     for ( let i = 0; i < n; i++ ) {
       let r;
       let explosions = 0;
       do {
         r = face();
-        results.push(r);
+        counts[r + offset]++;
+        rolled++;
+        total += r;
       } while ( explode && (r === faces) && (++explosions < MAX_EXPLOSIONS) );
     }
-    if ( keep ) results.sort((a, b) => a - b);
-    const kept = keep ? Math.min(keep.count, results.length) : results.length;
-    const start = (keep?.type === "kh") ? results.length - kept : 0;
-    let total = 0;
-    for ( let i = start; i < start + kept; i++ ) total += results[i];
+    if ( keep ) {
+      let left = Math.min(keep.count, rolled);
+      total = 0;
+      const high = keep.type === "kh";
+      for ( let i = high ? counts.length - 1 : 0; (left > 0) && (i >= 0) && (i < counts.length); i += high ? -1 : 1 ) {
+        const take = Math.min(counts[i], left);
+        total += take * (i - offset);
+        left -= take;
+      }
+    }
     totals[s] = total;
   }
   return fromSamples(totals, explode && !keep);
@@ -270,8 +281,9 @@ function groupDistribution(key, count, keep, fateDice) {
   const explode = modifiers === "x";
   if ( explode && ((faces === "F") || (faces < 2)) ) return null;
   const k = keep?.count > 0 ? keep : null;
-  // Dice too large for any useful odds (and for 32-bit simulated totals) aren't covered.
-  if ( (typeof faces === "number") && ((faces * count) > MAX_SIMULATED_TOTAL) ) return null;
+  // Dice too large for any useful odds (and for 32-bit simulated totals, and for counting faces)
+  // aren't covered.
+  if ( (typeof faces === "number") && (((faces * count) > MAX_SIMULATED_TOTAL) || (faces > MAX_SPAN)) ) return null;
   // Work out the size before building anything: a d1000000 must not allocate its faces.
   const width = (faces === "F") ? 3 : faces;
   if ( !k && ((width * count) <= MAX_SPAN) ) {

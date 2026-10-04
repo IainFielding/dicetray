@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { allButtons, normaliseRows } from "../scripts/dice.mjs";
+import { normaliseRows } from "../scripts/dice.mjs";
 import {
-  GENERIC_MODES, SYSTEM_ALIASES, SYSTEM_MAPS, registerSystemMap, systemMap, systemModes, systemRows, unregisterSystemMap
+  GENERIC_MODES, SYSTEM_ALIASES, SYSTEM_MAPS, registerSystemMap, systemMap, systemModes, systemRows
 } from "../scripts/systems.mjs";
+
+/** Every button in a layout, including those in drawers. */
+const allButtons = rows => rows.flatMap(row => row.flatMap(b => [b, ...(b.drawer ?? [])]));
 
 describe("built-in system maps", () => {
   for ( const id of Object.keys(SYSTEM_MAPS) ) {
@@ -33,7 +36,7 @@ describe("built-in system maps", () => {
 });
 
 describe("system modes", () => {
-  afterEach(() => ["dcc", "test-null", "test-partial"].forEach(unregisterSystemMap));
+  afterEach(() => ["dcc", "test-null", "test-partial"].forEach(id => registerSystemMap(id, null)));
 
   it("gives unknown systems the standard dice and generic advantage", () => {
     expect(systemRows("some-new-system")).toEqual([[
@@ -81,7 +84,7 @@ describe("system modes", () => {
     expect(systemRows("dcc")).toEqual([[{ formula: "d20" }]]);
     expect(systemModes("dcc")).toBe(GENERIC_MODES);
     expect(systemMap("dcc")).not.toBe(SYSTEM_MAPS.dcc);
-    unregisterSystemMap("dcc");
+    registerSystemMap("dcc", null);
     expect(systemMap("dcc")).toBe(SYSTEM_MAPS.dcc);
   });
 });

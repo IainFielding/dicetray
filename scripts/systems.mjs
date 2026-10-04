@@ -169,14 +169,10 @@ export const SYSTEM_ALIASES = {
 /** Maps added at runtime, e.g. by other modules through the API. They win over the built-in ones. */
 const registered = new Map();
 
-/** Add or replace the map for a system. */
+/** Add or replace the map for a system; null removes it again, so the built-in one (if any) applies. */
 export function registerSystemMap(id, map) {
-  registered.set(id, map ?? {});
-}
-
-/** Remove a map added with registerSystemMap, so the built-in one (if any) applies again. */
-export function unregisterSystemMap(id) {
-  registered.delete(id);
+  if ( map === null ) registered.delete(id);
+  else registered.set(id, map ?? {});
 }
 
 /** The map for a system id, following aliases; an empty map (standard dice) if there is none. */

@@ -116,11 +116,6 @@ export function normaliseRows(rows) {
 /** Buttons for a list of standard dice faces. */
 export const diceButtons = faces => faces.map(f => ({ formula: `d${f}` }));
 
-/** Every button in a layout, including those in drawers. */
-export function allButtons(rows) {
-  return rows.flatMap(row => row.flatMap(b => [b, ...(b.drawer ?? [])]));
-}
-
 /**
  * The image a button shows: its own, or the module's icon for a plain standard die.
  * @param {DiceButton} button

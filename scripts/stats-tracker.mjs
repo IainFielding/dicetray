@@ -62,14 +62,14 @@ export function onCreateChatMessage(message) {
 export function saveStats() {
   if ( timer ) clearTimeout(timer);
   timer = null;
-  const run = (saving ?? Promise.resolve()).then(saveNow);
-  // Only the latest save clears the chain; an earlier one finishing mustn't let a new save start
-  // alongside one still queued.
-  saving = run.finally(() => {
-    if ( saving === guarded ) saving = null;
+  // Each save waits for the one before. Only the latest clears the chain, so an earlier one
+  // finishing can't let a new save start alongside one still queued.
+  const next = (saving ?? Promise.resolve()).then(saveNow);
+  saving = next;
+  next.finally(() => {
+    if ( saving === next ) saving = null;
   });
-  const guarded = saving;
-  return saving;
+  return next;
 }
 
 /**
@@ -84,15 +84,37 @@ async function saveNow() {
   pending = null;
   const epoch = currentEpoch();
   if ( delta.epoch !== epoch ) return;                          // made before a reset
-  const merged = mergeStats(game.user.getFlag(MODULE_ID, STATS_FLAG), delta, epoch);
+  const stored = game.user.getFlag(MODULE_ID, STATS_FLAG);
+  const merged = mergeStats(stored, delta, epoch);
   try {
-    // Replace the value outright, so days that have dropped off are really removed.
-    await game.user.update({ [`flags.${MODULE_ID}.${STATS_FLAG}`]: foundry.data.operators.ForcedReplacement.create(merged) });
+    await game.user.update(statsUpdate(stored, merged, delta, epoch));
   } catch ( err ) {
     // Keep the rolls for the next save rather than losing them.
     pending = pending ? mergeStats(delta, pending, epoch) : delta;
     console.error(`${MODULE_ID} | Could not save roll statistics:`, err);
   }
+}
+
+/**
+ * The User update that stores `merged`. Every client receives each update, so only what changed is
+ * sent: the totals, the die sizes and days just rolled, and deletions for days that dropped off.
+ * Figures from before a reset, or in an older shape, are replaced outright.
+ */
+function statsUpdate(stored, merged, delta, epoch) {
+  const base = `flags.${MODULE_ID}.${STATS_FLAG}`;
+  const { ForcedDeletion, ForcedReplacement } = foundry.data.operators;
+  if ( !stored || (normaliseStats(stored, epoch).epoch !== (Number(stored.epoch) || 0)) || (stored.version !== merged.version) ) {
+    return { [base]: ForcedReplacement.create(merged) };
+  }
+  const update = { [`${base}.version`]: merged.version, [`${base}.epoch`]: epoch, [`${base}.rolls`]: merged.rolls };
+  for ( const faces of Object.keys(delta.dice) ) update[`${base}.dice.${faces}`] = merged.dice[faces];
+  for ( const day of Object.keys(delta.days) ) {
+    if ( merged.days[day] ) update[`${base}.days.${day}`] = ForcedReplacement.create(merged.days[day]);
+  }
+  for ( const day of Object.keys(stored.days ?? {}) ) {
+    if ( !merged.days[day] ) update[`${base}.days.${day}`] = ForcedDeletion.create();
+  }
+  return update;
 }
 
 /** Whether the current user may see a user's statistics under "Who Sees Roll Statistics". */

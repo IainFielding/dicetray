@@ -36,7 +36,7 @@ export function getDiceGroups(pool = state.pool) {
 }
 
 /** How many of one die type are in the pool. */
-export function countOf(key) {
+function countOf(key) {
   let count = 0;
   for ( const k of state.pool ) if ( k === key ) count++;
   return count;
@@ -78,7 +78,11 @@ function forget(key) {
   if ( state.lastDie === key ) state.lastDie = state.pool.at(-1) ?? null;
 }
 
-/** Take every die of one type out of the pool, e.g. after that group was rolled on its own. */
+/**
+ * Take every die of one type out of the pool because that group was rolled on its own (dragged to
+ * the canvas). If it was the whole pool, its modifier and mode were rolled with it, so they go too.
+ * Taking dice out by hand (removeDice) leaves them: setting them before adding dice is normal.
+ */
 export function removeAllOf(key) {
   if ( !state.pool.includes(key) ) return;
   state.pool = state.pool.filter(k => k !== key);

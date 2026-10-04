@@ -94,6 +94,8 @@ describe("parseRollCommand", () => {
     expect(parseRollCommand("hello")).toBeNull();
     expect(parseRollCommand("/w Bob 1d20")).toBeNull();
     expect(parseRollCommand("/rr 1d20")).toBeNull();
+    expect(parseRollCommand("/r 1d20\n/r 1d6")).toBeNull();
+    expect(parseRollCommand("/r\n1d6")).toBeNull();
     expect(parseRollCommand("")).toBeNull();
   });
 });
