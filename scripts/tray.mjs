@@ -39,10 +39,13 @@ const t = key => game.i18n.localize(`SOGROM_DICETRAY.${key}`);
 
 
 function forEachTray(callback) {
-  for ( const tray of trays ) {
-    if ( !tray.isConnected ) { trays.delete(tray); continue; }
-    callback(tray);
-  }
+  pruneTrays();
+  for ( const tray of trays ) callback(tray);
+}
+
+/** Forget trays no longer on the page, so nothing keeps a removed tray (and its buttons) alive. */
+function pruneTrays() {
+  for ( const tray of trays ) if ( !tray.isConnected ) trays.delete(tray);
 }
 
 /* -------------------------------------------- */
@@ -328,6 +331,7 @@ export function createDiceTray({ popout = false } = {}) {
     tray.addEventListener(type, onTrayPointerEnd);
   }
 
+  pruneTrays();
   trays.add(tray);
   refreshTray(tray);
   scheduleOdds();
@@ -656,6 +660,7 @@ export function removeAll() {
   pending.clear();
   // The pop-out window's tray belongs to the window and stays.
   for ( const el of document.querySelectorAll(`${SIDEBAR_TRAY}, .sogrom-dice-tray-toggle`) ) el.remove();
+  pruneTrays();
 }
 
 export function applyTheme(theme) {

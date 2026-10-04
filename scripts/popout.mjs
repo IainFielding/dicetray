@@ -89,6 +89,8 @@ export class DiceTrayWindow extends ApplicationV2 {
   /** @override */
   _onClose(options) {
     super._onClose(options);
+    // Empty the window, so its tray leaves the page (and the list of trays) with it.
+    this.element?.querySelector(".window-content")?.replaceChildren();
     syncTool(false);
   }
 }
