@@ -1,5 +1,5 @@
 import { MODULE_ID, THEME_CHOICES } from "./constants.mjs";
-import { applyTheme } from "./tray.mjs";
+import { applyTheme, rebuildTrays } from "./tray.mjs";
 
 export function registerSettings() {
   game.settings.register(MODULE_ID, "theme", {
@@ -33,5 +33,15 @@ export function registerSettings() {
       remove: "SOGROM_DICETRAY.RightClickRemove",
       roll: "SOGROM_DICETRAY.RightClickRoll"
     }
+  });
+
+  game.settings.register(MODULE_ID, "extraDice", {
+    name: "SOGROM_DICETRAY.SettingExtraDice",
+    hint: "SOGROM_DICETRAY.SettingExtraDiceHint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => rebuildTrays()
   });
 }

@@ -1,4 +1,4 @@
-import { DICE_TYPES, MAX_DICE_PER_TYPE, MODE_CONFIG, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
+import { DICE_TYPES, EXTRA_DICE_TYPES, MAX_DICE_PER_TYPE, MODE_CONFIG, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
 import {
   addDie, adjustKeep, adjustModifier, getDiceGroups, getKeepCount, onStateChange, removeDie, setModifier, state,
   toggleMode
@@ -74,9 +74,15 @@ function createDiceTray() {
   const theme = game.settings.get(MODULE_ID, "theme");
   if ( theme ) tray.classList.add(theme);
 
-  const diceRow = document.createElement("div");
-  diceRow.classList.add("dice-tray-dice-row");
-  diceRow.append(...DICE_TYPES.map(createDieButton));
+  const diceRows = [DICE_TYPES];
+  if ( game.settings.get(MODULE_ID, "extraDice") ) diceRows.push(EXTRA_DICE_TYPES);
+  const rows = diceRows.map(dice => {
+    const row = document.createElement("div");
+    row.classList.add("dice-tray-dice-row");
+    row.style.gridTemplateColumns = `repeat(${dice.length}, 1fr)`;
+    row.append(...dice.map(createDieButton));
+    return row;
+  });
 
   const plus = button(["dice-tray-modifier-btn"], { action: "modifier", delta: "1" });
   plus.title = t("TooltipModifierPlus");
@@ -126,7 +132,7 @@ function createDiceTray() {
   const version = game.modules.get(MODULE_ID)?.version ?? "";
   titleBar.innerHTML = `<i class="fas fa-dice-d20"></i> ${t("Title")} <span class="dice-tray-version">v${version}</span>`;
 
-  tray.append(diceRow, controlsRow, titleBar);
+  tray.append(...rows, controlsRow, titleBar);
 
   // One delegated listener per event type for the whole tray, rather than one per button.
   tray.addEventListener("click", onTrayClick);
@@ -409,6 +415,15 @@ export async function toggleTrayVisible(visible = !game.settings.get(MODULE_ID, 
     btn.classList.toggle("toggled-off", !visible);
     btn.classList.toggle("tray-visible", visible);
   }
+}
+
+/** Rebuild every tray from scratch, e.g. after a setting changed which buttons it shows. */
+export function rebuildTrays() {
+  removeAll();
+  const element = ui.chat?.element;
+  if ( !element ) return;
+  injectDiceTray(element);
+  injectToggleButton(element);
 }
 
 /** Remove every tray and toggle from the page, e.g. before the sidebar re-renders. */

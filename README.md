@@ -13,6 +13,7 @@ I created this Foundry module because the exsisting dice-tray module wasn't work
 
 - Build dice pools by clicking dice buttons directly in the Dice Tray
 - Support for all standard D&D dice: D4, D6, D8, D10, D12, D20, and D100
+- An optional second row of less common dice: D2, D3, D5, D7, D14, D16, D24 and D30
 - Roll modifiers: Keep Highest, Advantage, Disadvantage, and Keep Lowest
 - Live formula preview as you build your pool
 - Toggle the tray on/off with a D20 button
@@ -25,6 +26,10 @@ I created this Foundry module because the exsisting dice-tray module wasn't work
 
 - **Left-click** any dice button (D4–D100) to add that die to the pool. A badge appears on the button showing how many of that die are added.
 - **Right-click** a dice button to remove one die of that type from the pool. In the module settings you can change **Right-click on a die** to *Roll one immediately* instead, which rolls a single die of that type without touching the pool you're building.
+
+### Extra Dice
+
+The GM can turn on **Show Extra Dice** in the module settings to add a second row with D2, D3, D5, D7, D14, D16, D24 and D30 to everyone's tray.
 
 ### Dragging Dice
 

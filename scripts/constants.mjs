@@ -1,6 +1,10 @@
 export const MODULE_ID = "sogrom-dicetray";
 
+/** The dice every tray shows. */
 export const DICE_TYPES = [4, 6, 8, 10, 12, 20, 100];
+
+/** Less common dice, shown on a second row when the GM turns it on. */
+export const EXTRA_DICE_TYPES = [2, 3, 5, 7, 14, 16, 24, 30];
 
 export const MODE_CONFIG = {
   advantage:    { suffix: "adv", keep: "kh", flavorKey: "FlavorAdvantage",    icon: "fa-angle-double-up",   labelKey: "Advantage",    tooltipKey: "TooltipAdvantage" },

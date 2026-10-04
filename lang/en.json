@@ -27,6 +27,8 @@
   "SOGROM_DICETRAY.SettingThemeHint": "Choose the visual theme for the dice tray.",
   "SOGROM_DICETRAY.ThemeDarkMode": "Dark Mode",
   "SOGROM_DICETRAY.ThemeLightMode": "Light Mode",
+  "SOGROM_DICETRAY.SettingExtraDice": "Show Extra Dice",
+  "SOGROM_DICETRAY.SettingExtraDiceHint": "Adds a second row of less common dice to every player's tray: d2, d3, d5, d7, d14, d16, d24 and d30.",
   "SOGROM_DICETRAY.SettingRightClick": "Right-click on a die",
   "SOGROM_DICETRAY.SettingRightClickHint": "What right-clicking a die in the tray does: take one of that die out of the pool, or roll a single one of that die straight away without changing the pool.",
   "SOGROM_DICETRAY.RightClickRemove": "Remove one from the pool",
