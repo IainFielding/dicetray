@@ -34,6 +34,7 @@ In the module settings, **Dice Layout → Configure Dice** opens an editor for t
 - **Add Standard Dice Row** / **Add Extra Dice Row** add a ready-made row: D4–D100, or D2, D3, D5, D7, D14, D16, D24 and D30.
 - **Add Row** starts an empty row, and **+** adds a button to it.
 - Click a button to edit it, drag it to move it within or between rows, and right-click it (or use its **×**) to remove it.
+- **Drop a button on the middle of another** to put it in that button's **drawer**. In the tray, a small orange corner marks a button with a drawer: click it as usual, or press and hold it (or press the up arrow on it) to open its drawer of extra dice. Keep rarely used dice out of the way, such as the D100 inside the D10.
 - **Reset to Default** goes back to the standard dice.
 
 Each button has:

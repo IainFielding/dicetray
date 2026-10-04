@@ -132,6 +132,40 @@
   white-space: nowrap;
 }
 
+/* Drawers: a corner mark on the button, and the popover that opens from it */
+
+.dice-tray-die-btn.has-drawer::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  border-top: 5px solid var(--color-warm-2, #ff6400);
+  border-right: 5px solid transparent;
+  pointer-events: none;
+}
+
+.dice-tray-drawer {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid var(--color-warm-2, #ff6400);
+  border-radius: 6px;
+  background: var(--tray-bg);
+  color: var(--tray-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  overflow: visible;
+}
+
+.dice-tray-drawer:popover-open {
+  display: flex;
+  gap: 3px;
+}
+
+.dice-tray-drawer .dice-tray-die-btn {
+  width: 2.6em;
+}
+
 .dice-tray-badge {
   position: absolute;
   top: -4px;
@@ -453,6 +487,48 @@
 
 .dice-layout-buttons.drop-into {
   border-color: var(--color-warm-2, #ff6400);
+}
+
+.dice-layout-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.dice-layout-drawer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  max-width: 7.2em;
+  padding: 2px;
+  border-left: 2px solid var(--color-warm-2, #ff6400);
+  border-radius: 2px;
+}
+
+.dice-layout-button.dice-layout-sub {
+  width: 2.2em;
+  height: 2.2em;
+}
+
+.dice-layout-sub .dice-layout-face {
+  width: 1.4em;
+  height: 1.4em;
+}
+
+.dice-layout-button.has-drawer::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  border-top: 6px solid var(--color-warm-2, #ff6400);
+  border-right: 6px solid transparent;
+}
+
+.dice-layout-button.drop-into {
+  outline: 2px solid var(--color-warm-2, #ff6400);
+  outline-offset: 1px;
 }
 
 .dice-layout-button {

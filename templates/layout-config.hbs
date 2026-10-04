@@ -7,14 +7,26 @@
       <span class="dice-layout-row-label">{{row.label}}</span>
       <div class="dice-layout-buttons" data-row="{{row.index}}">
         {{#each row.buttons as |button|}}
-        <div class="dice-layout-button" draggable="true" data-action="editButton" data-row="{{row.index}}"
-             data-index="{{button.index}}" data-tooltip="{{button.formula}}" role="button" tabindex="0">
-          {{> "sogrom-dicetray.layout-face" face=button.face}}
-          <span class="dice-layout-formula">{{button.formula}}</span>
-          <a class="dice-layout-remove" data-action="removeButton" data-row="{{row.index}}" data-index="{{button.index}}"
-             data-tooltip="SOGROM_DICETRAY.LayoutRemoveButton" aria-label="{{localize "SOGROM_DICETRAY.LayoutRemoveButton"}}">
-            <i class="fas fa-times"></i>
-          </a>
+        <div class="dice-layout-group">
+          <div class="dice-layout-button{{#if button.drawer.length}} has-drawer{{/if}}" draggable="true" data-action="editButton"
+               data-row="{{row.index}}" data-index="{{button.index}}" data-tooltip="{{button.formula}}" role="button" tabindex="0">
+            {{> "sogrom-dicetray.layout-face" face=button.face}}
+            <span class="dice-layout-formula">{{button.formula}}</span>
+            <a class="dice-layout-remove" data-action="removeButton" data-tooltip="SOGROM_DICETRAY.LayoutRemoveButton"
+               aria-label="{{localize "SOGROM_DICETRAY.LayoutRemoveButton"}}"><i class="fas fa-times"></i></a>
+          </div>
+          {{#if button.drawer.length}}
+          <div class="dice-layout-drawer" aria-label="{{localize "SOGROM_DICETRAY.LayoutDrawer"}}">
+            {{#each button.drawer as |item|}}
+            <div class="dice-layout-button dice-layout-sub" draggable="true" data-action="editButton" data-row="{{row.index}}"
+                 data-index="{{button.index}}" data-sub="{{item.sub}}" data-tooltip="{{item.formula}}" role="button" tabindex="0">
+              {{> "sogrom-dicetray.layout-face" face=item.face}}
+              <a class="dice-layout-remove" data-action="removeButton" data-tooltip="SOGROM_DICETRAY.LayoutRemoveButton"
+                 aria-label="{{localize "SOGROM_DICETRAY.LayoutRemoveButton"}}"><i class="fas fa-times"></i></a>
+            </div>
+            {{/each}}
+          </div>
+          {{/if}}
         </div>
         {{/each}}
         {{#if row.canAdd}}

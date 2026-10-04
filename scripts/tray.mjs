@@ -17,6 +17,16 @@ const KEEP_BUTTONS = [
 /** Trays currently on the page. Detached trays are pruned on the next refresh. */
 const trays = new Set();
 
+/** How long a button with a drawer is held before the drawer opens. */
+const DRAWER_HOLD_MS = 300;
+
+/**
+ * Per-tray press-and-hold state: the pending hold timer, and the button whose click should be
+ * ignored because the press opened its drawer. Weakly held, so it goes with the tray.
+ * @type {WeakMap<HTMLElement, {timer: number|null, opened: HTMLElement|null}>}
+ */
+const holds = new WeakMap();
+
 /** How long to wait for the chat input to appear before giving up. */
 const INJECT_TIMEOUT_MS = 15000;
 
@@ -68,9 +78,111 @@ function createDieButton(def) {
     btn.draggable = true;
     btn.title = def.tooltip || game.i18n.format("SOGROM_DICETRAY.TooltipAddDie", { die: def.label || dieName(key) });
   }
-  btn.setAttribute("aria-label", btn.title);
   btn.append(buttonFace(def));
-  return btn;
+  if ( !def.drawer?.length ) {
+    btn.setAttribute("aria-label", btn.title);
+    return [btn];
+  }
+
+  // A drawer: more buttons that open above this one when it is held. It is a popover, so it shows
+  // in the top layer where no sidebar or window can clip it, and it stays inside the tray, so its
+  // buttons use the tray's own listeners. It is a manual popover: an automatic one would close as
+  // soon as the press that opened it is released, since that release lands outside it.
+  const drawer = document.createElement("div");
+  drawer.classList.add("dice-tray-drawer");
+  drawer.popover = "manual";
+  drawer.setAttribute("role", "group");
+  drawer.append(...def.drawer.flatMap(createDieButton));
+  btn.classList.add("has-drawer");
+  btn.title += ` ${t("DrawerHint")}`;
+  btn.setAttribute("aria-label", btn.title);
+  btn.setAttribute("aria-haspopup", "true");
+  btn.setAttribute("aria-expanded", "false");
+  drawer.addEventListener("toggle", event => btn.setAttribute("aria-expanded", String(event.newState === "open")));
+  return [btn, drawer];
+}
+
+/** Open the drawer that belongs to a button, just above it (below it if there's no room). */
+function openDrawer(btn) {
+  const drawer = btn.nextElementSibling;
+  if ( !drawer?.classList.contains("dice-tray-drawer") ) return;
+  if ( !drawer.matches(":popover-open") ) {
+    for ( const open of document.querySelectorAll(".dice-tray-drawer:popover-open") ) open.hidePopover();
+    drawer.showPopover();
+    dismissOnOutsideInput(drawer, btn);
+  }
+  const anchor = btn.getBoundingClientRect();
+  const { width, height } = drawer.getBoundingClientRect();
+  const margin = 4;
+  const left = Math.min(Math.max(anchor.left + (anchor.width / 2) - (width / 2), margin), window.innerWidth - width - margin);
+  const above = anchor.top - height - margin;
+  drawer.style.left = `${left}px`;
+  drawer.style.top = `${(above >= margin) ? above : anchor.bottom + margin}px`;
+}
+
+/**
+ * Close an open drawer when the player presses anywhere outside it (other than its own button,
+ * which stays usable) or presses Escape. The two document listeners exist only while the drawer is
+ * open, and are removed together as soon as it closes, however it closes.
+ */
+function dismissOnOutsideInput(drawer, owner) {
+  const controller = new AbortController();
+  const { signal } = controller;
+  const close = () => {
+    if ( drawer.isConnected && drawer.matches(":popover-open") ) drawer.hidePopover();
+    controller.abort();
+  };
+  document.addEventListener("pointerdown", event => {
+    if ( !drawer.isConnected ) return close();
+    if ( !drawer.contains(event.target) && !owner.contains(event.target) ) close();
+  }, { capture: true, signal });
+  document.addEventListener("keydown", event => {
+    if ( (event.key === "Escape") || !drawer.isConnected ) close();
+  }, { capture: true, signal });
+  drawer.addEventListener("toggle", event => {
+    if ( event.newState === "closed" ) controller.abort();
+  }, { signal });
+}
+
+function holdState(tray) {
+  let hold = holds.get(tray);
+  if ( !hold ) holds.set(tray, hold = { timer: null, opened: null });
+  return hold;
+}
+
+function cancelHold(tray) {
+  const hold = holds.get(tray);
+  if ( hold?.timer ) {
+    clearTimeout(hold.timer);
+    hold.timer = null;
+  }
+}
+
+function onTrayPointerDown(event) {
+  const btn = event.target.closest?.(".has-drawer");
+  if ( !btn || (event.button !== 0) ) return;
+  const tray = event.currentTarget;
+  const hold = holdState(tray);
+  cancelHold(tray);
+  hold.timer = setTimeout(() => {
+    hold.timer = null;
+    hold.opened = btn;
+    openDrawer(btn);
+  }, DRAWER_HOLD_MS);
+}
+
+function onTrayPointerEnd(event) {
+  // pointerout bubbles for every child crossed; only leaving the held button itself counts.
+  if ( (event.type === "pointerout") && event.target.closest?.(".has-drawer")?.contains(event.relatedTarget) ) return;
+  cancelHold(event.currentTarget);
+}
+
+/** Whether this click is the end of the press that opened a drawer, and should do nothing else. */
+function consumeHoldClick(tray, btn) {
+  const hold = holds.get(tray);
+  if ( !hold?.opened || (hold.opened !== btn) ) return false;
+  hold.opened = null;
+  return true;
 }
 
 /** What a button shows: its image (tinted when it has a colour), or else its text. */
@@ -126,7 +238,7 @@ export function createDiceTray({ popout = false } = {}) {
     const row = document.createElement("div");
     row.classList.add("dice-tray-dice-row");
     row.style.gridTemplateColumns = `repeat(${dice.length}, 1fr)`;
-    row.append(...dice.map(createDieButton));
+    row.append(...dice.flatMap(createDieButton));
     return row;
   });
 
@@ -193,6 +305,10 @@ export function createDiceTray({ popout = false } = {}) {
   tray.addEventListener("change", onTrayChange);
   tray.addEventListener("keydown", onTrayKeyDown);
   tray.addEventListener("dragstart", onTrayDragStart);
+  tray.addEventListener("pointerdown", onTrayPointerDown);
+  for ( const type of ["pointerup", "pointercancel", "pointerout", "dragstart"] ) {
+    tray.addEventListener(type, onTrayPointerEnd);
+  }
 
   trays.add(tray);
   refreshTray(tray);
@@ -205,7 +321,7 @@ export function createDiceTray({ popout = false } = {}) {
 
 function onTrayClick(event) {
   const btn = event.target.closest("button[data-action]");
-  if ( !btn ) return;
+  if ( !btn || consumeHoldClick(event.currentTarget, btn) ) return;
   switch ( btn.dataset.action ) {
     case "die": {
       const key = btn.dataset.key;
@@ -223,6 +339,11 @@ function onTrayClick(event) {
 function onTrayContextMenu(event) {
   const btn = event.target.closest("button[data-action]");
   if ( !btn ) return;
+  // On touch screens a long press also fires contextmenu; if that press opened a drawer, that's all.
+  if ( holds.get(event.currentTarget)?.opened === btn ) {
+    event.preventDefault();
+    return;
+  }
   switch ( btn.dataset.action ) {
     case "die": {
       event.preventDefault();
@@ -274,6 +395,13 @@ function onTrayChange(event) {
 }
 
 function onTrayKeyDown(event) {
+  // The keyboard way into a drawer: arrow up (or down) on its button.
+  if ( event.target.matches?.(".has-drawer") && ["ArrowUp", "ArrowDown"].includes(event.key) ) {
+    event.preventDefault();
+    openDrawer(event.target);
+    event.target.nextElementSibling?.querySelector("button")?.focus();
+    return;
+  }
   if ( !event.target.matches(".dice-tray-modifier-input") ) return;
   switch ( event.key ) {
     case "ArrowUp":
