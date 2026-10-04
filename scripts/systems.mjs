@@ -187,7 +187,23 @@ export const activeSystemId = () => game.system?.id;
 
 /** The default layout for a system. */
 export function systemRows(id) {
-  return systemMap(id).rows?.() ?? standardRows();
+  try {
+    return systemMap(id).rows?.() ?? standardRows();
+  } catch ( err ) {
+    // A broken map mustn't leave the tray without dice, or stop it drawing.
+    console.error(`sogrom-dicetray | The dice map for ${id} failed; using the standard dice.`, err);
+    return standardRows();
+  }
+}
+
+/** Whether a mode has what its style needs; one that doesn't would write "undefined" into rolls. */
+function validMode(mode) {
+  switch ( mode.style ) {
+    case "repeat": return ["kh", "kl"].includes(mode.keep);
+    case "extraDie": return ["+", "-"].includes(mode.op) && (typeof mode.die === "string");
+    case "wildDie": return typeof mode.die === "string";
+    default: return false;
+  }
 }
 
 /**
@@ -202,8 +218,18 @@ export function systemModes(id) {
   // Overrides merge over the generic modes, which stay unless set to null; new keys add modes.
   const modes = { ...GENERIC_MODES };
   for ( const [key, override] of Object.entries(map.modes) ) {
-    if ( override === null ) delete modes[key];
-    else modes[key] = { ...(GENERIC_MODES[key] ?? {}), ...override };
+    if ( override === null ) {
+      delete modes[key];
+      continue;
+    }
+    // A new mode borrows advantage's text and icon until it gives its own — never its mechanics.
+    const { label, tooltip, flavor, icon } = GENERIC_MODES.advantage;
+    const mode = { ...(GENERIC_MODES[key] ?? { label, tooltip, flavor, icon }), ...override };
+    if ( validMode(mode) ) modes[key] = mode;
+    else {
+      delete modes[key];
+      console.warn(`sogrom-dicetray | Mode "${key}" for ${id} is missing what its style "${mode.style}" needs; it is left out.`);
+    }
   }
   return modes;
 }

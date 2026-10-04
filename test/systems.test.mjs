@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { normaliseRows } from "../scripts/dice.mjs";
 import {
   GENERIC_MODES, SYSTEM_ALIASES, SYSTEM_MAPS, registerSystemMap, systemMap, systemModes, systemRows
@@ -36,6 +36,8 @@ describe("built-in system maps", () => {
 });
 
 describe("system modes", () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation(() => {});
   afterEach(() => ["dcc", "test-null", "test-partial"].forEach(id => registerSystemMap(id, null)));
 
   it("gives unknown systems the standard dice and generic advantage", () => {
@@ -72,6 +74,15 @@ describe("system modes", () => {
   it("treats modes: undefined as leaving the modes out", () => {
     registerSystemMap("test-null", { modes: undefined });
     expect(systemModes("test-null")).toBe(GENERIC_MODES);
+  });
+
+  it("leaves out modes missing what their style needs, and survives a throwing map", () => {
+    registerSystemMap("test-null", {
+      rows: () => { throw new Error("broken"); },
+      modes: { lucky: { style: "repeat" }, boost: { style: "extraDie", die: "1d4" }, ok: { style: "wildDie", die: "1d6x" } }
+    });
+    expect(Object.keys(systemModes("test-null"))).toEqual(["advantage", "disadvantage", "ok"]);
+    expect(systemRows("test-null")[0].map(b => b.formula)).toContain("d20");
   });
 
   it("drops a mode set to null and keeps the rest", () => {

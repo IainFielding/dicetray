@@ -1,8 +1,8 @@
 import { HOOKS, MODULE_ID } from "./constants.mjs";
 import { getModes } from "./layout.mjs";
-import { currentFormula, parseRollCommand } from "./formula.mjs";
-import { clearPool, removeAllOf, state } from "./state.mjs";
-import { getChatInput } from "./chat-input.mjs";
+import { currentFormula } from "./formula.mjs";
+import { consume, getDiceGroups, state } from "./state.mjs";
+import { getChatInput, poolCommand } from "./chat-input.mjs";
 
 /** `type` of the drag data a die dragged out of the tray carries. */
 export const DRAG_TYPE = "SogromDiceTrayRoll";
@@ -51,8 +51,10 @@ export async function rollFormula(formula, { flavor, messageMode = null, source 
     await roll.evaluate({ allowInteractive: mode !== "blind" });
     const options = data.messageMode ? { messageMode: data.messageMode } : {};
     const message = await roll.toMessage({ speaker, flavor: data.flavor }, options);
+    // Another module may stop the message being made; then nothing was posted.
+    if ( !message ) return null;
     Hooks.callAll(HOOKS.roll, roll, message, data);
-    return message ?? null;
+    return message;
   } catch ( err ) {
     console.error(`${MODULE_ID} | Roll error:`, err);
     ui.notifications.error(game.i18n.localize("SOGROM_DICETRAY.RollError"));
@@ -60,29 +62,40 @@ export async function rollFormula(formula, { flavor, messageMode = null, source 
   }
 }
 
+/** The pool roll in progress, so a double click or a held key doesn't post it twice. */
+let rolling = null;
+
 /**
  * Roll the current pool, honouring any edits the user made to the /r command in the chat bar.
+ * While a roll is in progress, asking again returns that same roll.
  * @param {object} [options]
  * @param {string} [options.source]  What asked for the roll; see rollFormula.
  * @returns {Promise<ChatMessage|null>}
  */
-export async function rollPool({ source = "tray" } = {}) {
-  // With dice in the pool, a roll command in the chat bar is the pool, perhaps edited: /gmr,
-  // # flavor and all. With none, there's nothing to roll — whatever the chat bar says.
-  const chat = getChatInput();
-  const command = state.pool.length ? parseRollCommand(chat?.value ?? "") : null;
+export function rollPool(options = {}) {
+  rolling ??= rollPoolNow(options).finally(() => { rolling = null; });
+  return rolling;
+}
+
+async function rollPoolNow({ source = "tray" } = {}) {
+  // The pool's command in the chat bar is the pool, perhaps edited: /gmr, # flavor and all.
+  const command = poolCommand();
   const formula = command?.formula ?? currentFormula();
   if ( !formula ) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
     return null;
   }
+  // What is being rolled, as it is now: dice added while the roll is in progress aren't part of it.
+  const rolled = getDiceGroups();
   const message = await rollFormula(formula, {
     flavor: command?.flavor ?? rollFlavor(), messageMode: command?.messageMode ?? null, source
   });
   if ( message ) {
-    // The command was rolled; leave nothing behind to roll a second time.
-    if ( command && chat ) chat.value = "";
-    clearPool();
+    // The command was rolled; clear it so it can't roll twice — unless the player has since typed
+    // something else there.
+    const chat = getChatInput();
+    if ( command && chat && (chat.value.trim() === command.text) ) chat.value = "";
+    consume(rolled, { withModifiers: true });
   }
   return message;
 }
@@ -94,8 +107,11 @@ export async function rollPool({ source = "tray" } = {}) {
  */
 export function onDropCanvasData(_canvas, data) {
   if ( data?.type !== DRAG_TYPE ) return;
-  rollFormula(data.formula, { flavor: data.flavor ?? rollFlavor(), source: "drop" }).then(rolled => {
-    if ( rolled && data.fromPool ) removeAllOf(data.key);
+  rollFormula(data.formula, { flavor: data.flavor ?? rollFlavor(), source: "drop" }).then(message => {
+    if ( !message ) return;
+    // Use up exactly what was dragged out, plus the modifier and mode if they went with it.
+    const groups = data.fromPool ? { [data.key]: data.rolled } : {};
+    if ( data.fromPool || data.withModifiers ) consume(groups, { withModifiers: !!data.withModifiers });
   });
   return false;
 }

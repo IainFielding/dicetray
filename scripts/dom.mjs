@@ -1,28 +1,11 @@
 /**
  * Finding the module's elements on screen. Foundry v14 can detach an application into a browser
  * window of its own, so the tray, the pop-out and chat can live in documents other than the main
- * one; these helpers look in all of them.
+ * one. Foundry's detached-window manager searches them all; these are short names for it.
  */
 
-/** The main document and every open detached window's. */
-export function allDocuments() {
-  const docs = [document];
-  for ( const { window: win } of foundry.applications.detached?.windows?.values() ?? [] ) {
-    if ( win && !win.closed && win.document ) docs.push(win.document);
-  }
-  return docs;
-}
+/** Every element matching a selector, in the main document and every detached window. */
+export const queryAll = selector => foundry.applications.detached.querySelectorAll(selector);
 
-/** Every element matching a selector, in every document. */
-export function queryAll(selector) {
-  return allDocuments().flatMap(doc => [...doc.querySelectorAll(selector)]);
-}
-
-/** The first element matching a selector, in any document. */
-export function queryOne(selector) {
-  for ( const doc of allDocuments() ) {
-    const found = doc.querySelector(selector);
-    if ( found ) return found;
-  }
-  return null;
-}
+/** The first element matching a selector, in the main document or any detached window. */
+export const queryOne = selector => foundry.applications.detached.querySelector(selector);

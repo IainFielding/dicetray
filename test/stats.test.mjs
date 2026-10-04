@@ -79,6 +79,15 @@ describe("merging and summarising", () => {
     expect(cleaned).toEqual({ version: 1, epoch: 0, rolls: 3, dice: {}, days: {} });
   });
 
+  it("drops tallies whose numbers aren't numbers", () => {
+    const bad = { version: 1, epoch: 0, rolls: 1, days: {}, dice: {
+      20: { count: "5", sum: 50, faces: new Array(20).fill(0) },
+      6: { count: 1, sum: 3, faces: [0, 0, "1", 0, 0, 0] },
+      4: { count: 1, sum: 2, faces: [0, 1, 0, 0] }
+    } };
+    expect(Object.keys(normaliseStats(bad).dice)).toEqual(["4"]);
+  });
+
   it("treats figures from before a reset as empty", () => {
     const old = recordRoll(emptyStats(0), [d20(20)], "2026-10-04");
     expect(normaliseStats(old, 1)).toEqual(emptyStats(1));

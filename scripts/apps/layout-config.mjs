@@ -61,6 +61,14 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
     footer: { template: "templates/generic/form-footer.hbs" }
   };
 
+  static #instance;
+
+  /** Open the editor, or bring it to the front with its unsaved changes intact. */
+  static open() {
+    this.#instance ??= new this();
+    return this.#instance.render({ force: true });
+  }
+
   /** The layout being edited. */
   #rows = foundry.utils.deepClone(getRows());
 
@@ -96,6 +104,7 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
     this.element.addEventListener("drop", this.#onDrop.bind(this));
     this.element.addEventListener("dragend", this.#onDragEnd.bind(this));
     this.element.addEventListener("contextmenu", this.#onContextMenu.bind(this));
+    this.element.addEventListener("keydown", this.#onKeyDown.bind(this));
   }
 
   /* -------------------------------------------- */
@@ -199,6 +208,47 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
     if ( !chip ) return;
     event.preventDefault();
     DiceLayoutConfig.#onRemoveButton.call(this, event, chip);
+  }
+
+  /**
+   * The keyboard way to do what the mouse does on a button: Enter or Space edits it, Delete removes
+   * it, and Alt with the left or right arrow moves it along its row or drawer.
+   */
+  #onKeyDown(event) {
+    const chip = event.target.closest?.(".dice-layout-button");
+    if ( !chip || (event.target !== chip) ) return;
+    const address = DiceLayoutConfig.#address(chip);
+    switch ( event.key ) {
+      case "Enter":
+      case " ":
+        event.preventDefault();
+        event.stopPropagation();
+        return DiceLayoutConfig.#onEditButton.call(this, event, chip);
+      case "Delete":
+      case "Backspace":
+        event.preventDefault();
+        return DiceLayoutConfig.#onRemoveButton.call(this, event, chip);
+      case "ArrowLeft":
+      case "ArrowRight": {
+        if ( !event.altKey ) return;
+        event.preventDefault();
+        const { list, button } = this.#resolve(address);
+        const at = list.indexOf(button);
+        const to = at + ((event.key === "ArrowLeft") ? -1 : 1);
+        if ( (to < 0) || (to >= list.length) ) return;
+        [list[at], list[to]] = [list[to], list[at]];
+        const focus = (address.sub === undefined) ? { ...address, index: to } : { ...address, sub: to };
+        return this.render().then(() => this.#focusChip(focus));
+      }
+    }
+  }
+
+  /** Put focus back on a button after a re-render. */
+  #focusChip({ row, index, sub }) {
+    const selector = (sub === undefined)
+      ? `.dice-layout-button:not(.dice-layout-sub)[data-row="${row}"][data-index="${index}"]`
+      : `.dice-layout-sub[data-row="${row}"][data-index="${index}"][data-sub="${sub}"]`;
+    this.element.querySelector(selector)?.focus();
   }
 
   static #onAddRow() {
@@ -351,10 +401,27 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
   /*  Saving                                      */
   /* -------------------------------------------- */
 
+  /** @override */
+  _onClose(options) {
+    super._onClose(options);
+    DiceLayoutConfig.#instance = null;
+  }
+
   static async #onSubmit() {
     const rows = normaliseRows(this.#rows);
     // Saving exactly the default layout stores nothing, so the world keeps following the default.
     const isDefault = JSON.stringify(rows) === JSON.stringify(normaliseRows(defaultRows()));
     await game.settings.set(MODULE_ID, "diceRows", isDefault ? [] : rows);
+  }
+}
+
+/**
+ * What the module settings' Configure Dice button opens. Settings menus construct a fresh
+ * application each time; this brings up the one editor instead, so unsaved changes aren't lost.
+ */
+export class DiceLayoutMenu extends ApplicationV2 {
+  /** @override */
+  render() {
+    return DiceLayoutConfig.open();
   }
 }

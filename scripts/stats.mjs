@@ -45,9 +45,12 @@ export function dayKey(date = new Date()) {
 export function normaliseStats(data, epoch = 0) {
   if ( !data || (typeof data !== "object") || (data.version !== STATS_VERSION) ) return emptyStats(epoch);
   if ( (Number(data.epoch) || 0) !== epoch ) return emptyStats(epoch);
+  // Players can write their own flags, so every number is checked before it is added to anything.
+  const count = n => Number.isInteger(n) && (n >= 0);
   const tallies = dice => Object.fromEntries(Object.entries(dice ?? {}).filter(([faces, t]) => {
     const f = Number(faces);
-    return Number.isInteger(f) && (f >= 2) && (f <= MAX_FACES) && Array.isArray(t?.faces) && (t.faces.length === f);
+    return Number.isInteger(f) && (f >= 2) && (f <= MAX_FACES) && count(t?.count) && Number.isFinite(t?.sum)
+      && Array.isArray(t.faces) && (t.faces.length === f) && t.faces.every(count);
   }));
   const days = Object.fromEntries(Object.entries(data.days ?? {})
     .filter(([day]) => /^\d{4}-\d{2}-\d{2}$/.test(day))
@@ -104,16 +107,25 @@ function mergeTallies(into, from) {
  */
 export function mergeStats(stats, delta, epoch = 0) {
   const merged = structuredClone(normaliseStats(stats, epoch));
-  merged.rolls += delta.rolls;
-  mergeTallies(merged.dice, delta.dice);
-  for ( const [day, d] of Object.entries(delta.days) ) {
-    const target = (merged.days[day] ??= { rolls: 0, dice: {} });
+  addInto(merged, delta);
+  return keepLatestDays(merged);
+}
+
+/** Add `from` into `into`, changing `into`. */
+function addInto(into, from) {
+  into.rolls += from.rolls;
+  mergeTallies(into.dice, from.dice);
+  for ( const [day, d] of Object.entries(from.days) ) {
+    const target = (into.days[day] ??= { rolls: 0, dice: {} });
     target.rolls += d.rolls;
     mergeTallies(target.dice, d.dice);
   }
-  const keep = Object.keys(merged.days).sort().slice(-DAYS_KEPT);
-  merged.days = Object.fromEntries(keep.map(day => [day, merged.days[day]]));
-  return merged;
+}
+
+function keepLatestDays(stats) {
+  const keep = Object.keys(stats.days).sort().slice(-DAYS_KEPT);
+  stats.days = Object.fromEntries(keep.map(day => [day, stats.days[day]]));
+  return stats;
 }
 
 /**
@@ -121,8 +133,12 @@ export function mergeStats(stats, delta, epoch = 0) {
  * @param {Stats[]} list
  * @returns {Stats}
  */
-export const combineStats = (list, epoch = 0) =>
-  list.reduce((all, s) => mergeStats(all, normaliseStats(s, epoch), epoch), emptyStats(epoch));
+export function combineStats(list, epoch = 0) {
+  // One running total, added to in place: no copy per player.
+  const all = emptyStats(epoch);
+  for ( const s of list ) addInto(all, normaliseStats(s, epoch));
+  return keepLatestDays(all);
+}
 
 /**
  * The figures shown for one player (or the party), over all time or one day.

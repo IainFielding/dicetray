@@ -7,7 +7,7 @@ import { onStateChange, snapshot } from "./state.mjs";
 import { onDropCanvasData, onHotbarDrop } from "./roll.mjs";
 import { onCreateChatMessage, onPreCreateChatMessage, saveOnHide } from "./stats-tracker.mjs";
 import {
-  ensureTray, followChatInput, injectToggleButton, onChatMessageSent, onPoolMessageCreated
+  ensureTray, followChatInput, injectToggleButton, onChatMessageSent, onPoolMessageCreated, onPoolPreCreate
 } from "./tray.mjs";
 
 Hooks.once("init", () => {
@@ -40,10 +40,13 @@ Hooks.once("ready", () => {
 
 // Roll statistics: tagged by the client that makes each message (pre-create hooks run only
 // there), and counted when the message really exists.
-Hooks.on("preCreateChatMessage", onPreCreateChatMessage);
-Hooks.on("createChatMessage", (message, options, userId) => {
-  onCreateChatMessage(message);
-  onPoolMessageCreated(message, options, userId);
+Hooks.on("preCreateChatMessage", (message, _data, options) => {
+  onPreCreateChatMessage(message, options);
+  onPoolPreCreate(message, options);
+});
+Hooks.on("createChatMessage", (message, options) => {
+  onCreateChatMessage(message, options);
+  onPoolMessageCreated(message, options);
 });
 
 Hooks.on("getSceneControlButtons", onGetSceneControlButtons);

@@ -77,8 +77,9 @@ export function currentFormula() {
  * the group only when it is the whole pool; otherwise they stay for the rest.
  * @param {string} key    The die type, e.g. "d6".
  * @param {number} [count]  How many make "one" of this die when none are in the pool.
- * @returns {{formula: string, fromPool: boolean, state: object}} `state` is the part of the pool
- *   rolled, for describing it.
+ * @returns {{formula: string, fromPool: boolean, rolled: number, withModifiers: boolean, state: object}}
+ *   `rolled` is how many dice of the pool it takes, `withModifiers` whether the modifier and mode go
+ *   with it, and `state` the part of the pool rolled, for describing it.
  */
 export function formulaForDie(key, count = 1) {
   const dice = state.pool.filter(k => k === key);
@@ -90,7 +91,13 @@ export function formulaForDie(key, count = 1) {
     partial.modifier = 0;
     if ( modes[state.mode]?.style === "extraDie" ) partial.mode = "normal";
   }
-  return { formula: buildFormula(partial, { nativeAdvantage: systemSupportsAdvantage(), modes }), fromPool, state: partial };
+  return {
+    formula: buildFormula(partial, { nativeAdvantage: systemSupportsAdvantage(), modes }),
+    fromPool,
+    rolled: dice.length,
+    withModifiers: wholePool,
+    state: partial
+  };
 }
 
 /**

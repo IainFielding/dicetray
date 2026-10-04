@@ -1,5 +1,5 @@
 import { MODULE_ID, THEME_CHOICES } from "./constants.mjs";
-import { DiceLayoutConfig } from "./apps/layout-config.mjs";
+import { DiceLayoutMenu } from "./apps/layout-config.mjs";
 import { DiceStatsMenu } from "./apps/stats-window.mjs";
 import { invalidateLayout } from "./layout.mjs";
 import { DiceTrayWindow } from "./popout.mjs";
@@ -53,7 +53,7 @@ export function registerSettings() {
     label: "SOGROM_DICETRAY.LayoutMenuLabel",
     hint: "SOGROM_DICETRAY.LayoutMenuHint",
     icon: "fas fa-dice",
-    type: DiceLayoutConfig,
+    type: DiceLayoutMenu,
     restricted: true
   });
 

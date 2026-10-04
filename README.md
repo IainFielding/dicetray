@@ -57,14 +57,20 @@ Nothing changes for players until you click **Save**.
 ### Roll Modifiers
 ![Roll Modifiers](https://github.com/IainFielding/dicetray/blob/master/assets/docs/roll-modifiers.png?raw=true)
 
-The tray provides four roll modifier modes. Only one can be active at a time — click a mode to select it, click it again to deselect and return to a normal roll.
+Two kinds of button change how the dice roll, and they work together.
 
-| Button | Mode | Effect |
-|--------|------|--------|
-| **KH** | Keep Highest | Rolls the pool and keeps only the highest result from each die group  |
-| **ADV** | Advantage | Rolls with advantage — doubles the dice and keeps the better half  |
-| **DIS** | Disadvantage | Rolls with disadvantage — doubles the dice and keeps the worse half  |
-| **KL** | Keep Lowest | Rolls the pool and keeps only the lowest result from each die group  |
+**Keep highest / lowest** apply to the die you added most recently. Click **KH** to keep that die's highest result, again to keep the highest two, and so on; right-click to lower it. **KL** does the same for the lowest. A small KH or KL mark on the die shows which dice it applies to.
+
+**Roll modes** apply to the whole roll. Click one to turn it on, and again to turn it off. Which modes you see depends on the game system:
+
+| Button | Effect |
+|--------|--------|
+| **ADV** / **DIS** | Advantage and disadvantage: each group of dice rolls twice and the better (or worse) set counts. D&D 5e uses the system's own advantage, so its chat cards recognise it. |
+| **FOR** / **MIS** | Pathfinder 2e's fortune and misfortune, which work the same way. |
+| **ADV** / **DIS** in Daggerheart, **BOON** / **BANE** in Shadow of the Demon Lord | Add or take away a d6. |
+| **WILD** | Savage Worlds: rolls the Wild Die alongside and keeps the higher. |
+
+Some systems, such as Fate and Dungeon Crawl Classics, have no roll modes.
 
 ### Odds
 
@@ -115,7 +121,7 @@ Click the chart icon at the bottom right of the tray (or **Roll Statistics → O
 - the average for every die size
 - all time, or just today
 
-Every roll made in chat counts, whether from the tray, a character sheet or a macro. Blind rolls don't. The GM can turn counting off (**Keep Roll Statistics**), choose whether players see each other's figures (**Who Sees Roll Statistics**), and reset everything from the window.
+Every roll made in chat that everyone can see counts, whether from the tray, a character sheet or a macro. Blind, whispered, GM-only and self rolls don't, since their results would show in the statistics. The GM can turn counting off (**Keep Roll Statistics**), choose whether players see each other's figures (**Who Sees Roll Statistics**), and reset everything from the window.
 
 ### Keyboard Shortcuts
 

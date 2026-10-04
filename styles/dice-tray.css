@@ -274,7 +274,9 @@
   display: none;
 }
 
-.dice-tray-odds.empty {
+/* No odds to show: the line keeps its place and its DC box, and only the figures are hidden. */
+.dice-tray-odds.empty .dice-tray-odds-summary,
+.dice-tray-odds.empty .dice-tray-odds-chance {
   visibility: hidden;
 }
 

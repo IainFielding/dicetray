@@ -4,8 +4,8 @@ import { dayKey, diceFromRolls, emptyStats, mergeStats, normaliseStats, recordRo
 /** Flag on each User holding their statistics. */
 export const STATS_FLAG = "stats";
 
-/** Flag on a chat message: the token of the client that made it, so it is counted once. */
-const STATS_TOKEN = "statsToken";
+/** Operation option carrying the token of the client making a message, so it is counted once. */
+const STATS_TOKEN = `${MODULE_ID}.statsToken`;
 
 /** Rolls are saved in batches, at most this often, rather than one database write per roll. */
 const SAVE_DELAY_MS = 3000;
@@ -31,23 +31,26 @@ export const currentEpoch = () => game.settings.get(MODULE_ID, "statsEpoch") ?? 
 /**
  * preCreateChatMessage: this client is making a message. Pre-create hooks run only on the client
  * making it, so tagging it here means it is counted once, by this client, even with the same user
- * logged in twice. Blind rolls are skipped: their results are hidden from the player who made
- * them, and their statistics would give them away.
+ * logged in twice. The token rides in the operation's options, so nothing is saved on the message.
+ *
+ * Only rolls everyone could see are counted. A blind roll is hidden from its own roller, and a
+ * whispered, GM-only or self roll from the others; statistics, which every client receives, would
+ * give the result away.
  */
-export function onPreCreateChatMessage(message) {
-  if ( message.blind || !message.rolls?.length ) return;
+export function onPreCreateChatMessage(message, options) {
+  if ( message.blind || message.whisper?.length || !message.rolls?.length ) return;
   if ( !game.settings.get(MODULE_ID, "trackStats") ) return;
   const dice = diceFromRolls(message.rolls);
   if ( !dice.length ) return;
   const token = foundry.utils.randomID();
-  message.updateSource({ [`flags.${MODULE_ID}.${STATS_TOKEN}`]: token });
+  options[STATS_TOKEN] = token;
   making.set(token, dice);
   if ( making.size > MAX_MAKING ) making.delete(making.keys().next().value);
 }
 
 /** createChatMessage: a message this client tagged now exists, so its dice count. */
-export function onCreateChatMessage(message) {
-  const token = message.getFlag(MODULE_ID, STATS_TOKEN);
+export function onCreateChatMessage(_message, options) {
+  const token = options?.[STATS_TOKEN];
   const dice = token && making.get(token);
   if ( !dice ) return;
   making.delete(token);
@@ -103,7 +106,7 @@ async function saveNow() {
 function statsUpdate(stored, merged, delta, epoch) {
   const base = `flags.${MODULE_ID}.${STATS_FLAG}`;
   const { ForcedDeletion, ForcedReplacement } = foundry.data.operators;
-  if ( !stored || (normaliseStats(stored, epoch).epoch !== (Number(stored.epoch) || 0)) || (stored.version !== merged.version) ) {
+  if ( !stored || ((Number(stored.epoch) || 0) !== epoch) || (stored.version !== merged.version) ) {
     return { [base]: ForcedReplacement.create(merged) };
   }
   const update = { [`${base}.version`]: merged.version, [`${base}.epoch`]: epoch, [`${base}.rolls`]: merged.rolls };
