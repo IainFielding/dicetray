@@ -76,6 +76,14 @@ describe("merging and summarising", () => {
     expect(normaliseStats(null)).toEqual(emptyStats());
     expect(normaliseStats({ version: 99 })).toEqual(emptyStats());
     const cleaned = normaliseStats({ version: 1, rolls: 3, dice: { 20: { count: 1, sum: 5, faces: [1] }, x: {} }, days: { bad: {} } });
-    expect(cleaned).toEqual({ version: 1, rolls: 3, dice: {}, days: {} });
+    expect(cleaned).toEqual({ version: 1, epoch: 0, rolls: 3, dice: {}, days: {} });
+  });
+
+  it("treats figures from before a reset as empty", () => {
+    const old = recordRoll(emptyStats(0), [d20(20)], "2026-10-04");
+    expect(normaliseStats(old, 1)).toEqual(emptyStats(1));
+    const merged = mergeStats(old, recordRoll(emptyStats(1), [d20(3)], "2026-10-04"), 1);
+    expect(merged).toMatchObject({ epoch: 1, rolls: 1 });
+    expect(merged.dice[20].sum).toBe(3);
   });
 });

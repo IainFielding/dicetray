@@ -137,4 +137,12 @@ export function registerSettings() {
       own: "SOGROM_DICETRAY.StatsVisibilityOwn"
     }
   });
+
+  // Moves on with each statistics reset; figures stamped with an older value count as empty.
+  game.settings.register(MODULE_ID, "statsEpoch", {
+    scope: "world",
+    config: false,
+    type: Number,
+    default: 0
+  });
 }

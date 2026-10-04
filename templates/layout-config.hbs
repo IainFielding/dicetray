@@ -16,7 +16,7 @@
                aria-label="{{localize "SOGROM_DICETRAY.LayoutRemoveButton"}}"><i class="fas fa-times"></i></a>
           </div>
           {{#if button.drawer.length}}
-          <div class="dice-layout-drawer" aria-label="{{localize "SOGROM_DICETRAY.LayoutDrawer"}}">
+          <div class="dice-layout-drawer" data-row="{{row.index}}" data-index="{{button.index}}" aria-label="{{localize "SOGROM_DICETRAY.LayoutDrawer"}}">
             {{#each button.drawer as |item|}}
             <div class="dice-layout-button dice-layout-sub" draggable="true" data-action="editButton" data-row="{{row.index}}"
                  data-index="{{button.index}}" data-sub="{{item.sub}}" data-tooltip="{{item.formula}}" role="button" tabindex="0">

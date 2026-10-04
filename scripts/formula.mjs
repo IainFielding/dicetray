@@ -44,7 +44,8 @@ export function buildFormula({ pool, mode, modifier, keep }, { nativeAdvantage =
         // The system's adv/dis belongs to its numbered dice; Fate dice and the like use the pool form.
         // So does a group with keep-highest/lowest: dnd5e picks the better set by its full total
         // before keeping, which isn't the "best of two kept sets" the tray (and its odds) promise.
-        if ( nativeAdvantage && active.suffix && !keepSuffix && !Number.isNaN(facesOf(key)) ) {
+        // And so does a die with its own modifiers: "1d6xadv" would read as one unknown modifier.
+        if ( nativeAdvantage && active.suffix && !keepSuffix && (key === `d${facesOf(key)}`) ) {
           return `${term}${active.suffix}`;
         }
         if ( (count === 1) && !keepSuffix && (key === `d${facesOf(key)}`) ) return `2${key}${active.keep}`;
@@ -76,7 +77,8 @@ export function currentFormula() {
  * the group only when it is the whole pool; otherwise they stay for the rest.
  * @param {string} key    The die type, e.g. "d6".
  * @param {number} [count]  How many make "one" of this die when none are in the pool.
- * @returns {{formula: string, fromPool: boolean}}
+ * @returns {{formula: string, fromPool: boolean, state: object}} `state` is the part of the pool
+ *   rolled, for describing it.
  */
 export function formulaForDie(key, count = 1) {
   const dice = state.pool.filter(k => k === key);
@@ -88,14 +90,30 @@ export function formulaForDie(key, count = 1) {
     partial.modifier = 0;
     if ( modes[state.mode]?.style === "extraDie" ) partial.mode = "normal";
   }
-  return { formula: buildFormula(partial, { nativeAdvantage: systemSupportsAdvantage(), modes }), fromPool };
+  return { formula: buildFormula(partial, { nativeAdvantage: systemSupportsAdvantage(), modes }), fromPool, state: partial };
 }
 
 /**
- * Pull the formula out of a chat-bar roll command ("/r 2d6", "/roll 1d20 + 2").
- * @returns {string|null} null when the text isn't a roll command.
+ * Foundry's dice commands, as its chat log recognises them: /r and /roll, and the ones that set a
+ * message mode — /gmr, /br (/blindroll), /sr (/selfroll), /pr (/publicroll). Text after # is flavor.
+ */
+const ROLL_COMMAND = /^(\/(?:r(?:oll)?|gmr(?:oll)?|b(?:lind)?r(?:oll)?|s(?:elf)?r(?:oll)?|p(?:ublic)?r(?:oll)?))\s+([^#]+?)\s*(?:#(.*))?$/i;
+const COMMAND_MODES = { g: "gm", b: "blind", s: "self", p: "public" };
+
+/**
+ * Pull a chat-bar roll command apart: "/gmr 2d6 + 1 # Damage".
+ * @returns {{prefix: string, formula: string, flavor: string|null, messageMode: string|null}|null}
+ *   null when the text isn't a dice command. messageMode is null for plain /r, which uses the mode
+ *   the player has selected.
  */
 export function parseRollCommand(text) {
-  const match = text.trim().match(/^\/r(?:oll)?\s+(.+)$/i);
-  return match ? match[1].trim() : null;
+  const match = String(text ?? "").trim().match(ROLL_COMMAND);
+  if ( !match ) return null;
+  const [, prefix, formula, flavor] = match;
+  return {
+    prefix,
+    formula: formula.trim(),
+    flavor: flavor?.trim() || null,
+    messageMode: COMMAND_MODES[prefix[1].toLowerCase()] ?? null
+  };
 }

@@ -211,29 +211,28 @@ function fromSamples(totals, unbounded) {
  */
 function simulateGroup({ faces, n, keep, explode }, seedText) {
   const random = generator(hash(seedText));
-  const roll = () => {
-    if ( faces === "F" ) return Math.floor(random() * 3) - 1;
-    let total = 0;
-    let face;
-    let explosions = 0;
-    do {
-      face = Math.floor(random() * faces) + 1;
-      total += face;
-    } while ( explode && (face === faces) && (++explosions < MAX_EXPLOSIONS) );
-    return total;
-  };
+  const face = () => ((faces === "F") ? Math.floor(random() * 3) - 1 : Math.floor(random() * faces) + 1);
   const totals = new Int32Array(SAMPLES);
-  const dice = new Int32Array(n);
+  // Like Foundry, each explosion is a result of its own, and keeping chooses among all the results.
+  const results = [];
   for ( let s = 0; s < SAMPLES; s++ ) {
-    for ( let i = 0; i < n; i++ ) dice[i] = roll();
-    if ( keep ) dice.sort();
+    results.length = 0;
+    for ( let i = 0; i < n; i++ ) {
+      let r;
+      let explosions = 0;
+      do {
+        r = face();
+        results.push(r);
+      } while ( explode && (r === faces) && (++explosions < MAX_EXPLOSIONS) );
+    }
+    if ( keep ) results.sort((a, b) => a - b);
+    const kept = keep ? Math.min(keep.count, results.length) : results.length;
+    const start = (keep?.type === "kh") ? results.length - kept : 0;
     let total = 0;
-    if ( !keep ) for ( let i = 0; i < n; i++ ) total += dice[i];
-    else if ( keep.type === "kh" ) for ( let i = n - Math.min(keep.count, n); i < n; i++ ) total += dice[i];
-    else for ( let i = 0; i < Math.min(keep.count, n); i++ ) total += dice[i];
+    for ( let i = start; i < start + kept; i++ ) total += results[i];
     totals[s] = total;
   }
-  return fromSamples(totals, explode);
+  return fromSamples(totals, explode && !keep);
 }
 
 /* -------------------------------------------- */
@@ -265,11 +264,12 @@ function groupDistribution(key, count, keep, fateDice) {
   const explode = modifiers === "x";
   if ( explode && ((faces === "F") || (faces < 2)) ) return null;
   const k = keep?.count > 0 ? keep : null;
-
-  if ( !k ) {
+  // Work out the size before building anything: a d1000000000 must not allocate its faces.
+  const width = (faces === "F") ? 3 : faces;
+  if ( !k && ((width * count) <= MAX_SPAN) ) {
     const one = explode ? explodingDistribution(faces) : dieDistribution(faces);
     if ( (one.p.length * count) <= MAX_SPAN ) return sumOf(one, count);
-  } else if ( !explode && (faces !== "F") ) {
+  } else if ( k && !explode && (faces !== "F") && ((width * k.count) <= MAX_SPAN) ) {
     const exact = keepDistribution(faces, count, k.count, k.type === "kh");
     if ( exact ) return exact;
   }
@@ -299,8 +299,9 @@ export function poolDistribution({ pool, mode, modifier, keep }, { modes = {}, f
       if ( !wild ) return null;
       d = extreme(d, wild, true);
     }
+    // Check the width before convolving: the work is the product of the two widths.
+    if ( total && ((total.p.length + d.p.length - 1) > MAX_SPAN) ) return null;
     total = total ? convolve(total, d) : d;
-    if ( total.p.length > MAX_SPAN ) return null;
   }
   if ( active?.style === "extraDie" ) {
     const extra = modeDie(active.die);

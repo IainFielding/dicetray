@@ -1,4 +1,4 @@
-import { ICON_PATH, MAX_DICE_PER_TYPE, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
+import { ICON_PATH, MAX_DICE_PER_TYPE, MODULE_ID, THEME_CLASSES, t } from "./constants.mjs";
 import { buttonImage, buttonText, cssUrl, dieName, isCommand, parseDieTerm } from "./dice.mjs";
 import { getModes, getRows } from "./layout.mjs";
 import {
@@ -6,7 +6,7 @@ import {
   toggleMode
 } from "./state.mjs";
 import { currentFormula, formulaForDie, parseRollCommand } from "./formula.mjs";
-import { DRAG_TYPE, rollFormula, rollPool } from "./roll.mjs";
+import { DRAG_TYPE, rollFlavor, rollFormula, rollPool } from "./roll.mjs";
 import { DiceStatsWindow } from "./apps/stats-window.mjs";
 import { getChatInput } from "./chat-input.mjs";
 import { createOddsLine, scheduleOdds, setTarget } from "./odds-display.mjs";
@@ -22,12 +22,38 @@ const trays = new Set();
 /** Set while a command button's own chat command is being sent, so it doesn't count as using the pool. */
 let sendingCommand = false;
 
+/** When a roll command was sent from the chat bar with dice in the pool; 0 when none is waiting. */
+let poolSentAt = 0;
+
+/** A sent roll command's message has this long to appear before it stops counting as the pool. */
+const POOL_SEND_WINDOW_MS = 10000;
+
 /**
- * Whether a message sent through chat used up the pool: a roll command typed or edited in the chat
- * bar. A command button's own command, or any other chat, leaves the pool alone.
+ * chatMessage hook: a dice command sent from the chat bar (the mirrored pool, perhaps edited, with
+ * any of /r, /gmr, /br, /sr, /pr) is the pool being rolled. It is only used up once the roll's
+ * message exists ({@link onPoolMessageCreated}), so a typo or a cancelled roll loses nothing.
+ * A command button's own command, or any other chat, doesn't count.
  */
-export function messageUsesPool(message) {
-  return !sendingCommand && (parseRollCommand(String(message ?? "")) !== null) && (state.pool.length > 0);
+export function onChatMessageSent(message) {
+  poolSentAt = (!sendingCommand && state.pool.length && parseRollCommand(plainText(message))) ? Date.now() : 0;
+}
+
+/**
+ * The chat bar sends its contents as HTML ("<p>/r 1d8</p>"); read it as the text the player sees.
+ * DOMParser neither runs scripts nor loads images from what it parses.
+ */
+function plainText(html) {
+  const text = String(html ?? "");
+  if ( !text.includes("<") && !text.includes("&") ) return text;
+  return new DOMParser().parseFromString(text, "text/html").body.textContent ?? "";
+}
+
+/** createChatMessage hook: the roll sent from the chat bar has landed, so the pool is used up. */
+export function onPoolMessageCreated(message, _options, userId) {
+  if ( !poolSentAt || (userId !== game.user.id) || !message.rolls?.length ) return;
+  const recent = (Date.now() - poolSentAt) < POOL_SEND_WINDOW_MS;
+  poolSentAt = 0;
+  if ( recent ) clearPool();
 }
 
 /** How long a button with a drawer is held before the drawer opens. */
@@ -46,7 +72,6 @@ const INJECT_TIMEOUT_MS = 15000;
 /** Pending wait-for-element observers, keyed by what they inject, so a new attempt cancels the old. */
 const pending = new Map();
 
-const t = key => game.i18n.localize(`SOGROM_DICETRAY.${key}`);
 
 
 function forEachTray(callback) {
@@ -184,12 +209,15 @@ function cancelHold(tray) {
 }
 
 function onTrayPointerDown(event) {
+  // Any new press, with any button, starts afresh: the press that opened a drawer may have ended
+  // anywhere, and its button mustn't keep swallowing clicks.
+  const previous = holds.get(event.currentTarget);
+  if ( previous ) previous.opened = null;
   const btn = event.target.closest?.(".has-drawer");
   if ( !btn || (event.button !== 0) ) return;
   const tray = event.currentTarget;
   const hold = holdState(tray);
   cancelHold(tray);
-  // A new press starts afresh: the press that opened a drawer may have ended anywhere.
   hold.opened = null;
   hold.timer = setTimeout(() => {
     hold.timer = null;
@@ -205,9 +233,10 @@ function onTrayPointerEnd(event) {
 }
 
 /** Whether this click is the end of the press that opened a drawer, and should do nothing else. */
-function consumeHoldClick(tray, btn) {
+function consumeHoldClick(tray, btn, event) {
   const hold = holds.get(tray);
-  if ( !hold?.opened || (hold.opened !== btn) ) return false;
+  // A keyboard "click" (Enter/Space, detail 0) is never the end of a press.
+  if ( !event.detail || !hold?.opened || (hold.opened !== btn) ) return false;
   hold.opened = null;
   return true;
 }
@@ -371,7 +400,7 @@ export function createDiceTray({ popout = false } = {}) {
 
 function onTrayClick(event) {
   const btn = event.target.closest("button[data-action]");
-  if ( !btn || consumeHoldClick(event.currentTarget, btn) ) return;
+  if ( !btn || consumeHoldClick(event.currentTarget, btn, event) ) return;
   switch ( btn.dataset.action ) {
     case "die": {
       const key = btn.dataset.key;
@@ -415,8 +444,10 @@ function onTrayDragStart(event) {
   const btn = event.target.closest?.('.dice-tray-die-btn[data-action="die"]');
   if ( !btn ) return;
   const { key, count } = btn.dataset;
-  const { formula, fromPool } = formulaForDie(key, Number(count));
-  event.dataTransfer.setData("text/plain", JSON.stringify({ type: DRAG_TYPE, formula, fromPool, key }));
+  const { formula, fromPool, state: rolled } = formulaForDie(key, Number(count));
+  // The card names the mode and keep modifier of what is actually dragged out, not the whole pool.
+  const flavor = rollFlavor(rolled);
+  event.dataTransfer.setData("text/plain", JSON.stringify({ type: DRAG_TYPE, formula, fromPool, key, flavor }));
   event.dataTransfer.effectAllowed = "copy";
 }
 
@@ -580,12 +611,17 @@ let mirrored = "";
 function updateChatInput() {
   const chat = getChatInput();
   if ( !chat ) return;
-  const formula = currentFormula();
-  const value = formula ? `/r ${formula}` : "";
   const current = chat.value.trim();
-  const ours = !current || (current === mirrored) || (parseRollCommand(current) !== null);
-  if ( ours && (chat.value !== value) ) chat.value = value;
-  if ( ours ) mirrored = value;
+  const command = parseRollCommand(current);
+  const ours = !current || (current === mirrored) || !!command;
+  if ( !ours ) return;
+  // Keep the player's own command (/gmr, /br, …) and flavor as the dice change under them.
+  const formula = currentFormula();
+  const prefix = command?.prefix ?? "/r";
+  const flavor = command?.flavor ? ` # ${command.flavor}` : "";
+  const value = formula ? `${prefix} ${formula}${flavor}` : "";
+  if ( chat.value !== value ) chat.value = value;
+  mirrored = value;
 }
 
 function refreshAll() {
@@ -625,12 +661,26 @@ function whenReady(key, root, attempt, onTimeout) {
   pending.set(key, cancel);
 }
 
+/**
+ * renderChatInput hook: Foundry has moved the chat input (sidebar, notifications area, or a
+ * popped-out chat). Move the tray to follow it, as it is — pool, focus and open drawers intact —
+ * rather than building a new one; build one only if there isn't one yet.
+ */
+export function followChatInput(input) {
+  const tray = document.querySelector(SIDEBAR_TRAY);
+  if ( !tray ) {
+    if ( ui.chat?.element ) injectDiceTray(ui.chat.element);
+    return;
+  }
+  if ( input?.isConnected && (tray.previousElementSibling !== input) ) input.after(tray);
+}
+
 export function injectDiceTray(root) {
   whenReady("tray", root, () => {
     const chatMessage = root.querySelector("#chat-message") ?? document.getElementById("chat-message");
     if ( !chatMessage ) return false;
-    // Replace any existing tray rather than stacking a second one beside it.
-    chatMessage.parentElement?.querySelector(SIDEBAR_TRAY)?.remove();
+    // Replace any existing tray, wherever it is, rather than stacking a second one.
+    for ( const old of document.querySelectorAll(SIDEBAR_TRAY) ) old.remove();
     const tray = createDiceTray();
     if ( !game.settings.get(MODULE_ID, "showDiceTray") ) tray.classList.add("dice-tray-hidden");
     tray.style.flex = "0 0";

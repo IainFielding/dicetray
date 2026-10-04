@@ -108,7 +108,8 @@ export class DiceStatsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }).sort((a, b) => b.d20s - a.d20s);
 
     if ( (this.#selected !== "party") && !all.has(this.#selected) ) this.#selected = "party";
-    const chosen = (this.#selected === "party") ? combineStats([...all.values()]) : all.get(this.#selected);
+    const epoch = game.settings.get(MODULE_ID, "statsEpoch") ?? 0;
+    const chosen = (this.#selected === "party") ? combineStats([...all.values()], epoch) : all.get(this.#selected);
     const summary = summariseStats(chosen, day);
     context.selectedName = (this.#selected === "party")
       ? game.i18n.localize("SOGROM_DICETRAY.StatsParty") : game.users.get(this.#selected)?.name;

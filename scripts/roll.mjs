@@ -7,12 +7,15 @@ import { getChatInput } from "./chat-input.mjs";
 /** `type` of the drag data a die dragged out of the tray carries. */
 export const DRAG_TYPE = "SogromDiceTrayRoll";
 
-/** Flavor text for the chat card, naming the roll mode or keep modifier in use. */
-function rollFlavor() {
+/**
+ * Flavor text for the chat card, naming the roll mode or keep modifier in use.
+ * @param {object} [rolled]  The part of the pool being rolled; the whole pool by default.
+ */
+export function rollFlavor(rolled = state) {
   let flavor = game.i18n.localize("SOGROM_DICETRAY.FlavorBase");
-  const keeps = Object.values(state.keep);
+  const keeps = Object.values(rolled.keep);
   let detail;
-  const mode = getModes()[state.mode];
+  const mode = getModes()[rolled.mode];
   if ( mode ) detail = mode.flavor;
   else if ( keeps.some(m => m.type === "kh") ) detail = "SOGROM_DICETRAY.FlavorKeepHighest";
   else if ( keeps.some(m => m.type === "kl") ) detail = "SOGROM_DICETRAY.FlavorKeepLowest";
@@ -26,19 +29,26 @@ function rollFlavor() {
  *
  * Every roll the tray makes comes through here, so other modules see them all: the preRoll hook
  * can change the formula or flavor, or cancel the roll, and the roll hook follows the message.
+ * @-references (`@abilities.dex.mod`) are filled from the speaking character's roll data, as a
+ * chat-bar /r command would.
  * @param {string} formula
  * @param {object} [options]
  * @param {string} [options.flavor]
+ * @param {string|null} [options.messageMode]  "gm", "blind", "self" or "public"; the player's
+ *   selected mode when omitted.
  * @param {"tray"|"rightClick"|"drop"|"api"} [options.source]  What asked for the roll.
  * @returns {Promise<ChatMessage|null>} The message, or null if cancelled or the roll failed.
  */
-export async function rollFormula(formula, { flavor, source = "tray" } = {}) {
-  const data = { formula, flavor, source };
+export async function rollFormula(formula, { flavor, messageMode = null, source = "tray" } = {}) {
+  const data = { formula, flavor, messageMode, source };
   if ( Hooks.call(HOOKS.preRoll, data) === false ) return null;
   try {
-    const roll = new Roll(data.formula);
+    const speaker = ChatMessage.getSpeaker();
+    const rollData = ChatMessage.getSpeakerActor(speaker)?.getRollData() ?? {};
+    const roll = new Roll(data.formula, rollData);
     await roll.evaluate();
-    const message = await roll.toMessage({ speaker: ChatMessage.getSpeaker(), flavor: data.flavor });
+    const options = data.messageMode ? { messageMode: data.messageMode } : {};
+    const message = await roll.toMessage({ speaker, flavor: data.flavor }, options);
     Hooks.callAll(HOOKS.roll, roll, message, data);
     return message ?? null;
   } catch ( err ) {
@@ -55,13 +65,16 @@ export async function rollFormula(formula, { flavor, source = "tray" } = {}) {
  * @returns {Promise<ChatMessage|null>}
  */
 export async function rollPool({ source = "tray" } = {}) {
-  const chatText = getChatInput()?.value ?? "";
-  const formula = parseRollCommand(chatText) ?? currentFormula();
+  // A roll command in the chat bar is the pool, perhaps edited: /gmr, # flavor and all.
+  const command = parseRollCommand(getChatInput()?.value ?? "");
+  const formula = command?.formula ?? currentFormula();
   if ( !formula ) {
     ui.notifications.warn(game.i18n.localize("SOGROM_DICETRAY.EmptyPool"));
     return null;
   }
-  const message = await rollFormula(formula, { flavor: rollFlavor(), source });
+  const message = await rollFormula(formula, {
+    flavor: command?.flavor ?? rollFlavor(), messageMode: command?.messageMode ?? null, source
+  });
   if ( message ) clearPool();
   return message;
 }
@@ -73,7 +86,7 @@ export async function rollPool({ source = "tray" } = {}) {
  */
 export function onDropCanvasData(_canvas, data) {
   if ( data?.type !== DRAG_TYPE ) return;
-  rollFormula(data.formula, { flavor: rollFlavor(), source: "drop" }).then(rolled => {
+  rollFormula(data.formula, { flavor: data.flavor ?? rollFlavor(), source: "drop" }).then(rolled => {
     if ( rolled && data.fromPool ) removeAllOf(data.key);
   });
   return false;
@@ -85,7 +98,10 @@ export function onDropCanvasData(_canvas, data) {
  */
 export function onHotbarDrop(_hotbar, data, slot) {
   if ( data?.type !== DRAG_TYPE ) return;
-  createRollMacro(data.formula, slot);
+  createRollMacro(data.formula, slot).catch(err => {
+    console.error(`${MODULE_ID} | Could not make a roll macro:`, err);
+    ui.notifications.error(game.i18n.localize("SOGROM_DICETRAY.MacroError"));
+  });
   return false;
 }
 

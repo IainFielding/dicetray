@@ -89,6 +89,20 @@ describe("pool odds", () => {
     expect(first.mean).toBeGreaterThan(14);
   });
 
+  it("keeps among every result when exploding dice are kept, as Foundry does", () => {
+    // 2d6xkh: each explosion is its own result, so the kept die can never be more than 6.
+    const kept = odds({ pool: ["d6x", "d6x"], keep: { d6x: { type: "kh", count: 1 } } }, 7);
+    expect(kept.max).toBeLessThanOrEqual(6);
+    expect(kept.chance).toBe(0);
+    expect(kept.unbounded).toBe(false);
+  });
+
+  it("doesn't build distributions for absurdly large dice", () => {
+    const huge = odds({ pool: ["d1000000000"] });
+    expect(huge.approximate).toBe(true);
+    expect(huge.mean).toBeGreaterThan(4e8);
+  });
+
   it("gives up on dice it can't cover", () => {
     expect(poolDistribution(pool({ pool: ["dp"] }))).toBeNull();
     expect(poolDistribution(pool({ pool: ["d10r1"] }))).toBeNull();

@@ -628,6 +628,7 @@
   border-right: 6px solid transparent;
 }
 
+.dice-layout-drawer.drop-into,
 .dice-layout-button.drop-into {
   outline: 2px solid var(--color-warm-2, #ff6400);
   outline-offset: 1px;

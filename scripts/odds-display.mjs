@@ -1,4 +1,4 @@
-import { MODULE_ID } from "./constants.mjs";
+import { MODULE_ID, t } from "./constants.mjs";
 import { getModes } from "./layout.mjs";
 import { poolDistribution, summarise } from "./odds.mjs";
 import { state } from "./state.mjs";
@@ -14,7 +14,6 @@ let timer = null;
 /** The last pool worked out, and its distribution, so re-showing it (or changing the DC) is free. */
 let cache = { key: null, distribution: null };
 
-const t = key => game.i18n.localize(`SOGROM_DICETRAY.${key}`);
 
 /** The odds line: average and range, a box for a DC, and the chance of reaching it. */
 export function createOddsLine() {

@@ -73,7 +73,7 @@
   "SOGROM_DICETRAY.SettingTrackStats": "Keep Roll Statistics",
   "SOGROM_DICETRAY.SettingTrackStatsHint": "Counts every roll made in chat (from the tray or anywhere else) for the Roll Statistics window. Blind rolls aren't counted.",
   "SOGROM_DICETRAY.SettingStatsVisibility": "Who Sees Roll Statistics",
-  "SOGROM_DICETRAY.SettingStatsVisibilityHint": "Whether players can see each other's roll statistics, or only their own. The GM always sees everyone's.",
+  "SOGROM_DICETRAY.SettingStatsVisibilityHint": "Whether the Roll Statistics window shows players each other's figures, or only their own. The GM always sees everyone's. This tidies the window rather than hiding anything: the figures are stored with each player, where a determined player could still read them.",
   "SOGROM_DICETRAY.StatsVisibilityAll": "Everyone sees everyone's",
   "SOGROM_DICETRAY.StatsVisibilityOwn": "Players see only their own",
   "SOGROM_DICETRAY.SettingRightClick": "Right-click on a die",
@@ -126,6 +126,7 @@
 
   "SOGROM_DICETRAY.EmptyPool": "Add some dice to your pool first!",
   "SOGROM_DICETRAY.RollError": "Invalid dice formula. Please check your input.",
+  "SOGROM_DICETRAY.MacroError": "Couldn't make a macro from that die. Check the console (F12) for details.",
   "SOGROM_DICETRAY.CommandError": "The chat command {command} failed. Check the console (F12) for details.",
 
   "SOGROM_DICETRAY.TooltipKeepHighestFor": "Keep Highest for {die}",

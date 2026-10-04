@@ -1,4 +1,4 @@
-import { ICON_PATH, MODULE_ID } from "../constants.mjs";
+import { ICON_PATH, MODULE_ID, t } from "../constants.mjs";
 import {
   EXTRA_DICE, STANDARD_DICE, buttonImage, buttonText, cssUrl, diceButtons, normaliseButton, normaliseRows
 } from "../dice.mjs";
@@ -14,13 +14,13 @@ const MAX_PER_DRAWER = 10;
 /** Dropping on the middle of a button, between these fractions of its width, puts it in the drawer. */
 const DRAWER_ZONE = [0.3, 0.7];
 
-const t = key => game.i18n.localize(`SOGROM_DICETRAY.${key}`);
 const escape = value => foundry.utils.escapeHTML(value ?? "");
 
 /** What a button looks like in the editor: the same face the tray gives it. */
 function face(button) {
   const img = buttonImage(button, ICON_PATH);
-  return { img, mask: img ? cssUrl(img) : null, text: buttonText(button), color: button.color };
+  // Labels may be lang keys (from a system map); the tray localises them, so the editor does too.
+  return { img, mask: img ? cssUrl(img) : null, text: game.i18n.localize(buttonText(button)), color: button.color };
 }
 
 /**
@@ -261,6 +261,9 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
       if ( (address.sub === undefined) && (x > DRAWER_ZONE[0]) && (x < DRAWER_ZONE[1]) ) return { ...address, mode: "into", el: chip };
       return { ...address, mode: (x >= 0.5) ? "after" : "before", el: chip };
     }
+    // The drawer strip under a button, between or beside its chips: into that drawer.
+    const drawer = event.target.closest?.(".dice-layout-drawer");
+    if ( drawer ) return { row: Number(drawer.dataset.row), index: Number(drawer.dataset.index), mode: "into", el: drawer };
     const list = event.target.closest?.(".dice-layout-buttons");
     if ( list ) return { row: Number(list.dataset.row), mode: "end", el: list };
     return null;

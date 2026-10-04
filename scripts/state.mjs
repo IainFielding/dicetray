@@ -100,7 +100,6 @@ export function getKeepCount(type) {
 
 export function adjustKeep(type, delta) {
   if ( !state.pool.length || !state.lastDie ) return;
-  state.mode = "normal";
   const existing = state.keep[state.lastDie];
   // Switching from kh to kl or vice versa on this die type starts the count again.
   const current = (existing?.type === type) ? existing.count : 0;
