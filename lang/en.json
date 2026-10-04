@@ -34,6 +34,13 @@
 
   "SOGROM_DICETRAY.ToggleTray": "Toggle Dice Tray",
 
+  "SOGROM_DICETRAY.KeybindingToggleTray": "Show or Hide the Dice Tray",
+  "SOGROM_DICETRAY.KeybindingToggleTrayHint": "The same as clicking the d20 button above the chat input.",
+  "SOGROM_DICETRAY.KeybindingRollPool": "Roll the Dice Pool",
+  "SOGROM_DICETRAY.KeybindingRollPoolHint": "Rolls the dice you have added to the tray, as if you clicked Roll.",
+  "SOGROM_DICETRAY.KeybindingClearPool": "Clear the Dice Pool",
+  "SOGROM_DICETRAY.KeybindingClearPoolHint": "Empties the tray: dice, keep modifiers, roll mode and modifier.",
+
   "SOGROM_DICETRAY.EmptyPool": "Add some dice to your pool first!",
   "SOGROM_DICETRAY.RollError": "Invalid dice formula. Please check your input.",
 

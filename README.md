@@ -67,6 +67,10 @@ As dice are added and a mode selcted, the formula preview updates in real time t
 
 A **D20 icon button** is added to the chat sidebar header (next to the export button). Click it to show or hide the dice tray. Your preference is saved per client and persists between sessions.
 
+### Keyboard Shortcuts
+
+Under **Game Settings → Configure Controls** you can bind keys to **Show or Hide the Dice Tray**, **Roll the Dice Pool** and **Clear the Dice Pool**. They have no keys by default, so they never clash with another module's shortcuts.
+
 ---
 
 ## Compatibility

@@ -391,10 +391,14 @@ export function injectToggleButton(root) {
   });
 }
 
-async function onToggleClick(event) {
+function onToggleClick(event) {
   event.preventDefault();
   event.stopPropagation();
-  const visible = !game.settings.get(MODULE_ID, "showDiceTray");
+  toggleTrayVisible();
+}
+
+/** Show or hide the tray (flips it when `visible` is omitted), remembering the choice for this client. */
+export async function toggleTrayVisible(visible = !game.settings.get(MODULE_ID, "showDiceTray")) {
   await game.settings.set(MODULE_ID, "showDiceTray", visible);
 
   // If the tray was removed while hidden, put a fresh one back.

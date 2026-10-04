@@ -1,9 +1,13 @@
+import { registerKeybindings } from "./keybindings.mjs";
 import { registerSettings } from "./settings.mjs";
 import { clearPool } from "./state.mjs";
 import { onDropCanvasData, onHotbarDrop } from "./roll.mjs";
 import { injectDiceTray, injectToggleButton, removeAll } from "./tray.mjs";
 
-Hooks.once("init", registerSettings);
+Hooks.once("init", () => {
+  registerSettings();
+  registerKeybindings();
+});
 
 Hooks.on("renderChatLog", (_app, element) => {
   injectDiceTray(element);
