@@ -30,7 +30,8 @@ it does), so a system or module can register a system map before any tray is dra
 | `getStats(user = game.user, {today})` | `object` | A user's roll statistics: `{ rolls, d20: { count, mean, nat20, nat1, faces }, dice: [{ faces, count, mean, expected }] }`, for all time or (with `today: true`) today. `null` if the "Who Sees Roll Statistics" setting doesn't let this user see that user's. |
 | `openStats()` | `Promise` | Open the roll statistics window. |
 
-Rolls use the chat message mode (public, GM, blind, self) the player has selected.
+Rolls use the chat message mode (public, GM, blind, self) the player has selected, and fill
+`@` references (`@abilities.dex.mod`) from the speaking character's roll data, as a chat `/r` would.
 
 ### Example: macros
 
@@ -53,7 +54,7 @@ await tray.rollFormula("4d6kh3", { flavor: "Ability score" });
 |------|-----------|------|
 | `sogrom-dicetray.init` | `api` | During Foundry's `init`, once the API exists. The place to call `registerSystem`. |
 | `sogrom-dicetray.ready` | `api` | When the world is ready. |
-| `sogrom-dicetray.preRoll` | `data` | Before every roll the tray makes. `data` is `{ formula, flavor, source }`, where `source` is `"tray"` (the Roll button, Enter or a shortcut), `"rightClick"`, `"drop"` (a die dropped on the canvas) or `"api"`. Change `formula` or `flavor` in place, or return `false` to cancel the roll. |
+| `sogrom-dicetray.preRoll` | `data` | Before every roll the tray makes. `data` is `{ formula, flavor, messageMode, source }`, where `source` is `"tray"` (the Roll button, Enter or a shortcut), `"rightClick"`, `"drop"` (a die dropped on the canvas) or `"api"`. Change `formula` or `flavor` in place, or return `false` to cancel the roll. |
 | `sogrom-dicetray.roll` | `roll, message, data` | After a roll is posted to chat. |
 | `sogrom-dicetray.poolChanged` | `pool` | Whenever the pool changes; `pool` is the same shape as `getPool()`. |
 

@@ -1,8 +1,7 @@
 import { MODULE_ID } from "./constants.mjs";
 import { rollPool } from "./roll.mjs";
-import { clearPool } from "./state.mjs";
 import { DiceTrayWindow } from "./popout.mjs";
-import { toggleTrayVisible } from "./tray.mjs";
+import { clearPoolAndCommand, toggleTrayVisible } from "./tray.mjs";
 
 /**
  * Keyboard shortcuts, configured under Game Settings → Configure Controls. None has a default
@@ -29,7 +28,7 @@ export function registerKeybindings() {
     clearPool: {
       name: "SOGROM_DICETRAY.KeybindingClearPool",
       hint: "SOGROM_DICETRAY.KeybindingClearPoolHint",
-      run: () => clearPool()
+      run: () => clearPoolAndCommand()
     }
   };
   for ( const [action, { name, hint, run }] of Object.entries(bindings) ) {

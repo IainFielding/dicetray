@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  addDice, adjustKeep, clearPool, removeAllOf, removeDice, setModifier, state, toggleMode
+  addDice, adjustKeep, clearPool, consume, removeDice, setModifier, state, toggleMode
 } from "../scripts/state.mjs";
 import { MAX_DICE_PER_TYPE, MAX_MODIFIER } from "../scripts/constants.mjs";
 
@@ -29,16 +29,31 @@ describe("dice pool state", () => {
     expect(state.lastDie).toBeNull();
   });
 
-  it("removes a whole die type, keeping the rest of the pool and its modifier", () => {
+  it("uses up the dice a roll took, keeping the rest of the pool and its modifier", () => {
     addDice("d6"); addDice("d6"); addDice("d20");
     setModifier(2);
     adjustKeep("kh", 1);
-    removeAllOf("d6");
+    consume({ d6: 2 });
     expect(state.pool).toEqual(["d20"]);
     expect(state.modifier).toBe(2);
     expect(state.keep).toEqual({ d20: { type: "kh", count: 1 } });
-    removeAllOf("d20");
+    consume({ d20: 1 }, { withModifiers: true });
     expect(state.modifier).toBe(0);
+  });
+
+  it("leaves dice added while a roll was in flight", () => {
+    addDice("d6", 2);
+    const rolled = { d6: 2 };
+    addDice("d6", 2);
+    consume(rolled, { withModifiers: true });
+    expect(state.pool).toEqual(["d6", "d6"]);
+  });
+
+  it("ignores lowering the other kind of keep", () => {
+    addDice("d6", 4);
+    adjustKeep("kh", 1); adjustKeep("kh", 1);
+    adjustKeep("kl", -1);
+    expect(state.keep).toEqual({ d6: { type: "kh", count: 2 } });
   });
 
   it("adds and removes several dice per click", () => {

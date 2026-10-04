@@ -36,7 +36,7 @@ export function getDiceGroups(pool = state.pool) {
 }
 
 /** How many of one die type are in the pool. */
-export function countOf(key) {
+function countOf(key) {
   let count = 0;
   for ( const k of state.pool ) if ( k === key ) count++;
   return count;
@@ -58,15 +58,19 @@ export function addDice(key, count = 1) {
 
 /** Take dice of one type back out of the pool, most recently added first. */
 export function removeDice(key, count = 1) {
+  if ( take(key, count) ) changed();
+}
+
+/** Take up to `count` dice of one type out, most recently added first. @returns {number} how many. */
+function take(key, count) {
   let removed = 0;
   for ( let i = state.pool.length - 1; (i >= 0) && (removed < count); i-- ) {
     if ( state.pool[i] !== key ) continue;
     state.pool.splice(i, 1);
     removed++;
   }
-  if ( !removed ) return;
-  if ( !state.pool.includes(key) ) forget(key);
-  changed();
+  if ( removed && !state.pool.includes(key) ) forget(key);
+  return removed;
 }
 
 /**
@@ -78,12 +82,18 @@ function forget(key) {
   if ( state.lastDie === key ) state.lastDie = state.pool.at(-1) ?? null;
 }
 
-/** Take every die of one type out of the pool, e.g. after that group was rolled on its own. */
-export function removeAllOf(key) {
-  if ( !state.pool.includes(key) ) return;
-  state.pool = state.pool.filter(k => k !== key);
-  forget(key);
-  if ( !state.pool.length ) {
+/**
+ * A roll has used some of the pool: take out the dice it rolled — `groups`, as they were when it
+ * was rolled — leaving any added while it was rolling. When the roll carried the modifier and mode
+ * (the whole pool was rolled), they are used up too. Taking dice out by hand (removeDice) leaves
+ * them: setting them before adding dice is normal.
+ * @param {Record<string, number>} groups   Dice rolled, by kind: { d6: 2 }.
+ * @param {object} [options]
+ * @param {boolean} [options.withModifiers]  Whether the roll included the modifier and mode.
+ */
+export function consume(groups, { withModifiers = false } = {}) {
+  for ( const [key, count] of Object.entries(groups) ) take(key, count);
+  if ( withModifiers ) {
     state.mode = "normal";
     state.modifier = 0;
   }
@@ -100,8 +110,9 @@ export function getKeepCount(type) {
 
 export function adjustKeep(type, delta) {
   if ( !state.pool.length || !state.lastDie ) return;
-  state.mode = "normal";
   const existing = state.keep[state.lastDie];
+  // Lowering the other kind of keep (right-click on an inactive KL while KH is set) does nothing.
+  if ( existing && (existing.type !== type) && (delta < 0) ) return;
   // Switching from kh to kl or vice versa on this die type starts the count again.
   const current = (existing?.type === type) ? existing.count : 0;
   const count = Math.max(0, current + delta);

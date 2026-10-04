@@ -50,6 +50,7 @@ describe("buildFormula with non-numeric and modified dice", () => {
       .toBe("1d20adv + {1dF,1dF}kh");
     expect(buildFormula(pool({ pool: ["d6", "d6", "d6"], mode: "advantage", keep: { d6: { type: "kh", count: 2 } } }),
       { nativeAdvantage: true })).toBe("{3d6kh2,3d6kh2}kh");
+    expect(buildFormula(pool({ pool: ["d6x"], mode: "advantage" }), { nativeAdvantage: true })).toBe("{1d6x,1d6x}kh");
   });
 });
 
@@ -76,13 +77,25 @@ describe("buildFormula with a system's own modes", () => {
 
 describe("parseRollCommand", () => {
   it("extracts the formula from /r and /roll", () => {
-    expect(parseRollCommand("/r 2d6 + 1")).toBe("2d6 + 1");
-    expect(parseRollCommand("  /ROLL 1d20kh ")).toBe("1d20kh");
+    expect(parseRollCommand("/r 2d6 + 1")).toEqual({ prefix: "/r", formula: "2d6 + 1", flavor: null, messageMode: null });
+    expect(parseRollCommand("  /ROLL 1d20kh ")).toMatchObject({ formula: "1d20kh", messageMode: null });
+  });
+
+  it("reads the message mode commands and flavor", () => {
+    expect(parseRollCommand("/gmr 1d20 # Stealth")).toEqual({ prefix: "/gmr", formula: "1d20", flavor: "Stealth", messageMode: "gm" });
+    expect(parseRollCommand("/blindroll 2d6")).toMatchObject({ messageMode: "blind" });
+    expect(parseRollCommand("/br 2d6")).toMatchObject({ messageMode: "blind" });
+    expect(parseRollCommand("/sr 1d4")).toMatchObject({ messageMode: "self" });
+    expect(parseRollCommand("/publicroll 1d8")).toMatchObject({ messageMode: "public" });
+    expect(parseRollCommand("/r 1d20 + @abilities.dex.mod")).toMatchObject({ formula: "1d20 + @abilities.dex.mod" });
   });
 
   it("ignores anything that isn't a roll command", () => {
     expect(parseRollCommand("hello")).toBeNull();
-    expect(parseRollCommand("/gmr 1d20")).toBeNull();
+    expect(parseRollCommand("/w Bob 1d20")).toBeNull();
+    expect(parseRollCommand("/rr 1d20")).toBeNull();
+    expect(parseRollCommand("/r 1d20\n/r 1d6")).toBeNull();
+    expect(parseRollCommand("/r\n1d6")).toBeNull();
     expect(parseRollCommand("")).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { MODULE_ID } from "./constants.mjs";
-import { normaliseRows } from "./dice.mjs";
+import { STANDARD_DICE, diceButtons, normaliseRows } from "./dice.mjs";
 import { activeSystemId, systemModes, systemRows } from "./systems.mjs";
 
 /** The normalised layout and modes, cached until something they depend on changes. */
@@ -19,7 +19,10 @@ export function defaultRows() {
 export function getRows() {
   if ( cachedRows ) return cachedRows;
   const saved = normaliseRows(game.settings.get(MODULE_ID, "diceRows"));
-  cachedRows = saved.length ? saved : normaliseRows(defaultRows());
+  if ( saved.length ) return (cachedRows = saved);
+  const fallback = normaliseRows(defaultRows());
+  // A system map whose buttons are all invalid still gets the standard dice.
+  cachedRows = fallback.length ? fallback : normaliseRows([diceButtons(STANDARD_DICE)]);
   return cachedRows;
 }
 

@@ -1,4 +1,4 @@
-import { ICON_PATH, MODULE_ID } from "../constants.mjs";
+import { ICON_PATH, MODULE_ID, t } from "../constants.mjs";
 import {
   EXTRA_DICE, STANDARD_DICE, buttonImage, buttonText, cssUrl, diceButtons, normaliseButton, normaliseRows
 } from "../dice.mjs";
@@ -14,13 +14,13 @@ const MAX_PER_DRAWER = 10;
 /** Dropping on the middle of a button, between these fractions of its width, puts it in the drawer. */
 const DRAWER_ZONE = [0.3, 0.7];
 
-const t = key => game.i18n.localize(`SOGROM_DICETRAY.${key}`);
 const escape = value => foundry.utils.escapeHTML(value ?? "");
 
 /** What a button looks like in the editor: the same face the tray gives it. */
 function face(button) {
   const img = buttonImage(button, ICON_PATH);
-  return { img, mask: img ? cssUrl(img) : null, text: buttonText(button), color: button.color };
+  // Labels may be lang keys (from a system map); the tray localises them, so the editor does too.
+  return { img, mask: img ? cssUrl(img) : null, text: game.i18n.localize(buttonText(button)), color: button.color };
 }
 
 /**
@@ -61,6 +61,14 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
     footer: { template: "templates/generic/form-footer.hbs" }
   };
 
+  static #instance;
+
+  /** Open the editor, or bring it to the front with its unsaved changes intact. */
+  static open() {
+    this.#instance ??= new this();
+    return this.#instance.render({ force: true });
+  }
+
   /** The layout being edited. */
   #rows = foundry.utils.deepClone(getRows());
 
@@ -96,6 +104,7 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
     this.element.addEventListener("drop", this.#onDrop.bind(this));
     this.element.addEventListener("dragend", this.#onDragEnd.bind(this));
     this.element.addEventListener("contextmenu", this.#onContextMenu.bind(this));
+    this.element.addEventListener("keydown", this.#onKeyDown.bind(this));
   }
 
   /* -------------------------------------------- */
@@ -169,10 +178,11 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   static async #onAddButton(_event, target) {
-    const row = Number(target.dataset.row);
+    // Hold the row itself, not its number: rows may be added or removed while the dialog is open.
+    const row = this.#rows[Number(target.dataset.row)];
     const button = await this.#promptButton();
-    if ( !button || !this.#rows[row] || (this.#rows[row].length >= MAX_PER_ROW) ) return;
-    this.#rows[row].push(button);
+    if ( !button || !row || !this.#rows.includes(row) || (row.length >= MAX_PER_ROW) ) return;
+    row.push(button);
     this.render();
   }
 
@@ -200,6 +210,47 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
     DiceLayoutConfig.#onRemoveButton.call(this, event, chip);
   }
 
+  /**
+   * The keyboard way to do what the mouse does on a button: Enter or Space edits it, Delete removes
+   * it, and Alt with the left or right arrow moves it along its row or drawer.
+   */
+  #onKeyDown(event) {
+    const chip = event.target.closest?.(".dice-layout-button");
+    if ( !chip || (event.target !== chip) ) return;
+    const address = DiceLayoutConfig.#address(chip);
+    switch ( event.key ) {
+      case "Enter":
+      case " ":
+        event.preventDefault();
+        event.stopPropagation();
+        return DiceLayoutConfig.#onEditButton.call(this, event, chip);
+      case "Delete":
+      case "Backspace":
+        event.preventDefault();
+        return DiceLayoutConfig.#onRemoveButton.call(this, event, chip);
+      case "ArrowLeft":
+      case "ArrowRight": {
+        if ( !event.altKey ) return;
+        event.preventDefault();
+        const { list, button } = this.#resolve(address);
+        const at = list.indexOf(button);
+        const to = at + ((event.key === "ArrowLeft") ? -1 : 1);
+        if ( (to < 0) || (to >= list.length) ) return;
+        [list[at], list[to]] = [list[to], list[at]];
+        const focus = (address.sub === undefined) ? { ...address, index: to } : { ...address, sub: to };
+        return this.render().then(() => this.#focusChip(focus));
+      }
+    }
+  }
+
+  /** Put focus back on a button after a re-render. */
+  #focusChip({ row, index, sub }) {
+    const selector = (sub === undefined)
+      ? `.dice-layout-button:not(.dice-layout-sub)[data-row="${row}"][data-index="${index}"]`
+      : `.dice-layout-sub[data-row="${row}"][data-index="${index}"][data-sub="${sub}"]`;
+    this.element.querySelector(selector)?.focus();
+  }
+
   static #onAddRow() {
     if ( this.#rows.length >= MAX_ROWS ) return;
     this.#rows.push([]);
@@ -214,16 +265,19 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   static async #onRemoveRow(_event, target) {
-    const row = Number(target.dataset.row);
-    if ( !this.#rows[row] ) return;
-    if ( this.#rows[row].length ) {
+    // Hold the row itself, not its number: rows may be removed while the dialog is open.
+    const row = this.#rows[Number(target.dataset.row)];
+    if ( !row ) return;
+    if ( row.length ) {
       const confirmed = await DialogV2.confirm({
         window: { title: "SOGROM_DICETRAY.LayoutRemoveRow" },
         content: `<p>${t("LayoutRemoveRowConfirm")}</p>`
       });
       if ( !confirmed ) return;
     }
-    this.#rows.splice(row, 1);
+    const at = this.#rows.indexOf(row);
+    if ( at === -1 ) return;
+    this.#rows.splice(at, 1);
     this.render();
   }
 
@@ -261,6 +315,9 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
       if ( (address.sub === undefined) && (x > DRAWER_ZONE[0]) && (x < DRAWER_ZONE[1]) ) return { ...address, mode: "into", el: chip };
       return { ...address, mode: (x >= 0.5) ? "after" : "before", el: chip };
     }
+    // The drawer strip under a button, between or beside its chips: into that drawer.
+    const drawer = event.target.closest?.(".dice-layout-drawer");
+    if ( drawer ) return { row: Number(drawer.dataset.row), index: Number(drawer.dataset.index), mode: "into", el: drawer };
     const list = event.target.closest?.(".dice-layout-buttons");
     if ( list ) return { row: Number(list.dataset.row), mode: "end", el: list };
     return null;
@@ -292,18 +349,18 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   #canMove(from, moving, target, destination) {
     const warn = key => {
-      ui.notifications.warn(game.i18n.format(`SOGROM_DICETRAY.${key}`, { max: (key === "LayoutRowFull") ? MAX_PER_ROW : MAX_PER_DRAWER }));
+      ui.notifications.warn(game.i18n.format(key, { max: (key === "SOGROM_DICETRAY.LayoutRowFull") ? MAX_PER_ROW : MAX_PER_DRAWER }));
       return false;
     };
     const intoDrawer = (target.mode === "into") || (target.sub !== undefined);
-    if ( intoDrawer && moving.drawer?.length ) return warn("LayoutNestedDrawer");
+    if ( intoDrawer && moving.drawer?.length ) return warn("SOGROM_DICETRAY.LayoutNestedDrawer");
     if ( destination === moving ) return false;
     const sameList = intoDrawer
       ? ((from.sub !== undefined) && (from.row === target.row) && (from.index === target.index))
       : ((from.sub === undefined) && (from.row === target.row));
     if ( sameList ) return true;
     const size = intoDrawer ? (destination.drawer?.length ?? 0) : this.#rows[target.row].length;
-    if ( size >= (intoDrawer ? MAX_PER_DRAWER : MAX_PER_ROW) ) return warn(intoDrawer ? "LayoutDrawerFull" : "LayoutRowFull");
+    if ( size >= (intoDrawer ? MAX_PER_DRAWER : MAX_PER_ROW) ) return warn(intoDrawer ? "SOGROM_DICETRAY.LayoutDrawerFull" : "SOGROM_DICETRAY.LayoutRowFull");
     return true;
   }
 
@@ -344,10 +401,27 @@ export class DiceLayoutConfig extends HandlebarsApplicationMixin(ApplicationV2) 
   /*  Saving                                      */
   /* -------------------------------------------- */
 
+  /** @override */
+  _onClose(options) {
+    super._onClose(options);
+    DiceLayoutConfig.#instance = null;
+  }
+
   static async #onSubmit() {
     const rows = normaliseRows(this.#rows);
     // Saving exactly the default layout stores nothing, so the world keeps following the default.
     const isDefault = JSON.stringify(rows) === JSON.stringify(normaliseRows(defaultRows()));
     await game.settings.set(MODULE_ID, "diceRows", isDefault ? [] : rows);
+  }
+}
+
+/**
+ * What the module settings' Configure Dice button opens. Settings menus construct a fresh
+ * application each time; this brings up the one editor instead, so unsaved changes aren't lost.
+ */
+export class DiceLayoutMenu extends ApplicationV2 {
+  /** @override */
+  render() {
+    return DiceLayoutConfig.open();
   }
 }

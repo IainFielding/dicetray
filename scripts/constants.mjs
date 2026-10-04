@@ -17,6 +17,9 @@ export const HOOKS = Object.freeze({
   poolChanged: `${MODULE_ID}.poolChanged`
 });
 
+/** Localise one of the module's own strings: t("Title") → game.i18n.localize("SOGROM_DICETRAY.Title"). */
+export const t = key => game.i18n.localize(`SOGROM_DICETRAY.${key}`);
+
 /** Folder of the module's die icons. */
 export const ICON_PATH = `modules/${MODULE_ID}/assets/icons`;
 

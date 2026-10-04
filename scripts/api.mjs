@@ -24,7 +24,7 @@ export function createApi() {
      */
     registerSystem(systemId, map) {
       if ( (typeof systemId !== "string") || !systemId ) throw new Error(`${MODULE_ID} | registerSystem needs a system id`);
-      if ( map && (typeof map !== "object") ) throw new Error(`${MODULE_ID} | registerSystem needs a map object`);
+      if ( !map || (typeof map !== "object") ) throw new Error(`${MODULE_ID} | registerSystem needs a map object`);
       if ( (map?.rows !== undefined) && (typeof map.rows !== "function") ) {
         throw new Error(`${MODULE_ID} | registerSystem: rows must be a function returning rows of buttons`);
       }

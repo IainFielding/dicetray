@@ -1,5 +1,5 @@
 import { MODULE_ID } from "./constants.mjs";
-import { createDiceTray } from "./tray.mjs";
+import { closeDrawers, createDiceTray } from "./tray.mjs";
 
 const { ApplicationV2 } = foundry.applications.api;
 
@@ -89,8 +89,10 @@ export class DiceTrayWindow extends ApplicationV2 {
   /** @override */
   _onClose(options) {
     super._onClose(options);
-    // Empty the window, so its tray leaves the page (and the list of trays) with it.
-    this.element?.querySelector(".window-content")?.replaceChildren();
+    // Empty the window, so its tray leaves the page with it, drawers closed first.
+    const content = this.element?.querySelector(".window-content");
+    closeDrawers(content);
+    content?.replaceChildren();
     syncTool(false);
   }
 }

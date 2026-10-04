@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  allButtons, buttonImage, buttonText, cssUrl, dieName, isCommand, normaliseButton, normaliseRows, parseDieTerm
+  buttonImage, buttonText, cssUrl, dieName, isCommand, normaliseButton, normaliseRows, parseDieTerm
 } from "../scripts/dice.mjs";
+
+/** Every button in a layout, including those in drawers. */
+const allButtons = rows => rows.flatMap(row => row.flatMap(b => [b, ...(b.drawer ?? [])]));
 
 describe("parseDieTerm", () => {
   it("parses plain, counted, Fate, percentile and modified dice", () => {

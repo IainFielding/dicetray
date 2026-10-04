@@ -27,6 +27,9 @@ const SAMPLES = 20000;
 /** Above this many steps, keep-highest/lowest is simulated instead of worked out exactly. */
 const MAX_EXACT_KEEP_WORK = 4e6;
 
+/** Pools whose highest total could pass this aren't covered at all (simulated totals are 32-bit). */
+const MAX_SIMULATED_TOTAL = 1e8;
+
 /** Totals wider than this are simulated too, to bound memory. */
 const MAX_SPAN = 20000;
 
@@ -200,6 +203,9 @@ function fromSamples(totals, unbounded) {
     if ( v < min ) min = v;
     if ( v > max ) max = v;
   }
+  // Totals spread over millions of values (a d1000000000) would need an array that size; the odds
+  // of such a pool aren't worth showing.
+  if ( (max - min + 1) > MAX_SPAN ) return null;
   const p = new Float64Array(max - min + 1);
   for ( const v of totals ) p[v - min] += 1 / totals.length;
   return dist(min, p, { approximate: true, unbounded });
@@ -211,29 +217,39 @@ function fromSamples(totals, unbounded) {
  */
 function simulateGroup({ faces, n, keep, explode }, seedText) {
   const random = generator(hash(seedText));
-  const roll = () => {
-    if ( faces === "F" ) return Math.floor(random() * 3) - 1;
-    let total = 0;
-    let face;
-    let explosions = 0;
-    do {
-      face = Math.floor(random() * faces) + 1;
-      total += face;
-    } while ( explode && (face === faces) && (++explosions < MAX_EXPLOSIONS) );
-    return total;
-  };
+  const face = () => ((faces === "F") ? Math.floor(random() * 3) - 1 : Math.floor(random() * faces) + 1);
   const totals = new Int32Array(SAMPLES);
-  const dice = new Int32Array(n);
+  // Like Foundry, each explosion is a result of its own, and keeping chooses among all the results.
+  // Every result is a face value, so the kept ones are found by counting faces rather than sorting.
+  const offset = (faces === "F") ? 1 : -1;                       // face value → index
+  const counts = new Int32Array((faces === "F") ? 3 : faces);
   for ( let s = 0; s < SAMPLES; s++ ) {
-    for ( let i = 0; i < n; i++ ) dice[i] = roll();
-    if ( keep ) dice.sort();
+    counts.fill(0);
+    let rolled = 0;
     let total = 0;
-    if ( !keep ) for ( let i = 0; i < n; i++ ) total += dice[i];
-    else if ( keep.type === "kh" ) for ( let i = n - Math.min(keep.count, n); i < n; i++ ) total += dice[i];
-    else for ( let i = 0; i < Math.min(keep.count, n); i++ ) total += dice[i];
+    for ( let i = 0; i < n; i++ ) {
+      let r;
+      let explosions = 0;
+      do {
+        r = face();
+        counts[r + offset]++;
+        rolled++;
+        total += r;
+      } while ( explode && (r === faces) && (++explosions < MAX_EXPLOSIONS) );
+    }
+    if ( keep ) {
+      let left = Math.min(keep.count, rolled);
+      total = 0;
+      const high = keep.type === "kh";
+      for ( let i = high ? counts.length - 1 : 0; (left > 0) && (i >= 0) && (i < counts.length); i += high ? -1 : 1 ) {
+        const take = Math.min(counts[i], left);
+        total += take * (i - offset);
+        left -= take;
+      }
+    }
     totals[s] = total;
   }
-  return fromSamples(totals, explode);
+  return fromSamples(totals, explode && !keep);
 }
 
 /* -------------------------------------------- */
@@ -265,11 +281,15 @@ function groupDistribution(key, count, keep, fateDice) {
   const explode = modifiers === "x";
   if ( explode && ((faces === "F") || (faces < 2)) ) return null;
   const k = keep?.count > 0 ? keep : null;
-
-  if ( !k ) {
+  // Dice too large for any useful odds (and for 32-bit simulated totals, and for counting faces)
+  // aren't covered.
+  if ( (typeof faces === "number") && (((faces * count) > MAX_SIMULATED_TOTAL) || (faces > MAX_SPAN)) ) return null;
+  // Work out the size before building anything: a d1000000 must not allocate its faces.
+  const width = (faces === "F") ? 3 : faces;
+  if ( !k && ((width * count) <= MAX_SPAN) ) {
     const one = explode ? explodingDistribution(faces) : dieDistribution(faces);
     if ( (one.p.length * count) <= MAX_SPAN ) return sumOf(one, count);
-  } else if ( !explode && (faces !== "F") ) {
+  } else if ( k && !explode && (faces !== "F") && ((width * k.count) <= MAX_SPAN) ) {
     const exact = keepDistribution(faces, count, k.count, k.type === "kh");
     if ( exact ) return exact;
   }
@@ -292,6 +312,7 @@ export function poolDistribution({ pool, mode, modifier, keep }, { modes = {}, f
   let total = null;
   for ( const [key, count] of Object.entries(groups) ) {
     let d = groupDistribution(key, count, keep[key], fateDice);
+    // groupDistribution may simulate, and a simulation too wide to keep gives null too.
     if ( !d ) return null;
     if ( active?.style === "repeat" ) d = extreme(d, d, active.keep !== "kl");
     else if ( active?.style === "wildDie" ) {
@@ -299,8 +320,9 @@ export function poolDistribution({ pool, mode, modifier, keep }, { modes = {}, f
       if ( !wild ) return null;
       d = extreme(d, wild, true);
     }
+    // Check the width before convolving: the work is the product of the two widths.
+    if ( total && ((total.p.length + d.p.length - 1) > MAX_SPAN) ) return null;
     total = total ? convolve(total, d) : d;
-    if ( total.p.length > MAX_SPAN ) return null;
   }
   if ( active?.style === "extraDie" ) {
     const extra = modeDie(active.die);

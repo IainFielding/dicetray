@@ -1,8 +1,11 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { allButtons, normaliseRows } from "../scripts/dice.mjs";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { normaliseRows } from "../scripts/dice.mjs";
 import {
-  GENERIC_MODES, SYSTEM_ALIASES, SYSTEM_MAPS, registerSystemMap, systemMap, systemModes, systemRows, unregisterSystemMap
+  GENERIC_MODES, SYSTEM_ALIASES, SYSTEM_MAPS, registerSystemMap, systemMap, systemModes, systemRows
 } from "../scripts/systems.mjs";
+
+/** Every button in a layout, including those in drawers. */
+const allButtons = rows => rows.flatMap(row => row.flatMap(b => [b, ...(b.drawer ?? [])]));
 
 describe("built-in system maps", () => {
   for ( const id of Object.keys(SYSTEM_MAPS) ) {
@@ -33,7 +36,9 @@ describe("built-in system maps", () => {
 });
 
 describe("system modes", () => {
-  afterEach(() => ["dcc", "test-null", "test-partial"].forEach(unregisterSystemMap));
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+  afterEach(() => ["dcc", "test-null", "test-partial"].forEach(id => registerSystemMap(id, null)));
 
   it("gives unknown systems the standard dice and generic advantage", () => {
     expect(systemRows("some-new-system")).toEqual([[
@@ -66,6 +71,20 @@ describe("system modes", () => {
     expect(Object.keys(systemModes("swade"))).toEqual(["wild"]);
   });
 
+  it("treats modes: undefined as leaving the modes out", () => {
+    registerSystemMap("test-null", { modes: undefined });
+    expect(systemModes("test-null")).toBe(GENERIC_MODES);
+  });
+
+  it("leaves out modes missing what their style needs, and survives a throwing map", () => {
+    registerSystemMap("test-null", {
+      rows: () => { throw new Error("broken"); },
+      modes: { lucky: { style: "repeat" }, boost: { style: "extraDie", die: "1d4" }, ok: { style: "wildDie", die: "1d6x" } }
+    });
+    expect(Object.keys(systemModes("test-null"))).toEqual(["advantage", "disadvantage", "ok"]);
+    expect(systemRows("test-null")[0].map(b => b.formula)).toContain("d20");
+  });
+
   it("drops a mode set to null and keeps the rest", () => {
     registerSystemMap("test-null", { modes: { advantage: {}, disadvantage: null } });
     expect(Object.keys(systemModes("test-null"))).toEqual(["advantage"]);
@@ -76,7 +95,7 @@ describe("system modes", () => {
     expect(systemRows("dcc")).toEqual([[{ formula: "d20" }]]);
     expect(systemModes("dcc")).toBe(GENERIC_MODES);
     expect(systemMap("dcc")).not.toBe(SYSTEM_MAPS.dcc);
-    unregisterSystemMap("dcc");
+    registerSystemMap("dcc", null);
     expect(systemMap("dcc")).toBe(SYSTEM_MAPS.dcc);
   });
 });
