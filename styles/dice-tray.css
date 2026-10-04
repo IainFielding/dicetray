@@ -114,6 +114,24 @@
   vertical-align: middle;
 }
 
+.dice-tray-die-tinted {
+  display: inline-block;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
+
+.dice-tray-die-fallback {
+  font-size: 0.7rem;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .dice-tray-badge {
   position: absolute;
   top: -4px;

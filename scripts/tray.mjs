@@ -1,6 +1,8 @@
-import { DICE_TYPES, EXTRA_DICE_TYPES, MAX_DICE_PER_TYPE, MODE_CONFIG, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
+import { MAX_DICE_PER_TYPE, MODE_CONFIG, MODULE_ID, THEME_CLASSES } from "./constants.mjs";
+import { buttonImage, buttonText, dieName, isCommand, parseDieTerm } from "./dice.mjs";
+import { getRows } from "./layout.mjs";
 import {
-  addDie, adjustKeep, adjustModifier, getDiceGroups, getKeepCount, onStateChange, removeDie, setModifier, state,
+  addDice, adjustKeep, adjustModifier, getDiceGroups, getKeepCount, onStateChange, removeDice, setModifier, state,
   toggleMode
 } from "./state.mjs";
 import { currentFormula, formulaForDie } from "./formula.mjs";
@@ -22,6 +24,8 @@ const INJECT_TIMEOUT_MS = 15000;
 const pending = new Map();
 
 const t = key => game.i18n.localize(`SOGROM_DICETRAY.${key}`);
+
+const ICON_PATH = `modules/${MODULE_ID}/assets/icons`;
 
 function forEachTray(callback) {
   for ( const tray of trays ) {
@@ -49,23 +53,57 @@ function stackedPair(...buttons) {
   return pair;
 }
 
-function createDieButton(faces) {
-  const btn = button(["dice-tray-die-btn"], { action: "die", faces });
-  btn.draggable = true;
-  btn.title = game.i18n.format("SOGROM_DICETRAY.TooltipAddDie", { die: `D${faces}` });
+/**
+ * A button from the layout. Dice buttons carry the die's pool key and how many one click adds;
+ * command buttons carry the chat command they run.
+ * @param {import("./dice.mjs").DiceButton} def
+ */
+function createDieButton(def) {
+  let btn;
+  if ( isCommand(def.formula) ) {
+    btn = button(["dice-tray-die-btn", "dice-tray-command-btn"], { action: "command", formula: def.formula });
+    btn.title = def.tooltip || def.label || def.formula;
+  } else {
+    const { key, count } = parseDieTerm(def.formula);
+    btn = button(["dice-tray-die-btn"], { action: "die", key, count });
+    btn.draggable = true;
+    btn.title = def.tooltip || game.i18n.format("SOGROM_DICETRAY.TooltipAddDie", { die: def.label || dieName(key) });
+  }
+  btn.setAttribute("aria-label", btn.title);
+  btn.append(buttonFace(def));
+  return btn;
+}
+
+/** What a button shows: its image (tinted when it has a colour), or else its text. */
+function buttonFace(def) {
+  const src = buttonImage(def, ICON_PATH);
+  const text = () => {
+    const span = document.createElement("span");
+    span.classList.add("dice-tray-die-fallback");
+    span.textContent = buttonText(def);
+    if ( def.color ) span.style.color = def.color;
+    return span;
+  };
+  if ( !src ) return text();
+  if ( def.color ) {
+    // Tint the image's shape with the colour: the image becomes a mask over a solid fill.
+    const tinted = document.createElement("span");
+    tinted.classList.add("dice-tray-die-icon", "dice-tray-die-tinted");
+    // Set inline, so a relative path resolves against the page like an <img> src would; inside a
+    // stylesheet it would resolve against the stylesheet's folder instead.
+    const mask = `url("${encodeURI(src)}")`;
+    tinted.style.maskImage = mask;
+    tinted.style.webkitMaskImage = mask;
+    tinted.style.backgroundColor = def.color;
+    return tinted;
+  }
   const img = document.createElement("img");
-  img.src = `modules/${MODULE_ID}/assets/icons/d${faces}-grey.svg`;
-  img.alt = `D${faces}`;
+  img.src = src;
+  img.alt = "";
   img.classList.add("dice-tray-die-icon");
   img.draggable = false;
-  img.addEventListener("error", () => {
-    const fallback = document.createElement("span");
-    fallback.classList.add("dice-tray-die-fallback");
-    fallback.textContent = `D${faces}`;
-    img.replaceWith(fallback);
-  }, { once: true });
-  btn.append(img);
-  return btn;
+  img.addEventListener("error", () => img.replaceWith(text()), { once: true });
+  return img;
 }
 
 function createDiceTray() {
@@ -74,9 +112,7 @@ function createDiceTray() {
   const theme = game.settings.get(MODULE_ID, "theme");
   if ( theme ) tray.classList.add(theme);
 
-  const diceRows = [DICE_TYPES];
-  if ( game.settings.get(MODULE_ID, "extraDice") ) diceRows.push(EXTRA_DICE_TYPES);
-  const rows = diceRows.map(dice => {
+  const rows = getRows().map(dice => {
     const row = document.createElement("div");
     row.classList.add("dice-tray-dice-row");
     row.style.gridTemplateColumns = `repeat(${dice.length}, 1fr)`;
@@ -156,10 +192,11 @@ function onTrayClick(event) {
   if ( !btn ) return;
   switch ( btn.dataset.action ) {
     case "die": {
-      const faces = Number(btn.dataset.faces);
-      if ( !addDie(faces) ) warnMaxDice(faces);
+      const key = btn.dataset.key;
+      if ( !addDice(key, Number(btn.dataset.count)) ) warnMaxDice(key);
       break;
     }
+    case "command": return runCommand(btn.dataset.formula);
     case "modifier": return adjustModifier(Number(btn.dataset.delta));
     case "keep": return adjustKeep(btn.dataset.keep, 1);
     case "mode": return toggleMode(btn.dataset.mode);
@@ -173,9 +210,11 @@ function onTrayContextMenu(event) {
   switch ( btn.dataset.action ) {
     case "die": {
       event.preventDefault();
-      const faces = Number(btn.dataset.faces);
-      if ( game.settings.get(MODULE_ID, "rightClick") === "roll" ) return rollFormula(`1d${faces}`, { flavor: t("FlavorBase") });
-      return removeDie(faces);
+      const { key, count } = btn.dataset;
+      if ( game.settings.get(MODULE_ID, "rightClick") === "roll" ) {
+        return rollFormula(`${count}${key}`, { flavor: t("FlavorBase") });
+      }
+      return removeDice(key, Number(count));
     }
     case "keep":
       event.preventDefault();
@@ -184,11 +223,11 @@ function onTrayContextMenu(event) {
 }
 
 function onTrayDragStart(event) {
-  const btn = event.target.closest?.(".dice-tray-die-btn");
+  const btn = event.target.closest?.('.dice-tray-die-btn[data-action="die"]');
   if ( !btn ) return;
-  const faces = Number(btn.dataset.faces);
-  const { formula, fromPool } = formulaForDie(faces);
-  event.dataTransfer.setData("text/plain", JSON.stringify({ type: DRAG_TYPE, formula, fromPool, faces }));
+  const { key, count } = btn.dataset;
+  const { formula, fromPool } = formulaForDie(key, Number(count));
+  event.dataTransfer.setData("text/plain", JSON.stringify({ type: DRAG_TYPE, formula, fromPool, key }));
   event.dataTransfer.effectAllowed = "copy";
 }
 
@@ -236,10 +275,18 @@ function onTrayKeyDown(event) {
 
 const formatModifier = value => ((value > 0) ? `+${value}` : String(value));
 
-function warnMaxDice(faces) {
+function warnMaxDice(key) {
   ui.notifications.warn(game.i18n.format("SOGROM_DICETRAY.MaxDiceReached", {
-    max: MAX_DICE_PER_TYPE, die: `D${faces}`
+    max: MAX_DICE_PER_TYPE, die: dieName(key)
   }));
+}
+
+/** Run a command button's chat command ("/dr", …) as if it had been typed into the chat bar. */
+function runCommand(command) {
+  Promise.resolve(ui.chat.processMessage(command)).catch(err => {
+    console.error(`${MODULE_ID} | Command error:`, err);
+    ui.notifications.error(game.i18n.format("SOGROM_DICETRAY.CommandError", { command }));
+  });
 }
 
 /* -------------------------------------------- */
@@ -261,12 +308,12 @@ function setBadge(btn, count, className = "dice-tray-badge") {
 /** Bring one tray's buttons in line with the shared state. Only touches what differs. */
 function refreshTray(tray) {
   const groups = getDiceGroups();
-  for ( const btn of tray.querySelectorAll(".dice-tray-die-btn") ) {
-    const faces = Number(btn.dataset.faces);
-    const count = groups[faces] || 0;
+  for ( const btn of tray.querySelectorAll('.dice-tray-die-btn[data-action="die"]') ) {
+    const key = btn.dataset.key;
+    const count = groups[key] || 0;
     btn.classList.toggle("active", count > 0);
     setBadge(btn, count);
-    const mod = (count > 0) ? state.keep[faces] : null;
+    const mod = (count > 0) ? state.keep[key] : null;
     let indicator = btn.querySelector(".dice-tray-keep-indicator");
     if ( mod ) {
       if ( !indicator ) {
@@ -298,7 +345,7 @@ function refreshTray(tray) {
   for ( const btn of tray.querySelectorAll(".dice-tray-keep-btn") ) {
     const cfg = KEEP_BUTTONS.find(k => k.type === btn.dataset.keep);
     const count = getKeepCount(cfg.type);
-    const die = `D${state.lastDie}`;
+    const die = state.lastDie ? dieName(state.lastDie) : "";
     btn.classList.toggle("active", count > 0);
     btn.querySelector(".dice-tray-label").textContent = (count > 0) ? `${t(cfg.labelKey)} ${die}` : t(cfg.labelKey);
     btn.title = (count > 0) ? game.i18n.format(`SOGROM_DICETRAY.${cfg.forKey}`, { die }) : t(cfg.tooltipKey);

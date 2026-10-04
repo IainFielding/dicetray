@@ -5,15 +5,15 @@ import { MAX_DICE_PER_TYPE, MAX_MODIFIER } from "./constants.mjs";
  * (sidebar and popped-out chat), so each tray just re-renders from this object.
  */
 export const state = {
-  /** Faces of every die added, in the order they were clicked. */
+  /** Key of every die added ("d6", "dF", "d6x"), in the order they were added. */
   pool: [],
   /** "normal", or a key of MODE_CONFIG. */
   mode: "normal",
-  /** The die type keep-highest/lowest applies to: the last die added. */
+  /** The key of the die type keep-highest/lowest applies to: the last die added. */
   lastDie: null,
   /** Flat modifier added to the formula. */
   modifier: 0,
-  /** Keep modifiers per die type: { [faces]: { type: "kh"|"kl", count } } */
+  /** Keep modifiers per die type: { [key]: { type: "kh"|"kl", count } } */
   keep: {}
 };
 
@@ -28,45 +28,61 @@ function changed() {
   for ( const callback of listeners ) callback(state);
 }
 
-/** Count of each die type in the pool: { [faces]: count } */
+/** Count of each die type in the pool, in the order each type was first added: { [key]: count } */
 export function getDiceGroups(pool = state.pool) {
   const groups = {};
-  for ( const faces of pool ) groups[faces] = (groups[faces] || 0) + 1;
+  for ( const key of pool ) groups[key] = (groups[key] || 0) + 1;
   return groups;
 }
 
+/** How many of one die type are in the pool. */
+export function countOf(key) {
+  let count = 0;
+  for ( const k of state.pool ) if ( k === key ) count++;
+  return count;
+}
+
 /**
- * Add one die to the pool.
- * @returns {boolean} false if the per-type limit was reached and nothing was added.
+ * Add dice of one type to the pool.
+ * @param {string} key      The die type, e.g. "d6".
+ * @param {number} [count]  How many to add.
+ * @returns {boolean} false if that would pass the per-type limit, in which case nothing is added.
  */
-export function addDie(faces) {
-  const count = state.pool.filter(f => f === faces).length;
-  if ( count >= MAX_DICE_PER_TYPE ) return false;
-  state.pool.push(faces);
-  state.lastDie = faces;
+export function addDice(key, count = 1) {
+  if ( countOf(key) + count > MAX_DICE_PER_TYPE ) return false;
+  for ( let i = 0; i < count; i++ ) state.pool.push(key);
+  state.lastDie = key;
   changed();
   return true;
 }
 
-export function removeDie(faces) {
-  const idx = state.pool.lastIndexOf(faces);
-  if ( idx === -1 ) return;
-  state.pool.splice(idx, 1);
-  if ( !state.pool.includes(faces) ) {
-    // The last die of this type is gone: drop its keep modifier, and point keep-highest/lowest
-    // at the most recently added die that is still in the pool.
-    delete state.keep[faces];
-    if ( state.lastDie === faces ) state.lastDie = state.pool.at(-1) ?? null;
+/** Take dice of one type back out of the pool, most recently added first. */
+export function removeDice(key, count = 1) {
+  let removed = 0;
+  for ( let i = state.pool.length - 1; (i >= 0) && (removed < count); i-- ) {
+    if ( state.pool[i] !== key ) continue;
+    state.pool.splice(i, 1);
+    removed++;
   }
+  if ( !removed ) return;
+  if ( !state.pool.includes(key) ) forget(key);
   changed();
 }
 
+/**
+ * The last die of a type has left the pool: drop its keep modifier, and point keep-highest/lowest
+ * at the most recently added die that is still there.
+ */
+function forget(key) {
+  delete state.keep[key];
+  if ( state.lastDie === key ) state.lastDie = state.pool.at(-1) ?? null;
+}
+
 /** Take every die of one type out of the pool, e.g. after that group was rolled on its own. */
-export function removeAllOf(faces) {
-  if ( !state.pool.includes(faces) ) return;
-  state.pool = state.pool.filter(f => f !== faces);
-  delete state.keep[faces];
-  if ( state.lastDie === faces ) state.lastDie = state.pool.at(-1) ?? null;
+export function removeAllOf(key) {
+  if ( !state.pool.includes(key) ) return;
+  state.pool = state.pool.filter(k => k !== key);
+  forget(key);
   if ( !state.pool.length ) {
     state.mode = "normal";
     state.modifier = 0;

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  addDie, adjustKeep, clearPool, removeAllOf, removeDie, setModifier, state, toggleMode
+  addDice, adjustKeep, clearPool, removeAllOf, removeDice, setModifier, state, toggleMode
 } from "../scripts/state.mjs";
 import { MAX_DICE_PER_TYPE, MAX_MODIFIER } from "../scripts/constants.mjs";
 
@@ -8,42 +8,53 @@ beforeEach(() => clearPool());
 
 describe("dice pool state", () => {
   it("targets keep modifiers at the last die added", () => {
-    addDie(20); addDie(20); addDie(6);
+    addDice("d20"); addDice("d20"); addDice("d6");
     adjustKeep("kh", 1);
-    expect(state.keep).toEqual({ 6: { type: "kh", count: 1 } });
+    expect(state.keep).toEqual({ d6: { type: "kh", count: 1 } });
   });
 
   it("retargets keep at a remaining die when the last type is removed", () => {
-    addDie(20); addDie(20); addDie(6);
-    removeDie(6);
-    expect(state.lastDie).toBe(20);
+    addDice("d20"); addDice("d20"); addDice("d6");
+    removeDice("d6");
+    expect(state.lastDie).toBe("d20");
     adjustKeep("kh", 1);
-    expect(state.keep).toEqual({ 20: { type: "kh", count: 1 } });
+    expect(state.keep).toEqual({ d20: { type: "kh", count: 1 } });
   });
 
   it("drops a keep modifier when its last die is removed", () => {
-    addDie(6); addDie(6);
+    addDice("d6"); addDice("d6");
     adjustKeep("kl", 1);
-    removeDie(6); removeDie(6);
+    removeDice("d6"); removeDice("d6");
     expect(state.keep).toEqual({});
     expect(state.lastDie).toBeNull();
   });
 
   it("removes a whole die type, keeping the rest of the pool and its modifier", () => {
-    addDie(6); addDie(6); addDie(20);
+    addDice("d6"); addDice("d6"); addDice("d20");
     setModifier(2);
     adjustKeep("kh", 1);
-    removeAllOf(6);
-    expect(state.pool).toEqual([20]);
+    removeAllOf("d6");
+    expect(state.pool).toEqual(["d20"]);
     expect(state.modifier).toBe(2);
-    expect(state.keep).toEqual({ 20: { type: "kh", count: 1 } });
-    removeAllOf(20);
+    expect(state.keep).toEqual({ d20: { type: "kh", count: 1 } });
+    removeAllOf("d20");
     expect(state.modifier).toBe(0);
   });
 
+  it("adds and removes several dice per click", () => {
+    addDice("dF", 4);
+    expect(state.pool).toEqual(["dF", "dF", "dF", "dF"]);
+    removeDice("dF", 4);
+    expect(state.pool).toEqual([]);
+    expect(state.lastDie).toBeNull();
+  });
+
   it("caps dice per type and the modifier", () => {
-    for ( let i = 0; i < MAX_DICE_PER_TYPE; i++ ) addDie(4);
-    expect(addDie(4)).toBe(false);
+    for ( let i = 0; i < MAX_DICE_PER_TYPE; i++ ) addDice("d4");
+    expect(addDice("d4")).toBe(false);
+    clearPool();
+    expect(addDice("d6", MAX_DICE_PER_TYPE + 1)).toBe(false);
+    expect(state.pool).toEqual([]);
     setModifier(1000);
     expect(state.modifier).toBe(MAX_MODIFIER);
     setModifier(-1000);

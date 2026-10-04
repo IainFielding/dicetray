@@ -55,7 +55,7 @@ export async function rollPool() {
 export function onDropCanvasData(_canvas, data) {
   if ( data?.type !== DRAG_TYPE ) return;
   rollFormula(data.formula, { flavor: rollFlavor() }).then(rolled => {
-    if ( rolled && data.fromPool ) removeAllOf(data.faces);
+    if ( rolled && data.fromPool ) removeAllOf(data.key);
   });
   return false;
 }

@@ -45,6 +45,7 @@
 
   "SOGROM_DICETRAY.EmptyPool": "Add some dice to your pool first!",
   "SOGROM_DICETRAY.RollError": "Invalid dice formula. Please check your input.",
+  "SOGROM_DICETRAY.CommandError": "The chat command {command} failed. Check the console (F12) for details.",
 
   "SOGROM_DICETRAY.TooltipKeepHighestFor": "Keep Highest for {die}",
   "SOGROM_DICETRAY.TooltipKeepLowestFor": "Keep Lowest for {die}",

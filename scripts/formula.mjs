@@ -1,5 +1,14 @@
 import { MODE_CONFIG } from "./constants.mjs";
+import { facesOf } from "./dice.mjs";
 import { getDiceGroups, state } from "./state.mjs";
+
+/** Numbered dice smallest first, then any others (dF, …) in the order they were added. */
+function groupOrder(a, b) {
+  const fa = facesOf(a);
+  const fb = facesOf(b);
+  if ( Number.isNaN(fa) || Number.isNaN(fb) ) return Number.isNaN(fa) - Number.isNaN(fb);
+  return (fa - fb) || a.localeCompare(b);
+}
 
 /**
  * Build the roll formula for a pool, e.g. "2d6 + 1d20kh + 3".
@@ -10,7 +19,7 @@ import { getDiceGroups, state } from "./state.mjs";
  * automation recognise the roll; everywhere else the same thing is written with core dice pools:
  * `2d20kh` for a single die, `{3d6,3d6}kh` for several.
  *
- * @param {{pool: number[], mode: string, modifier: number, keep: object}} state
+ * @param {{pool: string[], mode: string, modifier: number, keep: object}} state
  * @param {object} [options]
  * @param {boolean} [options.nativeAdvantage]  Whether the system's dice support `adv`/`dis`.
  * @returns {string} "" when the pool is empty.
@@ -19,15 +28,15 @@ export function buildFormula({ pool, mode, modifier, keep }, { nativeAdvantage =
   if ( !pool.length ) return "";
   const groups = getDiceGroups(pool);
   const advantage = MODE_CONFIG[mode];
-  const faces = Object.keys(groups).map(Number).sort((a, b) => a - b);
-  let formula = faces.map(f => {
-    const count = groups[f];
-    const mod = keep[f];
+  let formula = Object.keys(groups).sort(groupOrder).map(key => {
+    const count = groups[key];
+    const mod = keep[key];
     const keepSuffix = (mod?.count > 0) ? ((mod.count === 1) ? mod.type : `${mod.type}${mod.count}`) : "";
-    if ( !advantage ) return `${count}d${f}${keepSuffix}`;
-    if ( nativeAdvantage ) return `${count}d${f}${keepSuffix}${advantage.suffix}`;
-    if ( (count === 1) && !keepSuffix ) return `2d${f}${advantage.keep}`;
-    const term = `${count}d${f}${keepSuffix}`;
+    const term = `${count}${key}${keepSuffix}`;
+    if ( !advantage ) return term;
+    // The system's adv/dis belongs to its numbered dice; Fate dice and the like use the pool form.
+    if ( nativeAdvantage && !Number.isNaN(facesOf(key)) ) return `${term}${advantage.suffix}`;
+    if ( (count === 1) && !keepSuffix && (key === `d${facesOf(key)}`) ) return `2${key}${advantage.keep}`;
     return `{${term},${term}}${advantage.keep}`;
   }).join(" + ");
   if ( modifier > 0 ) formula += ` + ${modifier}`;
@@ -50,12 +59,14 @@ export function currentFormula() {
  * The formula for one die type, as it would roll if dragged out of the tray: that die's group
  * from the pool with its keep modifier, the roll mode and the modifier — or a single die if none
  * of that type has been added.
+ * @param {string} key    The die type, e.g. "d6".
+ * @param {number} [count]  How many make "one" of this die when none are in the pool.
  * @returns {{formula: string, fromPool: boolean}}
  */
-export function formulaForDie(faces) {
-  const dice = state.pool.filter(f => f === faces);
+export function formulaForDie(key, count = 1) {
+  const dice = state.pool.filter(k => k === key);
   const fromPool = dice.length > 0;
-  const formula = buildFormula({ ...state, pool: fromPool ? dice : [faces] },
+  const formula = buildFormula({ ...state, pool: fromPool ? dice : Array(count).fill(key) },
     { nativeAdvantage: systemSupportsAdvantage() });
   return { formula, fromPool };
 }

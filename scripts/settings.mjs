@@ -1,5 +1,12 @@
 import { MODULE_ID, THEME_CHOICES } from "./constants.mjs";
+import { invalidateRows } from "./layout.mjs";
 import { applyTheme, rebuildTrays } from "./tray.mjs";
+
+/** The layout changed: rebuild every open tray from it. */
+function onLayoutChange() {
+  invalidateRows();
+  rebuildTrays();
+}
 
 export function registerSettings() {
   game.settings.register(MODULE_ID, "theme", {
@@ -42,6 +49,15 @@ export function registerSettings() {
     config: true,
     type: Boolean,
     default: false,
-    onChange: () => rebuildTrays()
+    onChange: onLayoutChange
+  });
+
+  // The GM's dice layout: rows of button definitions (see dice.mjs). Empty means the default.
+  game.settings.register(MODULE_ID, "diceRows", {
+    scope: "world",
+    config: false,
+    type: Array,
+    default: [],
+    onChange: onLayoutChange
   });
 }
