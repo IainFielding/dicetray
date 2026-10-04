@@ -4,8 +4,12 @@ import { dayKey, diceFromRolls, emptyStats, mergeStats, normaliseStats, recordRo
 /** Flag on each User holding their statistics. */
 export const STATS_FLAG = "stats";
 
-/** Operation option carrying the token of the client making a message, so it is counted once. */
-const STATS_TOKEN = `${MODULE_ID}.statsToken`;
+/**
+ * A message's identity between being made and existing: its rolls, results and all. Every message
+ * in one create operation shares that operation's options, so a token there couldn't tell an
+ * initiative roll for four NPCs apart; the rolls can.
+ */
+const messageKey = message => JSON.stringify(message._source?.rolls ?? []);
 
 /** Rolls are saved in batches, at most this often, rather than one database write per roll. */
 const SAVE_DELAY_MS = 3000;
@@ -18,9 +22,9 @@ let timer = null;
 let saving = null;
 
 /**
- * Messages this client is making, by the token it gave them, with their dice. Counted when the
- * message is created; a message cancelled before then is never counted. Bounded, so tokens of
- * cancelled messages can't pile up.
+ * Messages this client is making, by their rolls (messageKey), with their dice: a list, since two
+ * messages can roll the same. Counted when the message exists; one cancelled before then is never
+ * counted. Bounded, so cancelled ones can't pile up.
  */
 const making = new Map();
 const MAX_MAKING = 100;
@@ -30,30 +34,33 @@ export const currentEpoch = () => game.settings.get(MODULE_ID, "statsEpoch") ?? 
 
 /**
  * preCreateChatMessage: this client is making a message. Pre-create hooks run only on the client
- * making it, so tagging it here means it is counted once, by this client, even with the same user
- * logged in twice. The token rides in the operation's options, so nothing is saved on the message.
+ * making it, so noting it here means it is counted once, by this client, even with the same user
+ * logged in twice. Nothing is saved on the message.
  *
  * Only rolls everyone could see are counted. A blind roll is hidden from its own roller, and a
  * whispered, GM-only or self roll from the others; statistics, which every client receives, would
  * give the result away.
  */
-export function onPreCreateChatMessage(message, options) {
+export function onPreCreateChatMessage(message) {
   if ( message.blind || message.whisper?.length || !message.rolls?.length ) return;
   if ( !game.settings.get(MODULE_ID, "trackStats") ) return;
   const dice = diceFromRolls(message.rolls);
   if ( !dice.length ) return;
-  const token = foundry.utils.randomID();
-  options[STATS_TOKEN] = token;
-  making.set(token, dice);
+  const key = messageKey(message);
+  const waiting = making.get(key) ?? [];
+  waiting.push(dice);
+  making.set(key, waiting);
   if ( making.size > MAX_MAKING ) making.delete(making.keys().next().value);
 }
 
-/** createChatMessage: a message this client tagged now exists, so its dice count. */
-export function onCreateChatMessage(_message, options) {
-  const token = options?.[STATS_TOKEN];
-  const dice = token && making.get(token);
+/** createChatMessage: a message this client noted now exists, so its dice count. */
+export function onCreateChatMessage(message, _options, userId) {
+  if ( userId !== game.user.id ) return;
+  const key = messageKey(message);
+  const waiting = making.get(key);
+  const dice = waiting?.shift();
   if ( !dice ) return;
-  making.delete(token);
+  if ( !waiting.length ) making.delete(key);
   const epoch = currentEpoch();
   if ( pending && (pending.epoch !== epoch) ) pending = null;
   pending ??= emptyStats(epoch);

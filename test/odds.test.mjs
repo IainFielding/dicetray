@@ -104,6 +104,21 @@ describe("pool odds", () => {
     expect(poolDistribution(pool({ pool: ["d100000"] }))).toBeNull();
   });
 
+  it("approximates sums too large to convolve, with the right mean and spread", () => {
+    const big = odds({ pool: [...Array(99).fill("d100"), ...Array(99).fill("d99")] }, 9900);
+    expect(big.approximate).toBe(true);
+    expect(big.mean).toBeCloseTo((99 * 50.5) + (99 * 50), 0);
+    expect(big.chance).toBeGreaterThan(0.45);
+    expect(big.chance).toBeLessThan(0.55);
+  });
+
+  it("knows a subtracted exploding die has no minimum", () => {
+    const modes = { minus: { style: "extraDie", die: "1d6x", op: "-" } };
+    const d = summarise(poolDistribution(pool({ pool: ["d20"], mode: "minus" }), { modes }));
+    expect(d.unboundedBelow).toBe(true);
+    expect(d.unbounded).toBe(false);
+  });
+
   it("gives up on dice it can't cover", () => {
     expect(poolDistribution(pool({ pool: ["dp"] }))).toBeNull();
     expect(poolDistribution(pool({ pool: ["d10r1"] }))).toBeNull();

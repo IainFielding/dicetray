@@ -4,7 +4,7 @@ import { DiceStatsMenu } from "./apps/stats-window.mjs";
 import { invalidateLayout } from "./layout.mjs";
 import { DiceTrayWindow } from "./popout.mjs";
 import { scheduleOdds } from "./odds-display.mjs";
-import { applyTheme, rebuildTrays } from "./tray.mjs";
+import { applyTheme, applyTrayVisibility, rebuildTrays } from "./tray.mjs";
 
 /** The layout or the system map behind it changed: rebuild every open tray from it. */
 export function refreshLayout() {
@@ -32,7 +32,8 @@ export function registerSettings() {
     scope: "client",
     config: true,
     type: Boolean,
-    default: true
+    default: true,
+    onChange: visible => applyTrayVisibility(visible)
   });
 
   game.settings.register(MODULE_ID, "rightClick", {

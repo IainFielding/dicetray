@@ -6,9 +6,8 @@ import { registerSettings } from "./settings.mjs";
 import { onStateChange, snapshot } from "./state.mjs";
 import { onDropCanvasData, onHotbarDrop } from "./roll.mjs";
 import { onCreateChatMessage, onPreCreateChatMessage, saveOnHide } from "./stats-tracker.mjs";
-import {
-  ensureTray, followChatInput, injectToggleButton, onChatMessageSent, onPoolMessageCreated, onPoolPreCreate
-} from "./tray.mjs";
+import { ensureTray, followChatInput, injectToggleButton } from "./tray.mjs";
+import { onChatInput, onChatMessageSent, onPoolMessageCreated, onPoolPreCreate } from "./chat-input.mjs";
 
 Hooks.once("init", () => {
   registerSettings();
@@ -21,7 +20,10 @@ Hooks.once("init", () => {
   Hooks.callAll(HOOKS.init, api);
 });
 
-onStateChange(() => Hooks.callAll(HOOKS.poolChanged, snapshot()));
+// Copy the pool for listeners only when there are any.
+onStateChange(() => {
+  if ( Hooks.events[HOOKS.poolChanged]?.length ) Hooks.callAll(HOOKS.poolChanged, snapshot());
+});
 
 Hooks.on("renderChatLog", (_app, element) => {
   ensureTray(element);
@@ -41,17 +43,18 @@ Hooks.once("ready", () => {
 // Roll statistics: tagged by the client that makes each message (pre-create hooks run only
 // there), and counted when the message really exists.
 Hooks.on("preCreateChatMessage", (message, _data, options) => {
-  onPreCreateChatMessage(message, options);
+  onPreCreateChatMessage(message);
   onPoolPreCreate(message, options);
 });
-Hooks.on("createChatMessage", (message, options) => {
-  onCreateChatMessage(message, options);
+Hooks.on("createChatMessage", (message, options, userId) => {
+  onCreateChatMessage(message, options, userId);
   onPoolMessageCreated(message, options);
 });
 
 Hooks.on("getSceneControlButtons", onGetSceneControlButtons);
 
 // A roll command sent from the chat bar is the pool being rolled; it's used up once the roll lands.
+Hooks.on("chatInput", onChatInput);
 Hooks.on("chatMessage", (_log, message, chatData) => onChatMessageSent(message, chatData));
 
 // Dice dragged out of the tray: roll them on the canvas, or keep them as a hotbar macro.

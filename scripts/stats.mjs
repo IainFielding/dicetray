@@ -52,10 +52,11 @@ export function normaliseStats(data, epoch = 0) {
     return Number.isInteger(f) && (f >= 2) && (f <= MAX_FACES) && count(t?.count) && Number.isFinite(t?.sum)
       && Array.isArray(t.faces) && (t.faces.length === f) && t.faces.every(count);
   }));
+  const rolls = n => (count(n) ? n : 0);
   const days = Object.fromEntries(Object.entries(data.days ?? {})
     .filter(([day]) => /^\d{4}-\d{2}-\d{2}$/.test(day))
-    .map(([day, d]) => [day, { rolls: Number(d?.rolls) || 0, dice: tallies(d?.dice) }]));
-  return { version: STATS_VERSION, epoch, rolls: Number(data.rolls) || 0, dice: tallies(data.dice), days };
+    .map(([day, d]) => [day, { rolls: rolls(d?.rolls), dice: tallies(d?.dice) }]));
+  return { version: STATS_VERSION, epoch, rolls: rolls(data.rolls), dice: tallies(data.dice), days };
 }
 
 function addToTallies(tallies, faces, results) {

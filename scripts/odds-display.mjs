@@ -1,4 +1,5 @@
 import { MODULE_ID, t } from "./constants.mjs";
+import { commandEdited, poolCommand } from "./chat-input.mjs";
 import { queryAll } from "./dom.mjs";
 import { getModes } from "./layout.mjs";
 import { poolDistribution, summarise } from "./odds.mjs";
@@ -90,12 +91,18 @@ function updateOdds() {
   cache.set(key, distribution);
   if ( cache.size > CACHE_SIZE ) cache.delete(cache.keys().next().value);
 
-  const odds = distribution && summarise(distribution, target);
+  // Once the player edits the pool's command in the chat bar, Roll rolls that, and the pool's odds no
+  // longer describe it.
+  const edited = commandEdited(poolCommand());
+  const odds = !edited && distribution && summarise(distribution, target);
   for ( const line of lines ) {
     line.classList.toggle("empty", !odds);
     if ( !odds ) continue;
     const prefix = odds.approximate ? "≈" : "";
-    const max = odds.unbounded ? `${odds.min}+` : `${odds.min}–${odds.max}`;
+    let max = `${odds.min}–${odds.max}`;
+    if ( odds.unbounded && odds.unboundedBelow ) max = "∞";
+    else if ( odds.unbounded ) max = `${odds.min}+`;
+    else if ( odds.unboundedBelow ) max = `≤${odds.max}`;
     line.querySelector(".dice-tray-odds-summary").textContent = game.i18n.format("SOGROM_DICETRAY.OddsSummary", {
       mean: `${prefix}${odds.mean.toFixed(1)}`, range: (odds.min === odds.max) ? `${odds.min}` : max
     });
