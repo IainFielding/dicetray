@@ -78,7 +78,7 @@ As you build a roll, a line under the buttons shows its **average** and its **lo
 
 - Advantage, keep highest/lowest, exploding dice, Fate dice, the modifier and each system's own modes are all taken into account.
 - The numbers are exact. For very large pools that would take too long to work out, they're estimated from simulated rolls and marked with **≈**.
-- Press **Enter** in the DC box to roll. Turn the line off with **Show the Odds** in the module settings.
+- Press **Enter** in the DC box to roll. The line is off by default: turn it on with **Show the Odds** in the module settings.
 
 ### Modifier
 
@@ -90,7 +90,7 @@ The box on the left of the controls is a flat modifier added to the roll.
 
 ### Formula Display
 
-As dice are added and a mode selcted, the formula preview updates in real time to show exactly what will be rolled.
+As dice are added and a mode selected, the formula preview updates in real time to show exactly what will be rolled.
 
 
 ### Rolling and Clearing
