@@ -90,7 +90,7 @@ The box on the left of the controls is a flat modifier added to the roll.
 
 ### Formula Display
 
-As dice are added and a mode selcted, the formula preview updates in real time to show exactly what will be rolled.
+As dice are added and a mode selected, the formula preview updates in real time to show exactly what will be rolled.
 
 
 ### Rolling and Clearing
